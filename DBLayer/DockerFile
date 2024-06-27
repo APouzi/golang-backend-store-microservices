@@ -4,14 +4,15 @@ FROM golang:1.20
 
 WORKDIR /app
 
-COPY /Golang-Store-Backend/go.mod /Golang-Store-Backend/go.sum ./
+COPY ./go.mod ./go.sum ./
 RUN go mod download && go mod verify
 
 # COPY . .
-COPY /Golang-Store-Backend .
+COPY . .
 
 RUN go build -o golang-shop .
 # RUN chmod +x app
 
-EXPOSE 8000
+
 CMD ["./golang-shop", "-initdb", "t", "-initView", "t"]
+EXPOSE 8000
