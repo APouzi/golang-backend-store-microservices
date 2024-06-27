@@ -27,4 +27,41 @@ func init() {
 }
 func main() {
 
+	
+
+
+	app := Config{}
+	fmt.Printf("Starting Store Backend on port %d \n", webport)
+
+	serve := &http.Server{
+		Addr:    fmt.Sprintf(":%d", webport),
+		Handler: app.StartRouter(),
+	}
+
+	err := serve.ListenAndServe()
+	if err != nil {
+		log.Panic(err)
+	}
+}
+func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Config)
+	mux := chi.NewRouter()
+
+	mux.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   app.GetAllowedOrigins(),
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           301,
+	}))
+	// Test if this is working, maybe for microservice
+	mux.Use(middleware.Heartbeat("/ping"))
+
+	
+
+
+	//Pass the mux to routes to use.
+	RouteDigest(mux)
+	return mux
+}
+
 }
