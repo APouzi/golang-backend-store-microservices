@@ -13,6 +13,10 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 )
+
+type Config struct{
+
+}
 func init() {
     exeDir, err := filepath.Abs("./")
     if err != nil {
@@ -25,6 +29,8 @@ func init() {
         log.Fatal("Error loading .env file\n","exeDir: ", exeDir)
     }
 }
+
+const webport int = 8080
 func main() {
 
 	
@@ -43,6 +49,7 @@ func main() {
 		log.Panic(err)
 	}
 }
+
 func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Config)
 	mux := chi.NewRouter()
 
@@ -64,4 +71,15 @@ func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Conf
 	return mux
 }
 
+func (app *Config) GetAllowedOrigins() []string{
+	allowedHostString := os.Getenv("ALLOWED_HOSTS")
+	var AllowedOriginsFromEnv []string
+	err := json.Unmarshal([]byte(allowedHostString),&AllowedOriginsFromEnv)
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+	fmt.Println("GetAllowedOrigins completed")
+	fmt.Println("AllowedOriginsFromEnv:",AllowedOriginsFromEnv)
+	return AllowedOriginsFromEnv
 }
