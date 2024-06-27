@@ -3,6 +3,7 @@ package productendpoints
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -33,25 +34,33 @@ type Product struct {
 	ProductDateAdded    string
 	ModifiedDate        string
 }
-var ProdJSON Product
+
 
 func (route *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *http.Request) {
+	var ProdJSON *Product = &Product{}
 	// ProdJSON := route.ProductQuery.GetAllProducts(route.DB)
-	ProdJSON = Product{Product_ID:55556}
-	JSONWrite,err := json.Marshal(ProdJSON)
-	if err != nil {
+	ret, err := http.Get("http://dblayer:8080/db/products/")
+	if err != nil{
+		fmt.Println("failed db pull", err)
+	}
+
+	body, err := io.ReadAll(ret.Body)
+	if err != nil{
+		fmt.Println("Read all Failed", err)
+	}
+	defer ret.Body.Close()
+	err = json.Unmarshal(body, ProdJSON)
+	if err != nil{
 		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(fmt.Sprint("Failed")))
 	}
-
-	w.WriteHeader(http.StatusAccepted)
-	w.Write(JSONWrite)
-	
+	helpers.WriteJSON(w,200,ProdJSON)
 }
 
 
 func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *http.Request){
+	var ProdJSON *Product = &Product{}
 	_, err :=  strconv.Atoi(chi.URLParam(r,"ProductID"))
 	if err != nil{
 		fmt.Println("String to Int failed:", err)
@@ -89,6 +98,7 @@ func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *htt
 
 
 func (route *ProductRoutes) GetProductCategoryEndPointFinal(w http.ResponseWriter, r *http.Request){
+	var ProdJSON *Product = &Product{}
 	// category := chi.URLParam(r, "CategoryName")
 
 	// if err != nil{
