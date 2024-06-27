@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"fmt"
-
 	authorization "github.com/APouzi/MerchantMachinee/authorization"
 	adminendpoints "github.com/APouzi/MerchantMachinee/routes/admin"
 	productendpoints "github.com/APouzi/MerchantMachinee/routes/product"
@@ -13,7 +11,6 @@ import (
 
 
 func RouteDigest(digest *chi.Mux) *chi.Mux{
-	fmt.Println("made it here 3!")
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
 	rProduct := productendpoints.InstanceProductsRoutes()
