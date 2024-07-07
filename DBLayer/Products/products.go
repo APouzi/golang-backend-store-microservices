@@ -35,4 +35,26 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 }
 
 
+func (prdRoutes *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *http.Request) {
+
+	rows, _ := prdRoutes.getAllProductsStmt.Query()
+	ListProducts := []ProductJSONRetrieve{}
+	prodJSON := ProductJSONRetrieve{}
+	defer rows.Close()
+	for rows.Next(){
+		
+		err := rows.Scan(
+			&prodJSON.Product_ID,
+			&prodJSON.Product_Name,
+			&prodJSON.Product_Description,
+		)
+
+		if err != nil{
+			fmt.Println("Scanning Error:",err)
+		}
+		ListProducts = append(ListProducts, prodJSON)
+	}
+
+	helpers.WriteJSON(w,200,ListProducts)
+
 }
