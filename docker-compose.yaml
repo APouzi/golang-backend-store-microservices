@@ -1,19 +1,21 @@
 version: "3"
 
 services:
-  # mysql:
-  #   image: mysql:latest
+  mysql:
+    image: mysql:latest
    
-  #   restart: always
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - mysql_data:/data
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: 'example'
-  #     MYSQL_USER: 'user'
-  #     MYSQL_PASSWORD: 'example'
-  #     MYSQL_DATABASE: 'database'
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/data
+    environment:
+      MYSQL_ROOT_PASSWORD: 'example'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'example'
+      MYSQL_DATABASE: 'database'
+    networks:
+      - pouzikov
   # redis:
   #   image: redis:latest
   #   restart: always
@@ -49,4 +51,3 @@ networks:
 
 volumes:
   mysql_data:
-  redis:
