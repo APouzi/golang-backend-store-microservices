@@ -61,7 +61,7 @@ func RouteDigest(digest *chi.Mux) *chi.Mux{
 
 
 	digest.Group(func(digest chi.Router){
-		digest.Use(AuthMiddleWare.ValidateToken)
+		// digest.Use(AuthMiddleWare.ValidateToken)
 		// digest.Get("/users/profile",rUser.UserProfile)
 	})
 	// digest.Post("/users/",rUser.Register)
@@ -76,7 +76,7 @@ func RouteDigest(digest *chi.Mux) *chi.Mux{
 
 	// digest.Get("/categories/",r.GetAllCategories)
 	
-	digest.Post("/products/test-categories/InsertTest", rAdmin.InsertIntoFinalProd)
+	// digest.Post("/products/test-categories/InsertTest", rAdmin.InsertIntoFinalProd)
 
 	// Admin need to lockdown based on jwt payload and scope
 	digest.Group(func(digest chi.Router){
@@ -84,27 +84,28 @@ func RouteDigest(digest *chi.Mux) *chi.Mux{
 		digest.Use(AuthMiddleWare.HasAdminScope)
 		digest.Post("/products/", rAdmin.CreateProduct)
 	})
-	digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
-	digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
-	digest.Post("/category/prime", rAdmin.CreatePrimeCategory)
-	digest.Post("/category/sub", rAdmin.CreateSubCategory)
-	digest.Post("/category/final", rAdmin.CreateFinalCategory)
-	digest.Delete("/category/prime/{CatPrimeName}",rAdmin.DeletePrimeCategory)
-	digest.Delete("/category/sub/{CatSubName}",rAdmin.DeleteSubCategory)
-	digest.Delete("/category/final/{CatFinalName}",rAdmin.DeleteFinalCategory)
-	digest.Post("/category/primetosub",rAdmin.ConnectPrimeToSubCategory)
-	digest.Post("/category/subtofinal",rAdmin.ConnectSubToFinalCategory)
-	digest.Post("/category/finaltoprod",rAdmin.ConnectFinalToProdCategory)
-	digest.Get("/category/primes", rAdmin.ReturnAllPrimeCategories)
-	digest.Get("/category/subs", rAdmin.ReturnAllSubCategories)
-	digest.Get("/category/finals", rAdmin.ReturnAllFinalCategories)
-	digest.Patch("/products/{ProductID}",rAdmin.EditProduct)
-	digest.Patch("/variation/{VariationID}",rAdmin.EditVariation)
-	digest.Post("/variation/{VariationID}/attribute",rAdmin.AddAttribute)
-	digest.Patch("/variation/{VariationID}/attribute/{AttributeName}",rAdmin.UpdateAttribute)
-	digest.Delete("/variation/{VariationID}/attribute/{AttributeName}",rAdmin.DeleteAttribute)
-	digest.Post("/admin/{UserID}", rAdmin.UserToAdmin)
+	// digest.Post("/products/", rAdmin.CreateProduct)
+	// digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
+	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
+	// digest.Post("/category/prime", rAdmin.CreatePrimeCategory)
+	// digest.Post("/category/sub", rAdmin.CreateSubCategory)
+	// digest.Post("/category/final", rAdmin.CreateFinalCategory)
+	// digest.Delete("/category/prime/{CatPrimeName}",rAdmin.DeletePrimeCategory)
+	// digest.Delete("/category/sub/{CatSubName}",rAdmin.DeleteSubCategory)
+	// digest.Delete("/category/final/{CatFinalName}",rAdmin.DeleteFinalCategory)
+	// digest.Post("/category/primetosub",rAdmin.ConnectPrimeToSubCategory)
+	// digest.Post("/category/subtofinal",rAdmin.ConnectSubToFinalCategory)
+	// digest.Post("/category/finaltoprod",rAdmin.ConnectFinalToProdCategory)
+	// digest.Get("/category/primes", rAdmin.ReturnAllPrimeCategories)
+	// digest.Get("/category/subs", rAdmin.ReturnAllSubCategories)
+	// digest.Get("/category/finals", rAdmin.ReturnAllFinalCategories)
+	// digest.Patch("/products/{ProductID}",rAdmin.EditProduct)
+	// digest.Patch("/variation/{VariationID}",rAdmin.EditVariation)
+	// digest.Post("/variation/{VariationID}/attribute",rAdmin.AddAttribute)
+	// digest.Patch("/variation/{VariationID}/attribute/{AttributeName}",rAdmin.UpdateAttribute)
+	// digest.Delete("/variation/{VariationID}/attribute/{AttributeName}",rAdmin.DeleteAttribute)
+	// digest.Post("/admin/{UserID}", rAdmin.UserToAdmin)
 
-	digest.Get("/tables",rAdmin.GetAllTables)
+	// digest.Get("/tables",rAdmin.GetAllTables)
 	return digest
 }
