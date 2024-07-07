@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+
 	products "github.com/APouzi/DBLayer/Products"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -8,10 +10,10 @@ import (
 
 
 
-func RouteDigest(digest *chi.Mux) *chi.Mux{
+func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
-	rProduct := products.GetProductRouteInstance()
+	rProduct := products.GetProductRouteInstance(dbInstance)
 
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
@@ -24,7 +26,7 @@ func RouteDigest(digest *chi.Mux) *chi.Mux{
 	c := cors.New(cors.Options{
         // AllowedOrigins is a list of origins a cross-domain request can be executed from
         // All origins are allowed by default, you don't need to set this.
-        AllowedOrigins: []string{"http://localhost:4200"},
+        AllowedOrigins: []string{"http://localhost:4200"}, //CHANGE LATER
         // AllowOriginFunc is a custom function to validate the origin. It takes the origin
         // as an argument and returns true if allowed or false otherwise. 
         // If AllowOriginFunc is set, AllowedOrigins is ignored.
