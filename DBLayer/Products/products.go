@@ -12,8 +12,12 @@ type ProductRoutes struct{
 	getAllProductsStmt *sql.Stmt
 }
 
-func GetProductRouteInstance() *ProductRoutes{
-	return &ProductRoutes{}
+func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutes{
+	
+	routeMap := prepareProductRoutes(dbInst)
+	return &ProductRoutes{
+		getAllProductsStmt: routeMap["getAllProducts"],
+	}
 }
 
 
