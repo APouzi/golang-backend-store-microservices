@@ -65,12 +65,12 @@ type ProductCreateRetrieve struct{
 
 // Needs to get SKU, UPC, Primary Image to get created. Primary Image needs to be a google/AWS bucket
 func(route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request){
-	userID := r.Context().Value("userid")
-	if !route.AdminTableScopeCheck("tblCreateTables","tblProducts",userID, w){
-		err := errors.New("Failed Query")
-		helpers.ErrorJSON(w, err, 400)
-		return
-	}
+	// userID := r.Context().Value("userid")
+	// if !route.AdminTableScopeCheck("tblCreateTables","tblProducts",userID, w){
+	// 	err := errors.New("Failed Query")
+	// 	helpers.ErrorJSON(w, err, 400)
+	// 	return
+	// }
 	transaction, err := route.DB.Begin()
 	if err != nil{
 		log.Println("Error creating a transation in CreateProduct")
