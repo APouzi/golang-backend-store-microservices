@@ -1,0 +1,45 @@
+CREATE TABLE IF NOT EXISTS tblUser (
+  UserID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  PasswordHash CHAR(60) NOT NULL,
+  FirstName VARCHAR(55),
+  LastName VARCHAR(55),
+  Email VARCHAR(55) UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS tblUserProfile (
+  UserProfileID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  UserID INT NOT NULL UNIQUE,
+  PhoneNumberCell VARCHAR(16),
+  PhoneNumberHome VARCHAR(16),
+  FOREIGN KEY (UserID) REFERENCES tblUser (UserID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tblUserAddresses (
+  AddressID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  Street VARCHAR(150),
+  City VARCHAR(50),
+  USState VARCHAR(2),
+  ZipCode INT
+);
+
+CREATE TABLE IF NOT EXISTS tblUserAddressesProfile (
+  UserProfileID INT,
+  AddressID INT,
+  FOREIGN KEY (AddressID) REFERENCES tblUserAddresses (AddressID) ON DELETE CASCADE,
+  FOREIGN KEY (UserProfileID) REFERENCES tblUserProfile (UserProfileID) ON DELETE CASCADE
+);
+
+
+
+CREATE TABLE IF NOT EXISTS tblUserWishList(
+  WishlistID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  UserProfileID INT,
+  FOREIGN KEY (UserProfileID) REFERENCES tblUserProfile (UserProfileID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tblWishlistProduct(
+  WishlistID INT,
+  Product_ID INT,
+  FOREIGN KEY (WishlistID) REFERENCES tblUserWishList (WishlistID) ON DELETE CASCADE,
+  FOREIGN KEY (Product_ID) REFERENCES tblProducts (Product_ID) ON DELETE CASCADE
+);
