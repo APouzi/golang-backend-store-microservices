@@ -35,6 +35,23 @@ func initDB() (*sql.DB,*database.Models){
 	var db *sql.DB
 	var err error
 	count := 0
+
+	
+	for count < 11{
+		// db, err = sql.Open("postgres",  cfg)
+		db, err = sql.Open("mysql", cfg.FormatDSN())
+		count++
+		if err != nil{
+			fmt.Printf("MySQL is still waiting to connect, trying to connect again. Attempt: %d \n", count)
+		} else if err = db.Ping(); err == nil {
+			fmt.Println("MySQL server connected confirmation")
+				break
+		}
+		fmt.Printf("Attempt: %d connecting to MySQL server again",count)
+		
+		time.Sleep(2 * time.Second)
+		
+	}
 	fmt.Println("DB connection has successfully initialized")
 	database := &database.Models{}
 	return db , database
