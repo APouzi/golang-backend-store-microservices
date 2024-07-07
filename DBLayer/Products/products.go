@@ -1,26 +1,15 @@
 package products
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 
 	"github.com/APouzi/DBLayer/helpers"
 )
 
-type Product struct {
-	Product_ID          int
-	Product_Name        string
-	Product_Description string
-	Product_Price       float32
-	SKU                 string
-	UPC                 string
-	PRIMARY_IMAGE       string
-	ProductDateAdded    string
-	ModifiedDate        string
-}
-
 type ProductRoutes struct{
-
+	getAllProductsStmt *sql.Stmt
 }
 
 func GetProductRouteInstance() *ProductRoutes{
