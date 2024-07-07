@@ -20,13 +20,19 @@ func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutes{
 	}
 }
 
+func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
+	sqlStmentsMap := make(map[string]*sql.Stmt)
 
-func (route *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *http.Request) {
-	ProdJSON := &Product{Product_ID: 55556}
-	err := helpers.WriteJSON(w,200,ProdJSON)
-	if err != nil {
-		fmt.Println("GetAllProductsEndPoint failed",err)
-		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprint("Failed")))
+	getAllPrdStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, Product_Description FROM tblProducts")
+	if err != nil{
+		fmt.Println("failed to create sql statements")
 	}
+	
+	sqlStmentsMap["getAllProducts"] = getAllPrdStment
+
+
+	return sqlStmentsMap
+}
+
+
 }
