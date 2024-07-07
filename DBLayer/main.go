@@ -1,16 +1,22 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
+	initializingpopulation "github.com/APouzi/DBLayer/Initializing_Population"
+	database "github.com/APouzi/DBLayer/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
@@ -126,7 +132,7 @@ func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Conf
 
 
 	//Pass the mux to routes to use.
-	RouteDigest(mux)
+	RouteDigest(mux, app.DB)
 	return mux
 }
 
