@@ -15,4 +15,4 @@ RUN go build -o golang-shop .
 
 
 CMD ["./golang-shop", "-initdb", "t", "-initView", "t"]
-EXPOSE 8000
+EXPOSE 8080
