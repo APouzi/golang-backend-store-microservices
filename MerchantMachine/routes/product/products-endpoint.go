@@ -37,23 +37,24 @@ type Product struct {
 
 
 func (route *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *http.Request) {
-	var ProdJSON *Product = &Product{}
+	var ProdJSON *[]Product = &[]Product{}
 	// ProdJSON := route.ProductQuery.GetAllProducts(route.DB)
 	ret, err := http.Get("http://dblayer:8080/db/products/")
 	if err != nil{
 		fmt.Println("failed db pull", err)
 	}
-
+	// fmt.Println(ret.Body)
 	body, err := io.ReadAll(ret.Body)
 	if err != nil{
 		fmt.Println("Read all Failed", err)
 	}
 	defer ret.Body.Close()
+	
 	err = json.Unmarshal(body, ProdJSON)
 	if err != nil{
 		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprint("Failed")))
+		w.Write([]byte(err.Error()))
 	}
 	helpers.WriteJSON(w,200,ProdJSON)
 }
