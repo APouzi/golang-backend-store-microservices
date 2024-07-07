@@ -22,6 +22,22 @@ const webport int = 8080
 
 
 func initDB() (*sql.DB,*database.Models){
+	fmt.Println("Start of Initializing DB")
+
+	cfg := mysql.Config{
+		User:                 "user",
+		Passwd:               "example",
+		Net:                  "tcp",
+		Addr:                 "mysql:3306",
+		DBName:               "database",
+		MultiStatements:      true,
+	}
+	var db *sql.DB
+	var err error
+	count := 0
+	fmt.Println("DB connection has successfully initialized")
+	database := &database.Models{}
+	return db , database
 }
 
 
