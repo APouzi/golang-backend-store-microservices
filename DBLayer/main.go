@@ -15,9 +15,37 @@ import (
 )
 
 type Config struct{
-
+	DB *sql.DB
 }
-func init() {
+
+const webport int = 8080
+
+
+func initDB() (*sql.DB,*database.Models){
+}
+
+
+
+
+func main() {
+
+	connection, _ := initDB()
+	time.Sleep(time.Second*3)
+	// flags to initailize this
+	var initializeDB, initailizeView string
+
+	flag.StringVar(&initializeDB, "initdb","","Initalize Database")
+	flag.StringVar(&initailizeView,"initView","","Intialize Views")
+	flag.Parse()
+
+	app := Config{
+		DB: connection,
+		// Models: models,
+		// Redis: rdb,
+	}
+
+	
+
     exeDir, err := filepath.Abs("./")
     if err != nil {
         log.Fatal(err)
@@ -28,15 +56,13 @@ func init() {
     if err != nil {
         log.Fatal("Error loading .env file\n","exeDir: ", exeDir)
     }
-}
 
-const webport int = 8080
-func main() {
-
-	
-
-
-	app := Config{}
+	if initializeDB == "t" || initializeDB == "T"{
+		initializingpopulation.PopulateProductTables(app.DB)
+		// InitiateAndPopulateUsers(app.DB)
+		// InitAdminTables(app.DB)
+		
+	}
 	fmt.Printf("Starting Store Backend on port %d \n", webport)
 
 	serve := &http.Server{
@@ -44,7 +70,7 @@ func main() {
 		Handler: app.StartRouter(),
 	}
 
-	err := serve.ListenAndServe()
+	err = serve.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
 	}
