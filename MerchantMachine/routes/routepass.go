@@ -19,7 +19,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 
 	rAdmin := adminendpoints.InstanceAdminRoutes()
 
-	AuthMiddleWare := authorization.InjectDBRef()
+	// AuthMiddleWare := authorization.InjectSystemRefrences()
 
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
 

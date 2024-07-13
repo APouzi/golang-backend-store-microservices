@@ -21,7 +21,7 @@ services:
   #   restart: always
   #   command: redis-server --save 20 1 --loglevel warning --requirepass REDISPASS
   #   ports:
-  #     - "6379:6379"      
+  #     - "6379:6379" 
   merchantmachine:
     build: MerchantMachine/
     ports:
@@ -40,10 +40,11 @@ services:
       MYSQL_USER: user
       MYSQL_PASSWORD: example
       MYSQL_DATABASE: database
-    # depends_on:
-    #   - mysql
+    depends_on:
+      - mysql
     networks:
-      - pouzikov
+    - pouzikov
+
 
 networks:
   pouzikov:
