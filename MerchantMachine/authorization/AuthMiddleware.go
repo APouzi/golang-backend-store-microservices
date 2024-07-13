@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	firebase "firebase.google.com/go"
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -19,12 +20,13 @@ type JWTtest struct{
 
 type AuthMiddleWareStruct struct{
 	db *sql.DB
+	firebaseApp *firebase.App
 }
 
-func InjectDBRef() *AuthMiddleWareStruct{
-	AMWS := AuthMiddleWareStruct{}
+func InjectSystemRefrences(dbRef *sql.DB, firebaseApp *firebase.App) *AuthMiddleWareStruct{
+	authMiddleWareInstance := AuthMiddleWareStruct{db:dbRef, firebaseApp: firebaseApp}
 	// AMWS.db = db
-	return &AMWS
+	return &authMiddleWareInstance
 }
 
 func(db *AuthMiddleWareStruct) ValidateToken(next http.Handler) http.Handler{
