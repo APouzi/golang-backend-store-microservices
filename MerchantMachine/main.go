@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,11 +10,13 @@ import (
 	"os"
 	"path/filepath"
 
+	firebase "firebase.google.com/go"
 	"github.com/APouzi/MerchantMachinee/routes"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	"google.golang.org/api/option"
 )
 type Config struct{
 
@@ -32,6 +35,19 @@ func init() {
     }
 }
 
+
+func fireBaseInit() (*firebase.App, error){
+	fmt.Println("Firebase Initialization started")
+	opt := option.WithCredentialsFile("yangwang-9510b-firebase-adminsdk-ilyhb-eba85e8cbf.json")
+	firebaseApp, err := firebase.NewApp(context.Background(), nil, opt)
+	if err != nil {
+		return nil, fmt.Errorf("error initializing app: %v", err)
+	}
+	
+	return firebaseApp, nil
+
+
+}
 
 func main() {
 	const webport = 8000
