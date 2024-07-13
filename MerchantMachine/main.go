@@ -65,23 +65,33 @@ func main() {
 	app := Config{
 	}
 	fmt.Printf("Starting Store Backend on port %d \n", webport)
+	fbDB, err :=fireBaseInit()
 
-	serve := &http.Server{
-		Addr:    fmt.Sprintf(":%d", webport),
-		Handler: app.StartRouter(),
-	}
-
-	err := serve.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
 	}
 
 
+	serve := &http.Server{
+		Addr:    fmt.Sprintf(":%d", webport),
+		Handler: app.StartRouter(fbDB),
+	}
+
+	
+
+	fmt.Println("\nFirebase App:",fbDB,"\n")
+
+	err = serve.ListenAndServe()
+	if err != nil {
+		log.Panic(err)
+	}
+
+	
 	// fmt.Println("test", reflect.TypeOf(router))
 
 }
 
-func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Config)
+func (app *Config) StartRouter(firebase *firebase.App) http.Handler { // Change the receiver to (*Config)
 	mux := chi.NewRouter()
 
 	mux.Use(cors.Handler(cors.Options{
@@ -98,7 +108,7 @@ func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Conf
 
 
 	//Pass the mux to routes to use.
-	routes.RouteDigest(mux)
+	routes.RouteDigest(mux,firebase)
 	return mux
 }
 
