@@ -1,7 +1,7 @@
 package routes
 
 import (
-	authorization "github.com/APouzi/MerchantMachinee/authorization"
+	firebase "firebase.google.com/go"
 	adminendpoints "github.com/APouzi/MerchantMachinee/routes/admin"
 	productendpoints "github.com/APouzi/MerchantMachinee/routes/product"
 	"github.com/go-chi/chi/v5"
@@ -10,7 +10,7 @@ import (
 
 
 
-func RouteDigest(digest *chi.Mux) *chi.Mux{
+func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
 	rProduct := productendpoints.InstanceProductsRoutes()
@@ -72,7 +72,7 @@ func RouteDigest(digest *chi.Mux) *chi.Mux{
 	
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductsEndPoint)
 	digest.Get("/products/",rProduct.GetAllProductsEndPoint)
-	// digest.Get("/products/{CategoryName}",r.GetProductCategoryEndPointFinal)
+	digest.Get("/products/{CategoryName}",rProduct.GetProductCategoryEndPointFinal)
 
 	// digest.Get("/categories/",r.GetAllCategories)
 	
@@ -80,8 +80,8 @@ func RouteDigest(digest *chi.Mux) *chi.Mux{
 
 	// Admin need to lockdown based on jwt payload and scope
 	digest.Group(func(digest chi.Router){
-		digest.Use(AuthMiddleWare.ValidateToken)
-		digest.Use(AuthMiddleWare.HasAdminScope)
+		// digest.Use(AuthMiddleWare.ValidateToken)
+		// digest.Use(AuthMiddleWare.HasAdminScope)
 		digest.Post("/products/", rAdmin.CreateProduct)
 	})
 	// digest.Post("/products/", rAdmin.CreateProduct)
