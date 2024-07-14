@@ -29,6 +29,15 @@ services:
     networks:
       - pouzikov
 
+  adminmerchant:
+    build: Admin/
+    ports:
+      - "8001:8001"
+    networks:
+      - pouzikov
+    depends_on:
+    - merchantmachine
+
     
   dblayer:
     build: DBLayer/
