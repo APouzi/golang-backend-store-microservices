@@ -13,6 +13,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+//You can also authenticate with Firebase using a Google Account by handling the sign-in flow with the Sign In With Google library:
+// https://firebase.google.com/docs/auth/web/google-signin#expandable-2
 
 type JWTtest struct{
 	Token string `json:"JWT"`
@@ -29,6 +31,8 @@ func InjectSystemRefrences(dbRef *sql.DB, firebaseApp *firebase.App) *AuthMiddle
 	return &authMiddleWareInstance
 }
 
+//Initialize the SDK in non-Google environments: If you are working in a non-Google server environment (This appp, I believe) in which default credentials lookup can't be fully automated, you can initialize the SDK with an exported service account key file. 
+// https://firebase.google.com/docs/admin/setup#initialize_the_sdk_in_non-google_environments
 func(db *AuthMiddleWareStruct) ValidateToken(next http.Handler) http.Handler{
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
 		jwttoken := r.Header.Get("Authorization")
