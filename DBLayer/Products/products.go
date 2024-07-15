@@ -58,3 +58,33 @@ func (prdRoutes *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r 
 	helpers.WriteJSON(w,200,ListProducts)
 
 }
+
+func (prdRoutes *ProductRoutes) InsertIntoTblProducts(w http.ResponseWriter, r *http.Request){
+	// tRes, err := transaction.Exec("INSERT INTO tblProducts(Product_Name, Product_Description) VALUES(?,?)", productRetrieve.Name,productRetrieve.Description)
+	// if err != nil{
+	// 	fmt.Println("transaction at tblProduct has failed")
+	// 	fmt.Println(err)
+	// 	transaction.Rollback()
+	// }
+}
+
+
+func (prdRoutes *ProductRoutes) InsertIntoTblProductVariation(w http.ResponseWriter, r *http.Request){
+	// tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)",prodID, productRetrieve.VariationName, productRetrieve.VariationDescription, productRetrieve.VariationPrice)
+	// if err != nil{
+	// 	fmt.Println("transaction at tblProductVariation has failed")
+	// 	fmt.Println(err)
+	// 	transaction.Rollback()
+	// 	return
+	// }
+}
+
+
+func (prdRoutes *ProductRoutes) InsertIntoTblProductInventoryLocation(w http.ResponseWriter, r *http.Request){
+	// tRes, err = transaction.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_AT) VALUES(?,?,?)",  ProdVarID,productRetrieve.VariationQuantity, productRetrieve.LocationAt)
+	// if err != nil {
+	// 	fmt.Println("transaction at tblProductInventory has failed")
+	// 	fmt.Println(err)
+	// }
+
+}
