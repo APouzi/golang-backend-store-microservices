@@ -1,7 +1,9 @@
 package adminendpoints
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -71,75 +73,92 @@ func(route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request){
 	// 	helpers.ErrorJSON(w, err, 400)
 	// 	return
 	// }
-	transaction, err := route.DB.Begin()
-	if err != nil{
-		log.Println("Error creating a transation in CreateProduct")
-		log.Println(err)
-	}
+
+	fmt.Println("hit!")
+	// transaction, err := route.DB.Begin()
+	// if err != nil{
+	// 	log.Println("Error creating a transation in CreateProduct")
+	// 	log.Println(err)
+	// }
 
 	productRetrieve := &ProductCreate{}
 
-	helpers.ReadJSON(w, r, &productRetrieve)
-
-	tRes, err := transaction.Exec("INSERT INTO tblProducts(Product_Name, Product_Description) VALUES(?,?)", productRetrieve.Name,productRetrieve.Description)
+	err := helpers.ReadJSON(w, r, &productRetrieve)
 	if err != nil{
-		fmt.Println("transaction at tblProduct has failed")
-		fmt.Println(err)
-		transaction.Rollback()
+		fmt.Println("read json error:",err)
 	}
-	prodID, err := tRes.LastInsertId()
-	if err != nil {
-		fmt.Println("retrieval of LastInsertID of tblProduct has failed")
-		fmt.Println(err)
-		transaction.Rollback()
-		return
-	}
-	tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)",prodID, productRetrieve.VariationName, productRetrieve.VariationDescription, productRetrieve.VariationPrice)
-	if err != nil{
-		fmt.Println("transaction at tblProductVariation has failed")
-		fmt.Println(err)
-		transaction.Rollback()
-		return
-	}
+	fmt.Println("create product at admin:", productRetrieve)
+	// tRes, err := transaction.Exec("INSERT INTO tblProducts(Product_Name, Product_Description) VALUES(?,?)", productRetrieve.Name,productRetrieve.Description)
+	// if err != nil{
+	// 	fmt.Println("transaction at tblProduct has failed")
+	// 	fmt.Println(err)
+	// 	transaction.Rollback()
+	// }
+	// prodID, err := tRes.LastInsertId()
+	// if err != nil {
+	// 	fmt.Println("retrieval of LastInsertID of tblProduct has failed")
+	// 	fmt.Println(err)
+	// 	transaction.Rollback()
+	// 	return
+	// }
+	// tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)",prodID, productRetrieve.VariationName, productRetrieve.VariationDescription, productRetrieve.VariationPrice)
+	// if err != nil{
+	// 	fmt.Println("transaction at tblProductVariation has failed")
+	// 	fmt.Println(err)
+	// 	transaction.Rollback()
+	// 	return
+	// }
 	
-	ProdVarID, err :=  tRes.LastInsertId()
-	if err != nil {
-		fmt.Println("retrieval of LastInsertID of tblProductVariation has failed")
-		fmt.Println(err)
-		transaction.Rollback()
-		return
-	}
-	PCR := ProductCreateRetrieve{
-		ProductID: prodID,
-		VarID: ProdVarID,
-	}
-	if productRetrieve.LocationAt == ""{
+	// ProdVarID, err :=  tRes.LastInsertId()
+	// if err != nil {
+	// 	fmt.Println("retrieval of LastInsertID of tblProductVariation has failed")
+	// 	fmt.Println(err)
+	// 	transaction.Rollback()
+	// 	return
+	// }
+	// PCR := ProductCreateRetrieve{
+	// 	ProductID: prodID,
+	// 	VarID: ProdVarID,
+	// }
+	// if productRetrieve.LocationAt == ""{
 		
-		err = transaction.Commit()
-		if err != nil{
-			fmt.Println(err)
-			transaction.Rollback()
-			return
-		}
-		helpers.WriteJSON(w,http.StatusAccepted,&PCR)
-		return
-	}
+	// 	err = transaction.Commit()
+	// 	if err != nil{
+	// 		fmt.Println(err)
+	// 		transaction.Rollback()
+	// 		return
+	// 	}
+	// 	helpers.WriteJSON(w,http.StatusAccepted,&PCR)
+	// 	return
+	// }
 
-	tRes, err = transaction.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_AT) VALUES(?,?,?)",  ProdVarID,productRetrieve.VariationQuantity, productRetrieve.LocationAt)
-	if err != nil {
-		fmt.Println("transaction at tblProductInventory has failed")
-		fmt.Println(err)
-	}
-	invID, err := tRes.LastInsertId()
+	// tRes, err = transaction.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_AT) VALUES(?,?,?)",  ProdVarID,productRetrieve.VariationQuantity, productRetrieve.LocationAt)
+	// if err != nil {
+	// 	fmt.Println("transaction at tblProductInventory has failed")
+	// 	fmt.Println(err)
+	// }
+	// invID, err := tRes.LastInsertId()
+	// if err != nil{
+	// 	fmt.Println(err)
+	// }
+	// PCR.ProdInvLoc = invID
+	// err = transaction.Commit()
+	// if err != nil{
+	// 	fmt.Println(err)
+	// }
+	// helpers.WriteJSON(w,http.StatusAccepted,&PCR)
+	sendOff, err := json.Marshal(productRetrieve)
+	createdProductResult, err := http.Post("http://dblayer:8080/db/products/","application/json",bytes.NewReader(sendOff))
 	if err != nil{
 		fmt.Println(err)
 	}
-	PCR.ProdInvLoc = invID
-	err = transaction.Commit()
-	if err != nil{
-		fmt.Println(err)
-	}
-	helpers.WriteJSON(w,http.StatusAccepted,&PCR)
+	prodcreate:= &ProductCreateRetrieve{}
+	
+	decode := json.NewDecoder(createdProductResult.Body)
+	decode.Decode(prodcreate)
+	fmt.Println("attempted result is",prodcreate)
+	helpers.WriteJSON(w,http.StatusAccepted,prodcreate)
+
 }
 
 
