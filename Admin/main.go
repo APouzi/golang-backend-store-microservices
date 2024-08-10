@@ -50,7 +50,7 @@ func fireBaseInit() (*firebase.App, error){
 }
 
 func main() {
-	const webport = 8000
+	const webport = 8001
 
 	// flags to initailize this
 	var initializeDB, initailizeView string

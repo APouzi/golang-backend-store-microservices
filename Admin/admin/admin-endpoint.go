@@ -67,87 +67,20 @@ type ProductCreateRetrieve struct{
 
 // Needs to get SKU, UPC, Primary Image to get created. Primary Image needs to be a google/AWS bucket
 func(route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request){
-	// userID := r.Context().Value("userid")
-	// if !route.AdminTableScopeCheck("tblCreateTables","tblProducts",userID, w){
-	// 	err := errors.New("Failed Query")
-	// 	helpers.ErrorJSON(w, err, 400)
-	// 	return
-	// }
 
 	fmt.Println("hit!")
-	// transaction, err := route.DB.Begin()
-	// if err != nil{
-	// 	log.Println("Error creating a transation in CreateProduct")
-	// 	log.Println(err)
-	// }
 
-	productRetrieve := &ProductCreate{}
+	productFromRequest := &ProductCreate{}
 
-	err := helpers.ReadJSON(w, r, &productRetrieve)
+	err := helpers.ReadJSON(w, r, &productFromRequest)
 	if err != nil{
 		fmt.Println("read json error:",err)
 	}
-	fmt.Println("create product at admin:", productRetrieve)
-	// tRes, err := transaction.Exec("INSERT INTO tblProducts(Product_Name, Product_Description) VALUES(?,?)", productRetrieve.Name,productRetrieve.Description)
-	// if err != nil{
-	// 	fmt.Println("transaction at tblProduct has failed")
-	// 	fmt.Println(err)
-	// 	transaction.Rollback()
-	// }
-	// prodID, err := tRes.LastInsertId()
-	// if err != nil {
-	// 	fmt.Println("retrieval of LastInsertID of tblProduct has failed")
-	// 	fmt.Println(err)
-	// 	transaction.Rollback()
-	// 	return
-	// }
-	// tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)",prodID, productRetrieve.VariationName, productRetrieve.VariationDescription, productRetrieve.VariationPrice)
-	// if err != nil{
-	// 	fmt.Println("transaction at tblProductVariation has failed")
-	// 	fmt.Println(err)
-	// 	transaction.Rollback()
-	// 	return
-	// }
-	
-	// ProdVarID, err :=  tRes.LastInsertId()
-	// if err != nil {
-	// 	fmt.Println("retrieval of LastInsertID of tblProductVariation has failed")
-	// 	fmt.Println(err)
-	// 	transaction.Rollback()
-	// 	return
-	// }
-	// PCR := ProductCreateRetrieve{
-	// 	ProductID: prodID,
-	// 	VarID: ProdVarID,
-	// }
-	// if productRetrieve.LocationAt == ""{
-		
-	// 	err = transaction.Commit()
-	// 	if err != nil{
-	// 		fmt.Println(err)
-	// 		transaction.Rollback()
-	// 		return
-	// 	}
-	// 	helpers.WriteJSON(w,http.StatusAccepted,&PCR)
-	// 	return
-	// }
-
-	// tRes, err = transaction.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_AT) VALUES(?,?,?)",  ProdVarID,productRetrieve.VariationQuantity, productRetrieve.LocationAt)
-	// if err != nil {
-	// 	fmt.Println("transaction at tblProductInventory has failed")
-	// 	fmt.Println(err)
-	// }
-	// invID, err := tRes.LastInsertId()
-	// if err != nil{
-	// 	fmt.Println(err)
-	// }
-	// PCR.ProdInvLoc = invID
-	// err = transaction.Commit()
-	// if err != nil{
-	// 	fmt.Println(err)
-	// }
-	// helpers.WriteJSON(w,http.StatusAccepted,&PCR)
-	sendOff, err := json.Marshal(productRetrieve)
+	fmt.Println("create product at admin:", productFromRequest)
+	sendOff, err := json.Marshal(productFromRequest)
+	if err != nil{
+		fmt.Println("There was an error marshalling data:",err)
+	}
 	createdProductResult, err := http.Post("http://dblayer:8080/db/products/","application/json",bytes.NewReader(sendOff))
 	if err != nil{
 		fmt.Println(err)
@@ -262,6 +195,7 @@ func(route *AdminRoutes) CreateInventoryLocation(w http.ResponseWriter, r *http.
 		fmt.Println(row.Err().Error())
 		return
 	}
+
 	var exists bool
 	if row.Scan(&exists); exists == false {
 		
@@ -272,6 +206,8 @@ func(route *AdminRoutes) CreateInventoryLocation(w http.ResponseWriter, r *http.
 		log.Println("Location Creation failed")
 		return
 	}
+
+
 	res ,err:= route.DB.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_At) VALUES(?,?,?)", pil.VarID,pil.Quantity,pil.Location)
 	
 	if err != nil{
@@ -290,7 +226,7 @@ func(route *AdminRoutes) CreateInventoryLocation(w http.ResponseWriter, r *http.
 	pilReturn.InvID = pilID
 	pilReturn.Quantity = pil.Quantity
 	pilReturn.Location = pil.Location
-	helpers.WriteJSON(w, http.StatusAccepted, pil)
+	helpers.WriteJSON(w, http.StatusAccepted, pilReturn)
 }
 
 

@@ -25,7 +25,6 @@ func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
 }
 
 func (prdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("db layed hit!")
 	transaction, err := prdRoutes.DB.Begin()
 	if err != nil {
 		log.Println("Error creating a transation in CreateProduct")
@@ -142,4 +141,43 @@ func (prdRoutes *ProductRoutesTray) CreateProductVariation(w http.ResponseWriter
 		fmt.Println(err)
 		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
 	}
+}
+
+
+type ProdInvLocCreation struct{
+	VarID int64 `json:"Variation_ID"`
+	Quantity int `json:"Quantity"`
+	Location string `json:"Location"`
+}
+
+type PILCreated struct{
+	InvID int64 `json:"Inv_ID"`
+	Quantity int `json:"Quantity"`
+	Location string `json:"Location"`
+}
+
+func (prdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWriter, r *http.Request) {
+
+	pil := ProdInvLocCreation{}
+	helpers.ReadJSON(w,r,&pil)
+
+	res ,err:= prdRoutes.DB.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_At) VALUES(?,?,?)", pil.VarID,pil.Quantity,pil.Location)
+	
+	if err != nil{
+		fmt.Println("failed to create tblProductInventoryLocation")
+		fmt.Println(err)
+		helpers.ErrorJSON(w,err,http.StatusForbidden)
+		return
+	}
+
+	pilID, err := res.LastInsertId()
+	
+	if err != nil{
+		fmt.Println("result of tblProductInventoryLocation failed")
+	}
+	pilReturn := PILCreated{}
+	pilReturn.InvID = pilID
+	pilReturn.Quantity = pil.Quantity
+	pilReturn.Location = pil.Location
+	helpers.WriteJSON(w, http.StatusAccepted, pil)
 }

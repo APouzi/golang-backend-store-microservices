@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 
+	admin "github.com/APouzi/DBLayer/Admin"
 	products "github.com/APouzi/DBLayer/Products"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -17,7 +18,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
-	// rAdmin := adminendpoints.InstanceAdminRoutes()
+	rAdmin := admin.GetProductRouteInstance(dbInstance)
 
 	// AuthMiddleWare := authorization.InjectDBRef()
 
@@ -70,7 +71,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	
 	// digest.Post("/superusercreation",rUser.AdminSuperUserCreation)
 	
-	// digest.Get("/products/{ProductID}",rProduct.GetOneProductsEndPoint)
+	digest.Get("/products/{ProductID}",rProduct.GetOneProductEndPoint)
 	digest.Get("/db/products/",rProduct.GetAllProductsEndPoint)
 	// digest.Get("/products/{CategoryName}",r.GetProductCategoryEndPointFinal)
 
@@ -82,9 +83,9 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// digest.Group(func(digest chi.Router){
 	// 	digest.Use(AuthMiddleWare.ValidateToken)
 	// 	digest.Use(AuthMiddleWare.HasAdminScope)
-	// 	digest.Post("/products/", rAdmin.CreateProduct)
+		digest.Post("/db/products/", rAdmin.CreateProductMultiChain)
 	// })
-	// digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
+	digest.Post("/products/{ProductID}/variation", rAdmin.CreateProductVariation)
 	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
 	// digest.Post("/category/prime", rAdmin.CreatePrimeCategory)
 	// digest.Post("/category/sub", rAdmin.CreateSubCategory)

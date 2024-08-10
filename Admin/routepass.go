@@ -78,11 +78,11 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 	// digest.Post("/products/test-categories/InsertTest", rAdmin.InsertIntoFinalProd)
 
 	// Admin need to lockdown based on jwt payload and scope
-	digest.Group(func(digest chi.Router){
+	// digest.Group(func(digest chi.Router){
 		// digest.Use(AuthMiddleWare.ValidateToken)
 		// digest.Use(AuthMiddleWare.HasAdminScope)
-		digest.Post("/products/", rAdmin.CreateProduct)
-	})
+		// digest.Post("/products/", rAdmin.CreateProduct)
+	// })
 	digest.Post("/products/", rAdmin.CreateProduct)
 	digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
 	digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
