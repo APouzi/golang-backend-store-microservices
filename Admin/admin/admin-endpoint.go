@@ -85,70 +85,49 @@ func (route *AdminRoutes) CreateVariation(w http.ResponseWriter, r *http.Request
 	helpers.ReadJSON(w,r, &variation)
 
 // Check if product exists, if not, then return false
-	var prodID int64
-	err := route.DB.QueryRow("SELECT Product_ID FROM tblProducts WHERE Product_ID = ?",ProductID).Scan(&prodID)
-	if err == sql.ErrNoRows{
-		msg := ProdExist{}
-		msg.ProductExists = false
-		msg.Message = "Product provided does not exist"
-		helpers.WriteJSON(w,http.StatusAccepted,msg)
-		log.Println("Variation Creation failed, Product doesn't exist")
-		return
-	}
-	// Implement the returns for this to allow for proper exiting 
-
-	var varit sql.Result
-	if variation.PrimaryImage != "" {
-		varitCrt := variCrtd{}
-		varit, err = route.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price)
-		if err != nil{
-			log.Println("insert into tblProductVariation failed")
-			log.Println(err)
-			helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed"),400)
-			return
-		}
-		varitCrt.VariationID, err = varit.LastInsertId()
-		if err != nil{
-			log.Println(err)
-			helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
-			return
-		}
-		helpers.WriteJSON(w, http.StatusCreated,varitCrt)
-	}
-	varit, err = route.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price, PRIMARY_IMAGE) VALUES(?,?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price, variation.PrimaryImage)
+	pil := ProductRetrieve{}
+	url := "http://dblayer:8080/products/" + ProductID
+	resp, err := http.Get(url)
 	if err != nil{
-		fmt.Println("insert into tblProductVariation failed")
-		fmt.Println(err)
-		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
-	}
-//Check if location exists, if not, then we should prompt them to create one
-	varitID, err := varit.LastInsertId()
-	if err != nil{
-		fmt.Println("issue with Variation_ID failed")
-		fmt.Println(err)
-	}
-	if variation.LocationAt == ""{
-		msg := variCrtd{}
-		msg.LocationExists = false
-		msg.VariationID = varitID
-		helpers.WriteJSON(w, http.StatusAccepted, msg)
-		return
+		helpers.WriteJSON(w,500,"Error getting data from database")
 	}
 
+	if resp.StatusCode == 404{
+		helpers.ErrorJSON(w,errors.New("could not find the coresponding product to create variation"), 404)
+		return
+	}
+	
+
+	jDecode := json.NewDecoder(resp.Body)
+	if err = jDecode.Decode(&pil); err != nil || pil.ProductID == 0{
+		fmt.Println("There is an error decoding!", err)
+	}
+
+	url = "http://dblayer:8080/products/" + ProductID + "/variation"
+	varbytes, err:= json.Marshal(variation)
+	if err != nil{
+		helpers.ErrorJSON(w,errors.New("could not martial inputted variation"), 404)
+	}
+	varReader := bytes.NewReader(varbytes)
+	resp, err = http.Post(url, "application/json",varReader)
+	if err != nil{
+		helpers.WriteJSON(w,500,"Error getting data from database")
+	}
+	if resp.StatusCode == 404{
+		helpers.ErrorJSON(w,errors.New("could not find the coresponding product to create variation"), 404)
+	}
+	verify := variCrtd{}
+	jDecode = json.NewDecoder(resp.Body)
+	if err = jDecode.Decode(&verify); err != nil || pil.ProductID == 0{
+		fmt.Println("There is an error decoding!", err)
+	}
+
+	helpers.WriteJSON(w,200,verify)
 	 
 	
 }
 
-type ProdInvLocCreation struct{
-	VarID int64 `json:"Variation_ID"`
-	Quantity int `json:"Quantity"`
-	Location string `json:"Location"`
-}
-type PILCreated struct{
-	InvID int64 `json:"Inv_ID"`
-	Quantity int `json:"Quantity"`
-	Location string `json:"Location"`
-}
+
 
 func(route *AdminRoutes) CreateInventoryLocation(w http.ResponseWriter, r *http.Request){
 	// Test for Variantion existness
