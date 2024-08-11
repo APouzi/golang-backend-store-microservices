@@ -18,7 +18,22 @@ type ProductCreateRetrieve struct{
 
 }
 
+type ProductRetrieve struct{
+	ProductID int64 `json:"Product_ID"`
+	Name string `json:"Product_Name"`
+	Description string `json:"Product_Description"`
+}
 
+
+type VariationRetrieve struct{
+	Variation_ID int64 `json:"Variation_ID"`
+	ProductID int64 `json:"Product_ID"`
+	Name string `json:"Variation_Name"`
+	Description string `json:"Variation_Description"`
+	Price float32 `json:"Variation_Price"`
+	PrimaryImage string `json:"PRIMARY_IMAGE,omitempty"`
+
+}
 
 type VariationCreate struct{
 	ProductID int64 `json:"Product_ID"`
@@ -38,4 +53,16 @@ type ProdExist struct{
 type variCrtd struct{
 	VariationID int64 `json:"Product_ID"`
 	LocationExists bool `json:"Location_Exists"`
+}
+
+type ProdInvLocCreation struct{
+	VarID int64 `json:"Variation_ID"`
+	Quantity int `json:"Quantity"`
+	Location string `json:"Location"`
+}
+
+type PILCreated struct{
+	InvID int64 `json:"Inv_ID"`
+	Quantity int `json:"Quantity"`
+	Location string `json:"Location"`
 }
