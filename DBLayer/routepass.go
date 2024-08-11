@@ -86,6 +86,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 		digest.Post("/db/products/", rAdmin.CreateProductMultiChain)
 	// })
 	digest.Post("/products/{ProductID}/variation", rAdmin.CreateProductVariation)
+	digest.Get("/products/variation/{VariationID}", rProduct.GetOneVariationEndPoint)
 	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
 	// digest.Post("/category/prime", rAdmin.CreatePrimeCategory)
 	// digest.Post("/category/sub", rAdmin.CreateSubCategory)

@@ -2,6 +2,7 @@ package products
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,6 +16,7 @@ type ProductRoutesTray struct{
 	DB *sql.DB
 	getAllProductsStmt *sql.Stmt
 	getOneProductStmt *sql.Stmt
+	getOneVariationProductStment *sql.Stmt
 }
 
 func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
@@ -23,6 +25,7 @@ func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
 	return &ProductRoutesTray{
 		getAllProductsStmt: routeMap["getAllProducts"],
 		getOneProductStmt: routeMap["getOneProducts"],
+		getOneVariationProductStment: routeMap["getOneVariationProducts"],
 		DB: dbInst,
 	}
 }
@@ -35,14 +38,20 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 		log.Fatal(err)
 	}
 	GetOneProductStmt, err := dbInst.Prepare("SELECT Product_ID, Product_Name, Product_Description, PRIMARY_IMAGE, Date_Created, Modified_Date FROM tblProducts WHERE Product_ID = ?")
-	
+	if err != nil{
+		log.Fatal(err)
+	}
+	GetOneVariationStmt, err := dbInst.Prepare("SELECT Variation_ID, Product_ID, Variation_Name, Variation_Description, Variation_Price, PRIMARY_IMAGE FROM tblProductVariation WHERE Variation_ID = ?")
+	if err != nil{
+		log.Fatal(err)
+	}
 	if err != nil{
 		fmt.Println("failed to create sql statements")
 	}
 	
 	sqlStmentsMap["getAllProducts"] = getAllPrdStment
 	sqlStmentsMap["getOneProducts"] = GetOneProductStmt
-
+	sqlStmentsMap["getOneVariationProducts"] = GetOneVariationStmt
 
 	return sqlStmentsMap
 }
@@ -99,7 +108,7 @@ func (prdRoutes *ProductRoutesTray) GetOneProductEndPoint(w http.ResponseWriter,
 		&prodJSON.ModifiedDate,
 	)
 	if err == sql.ErrNoRows{
-		helpers.WriteJSON(w,200,"Cant find product son")
+		helpers.WriteJSON(w,404,"Cant find product son")
 	}
 	if err != nil{
 		fmt.Println("scanning error:",err)
@@ -125,60 +134,32 @@ type FailedDBQuery struct {
 
 func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("hit getoneproductendpoint")
-	productID, err :=  strconv.Atoi(chi.URLParam(r,"VariationID"))
+	productVariationID, err :=  strconv.Atoi(chi.URLParam(r,"VariationID"))
 	if err != nil{
 		fmt.Println("String to Int failed:", err)
 	}
-	row := route.DB.QueryRow("SELECT Variation_ID FROM tblProductVariation WHERE Variation_ID = ?",pil.VarID)
-	rows :=prdRoutes.getOneProductStmt.QueryRow(productID)
-	prodJSON := ProductJSON{}
+	fmt.Println("hit getoneproductendpoint", productVariationID)
+	// row := route.DB.QueryRow("SELECT Variation_ID FROM tblProductVariation WHERE Variation_ID = ?",pil.VarID)
+	rows := prdRoutes.getOneVariationProductStment.QueryRow(productVariationID)
+	variationJSON := &VariationRetrieve{}
 	
 	err = rows.Scan(
-		&prodJSON.Product_ID, 
-		&prodJSON.Product_Name, 
-		&prodJSON.Product_Description,  
-		&prodJSON.PRIMARY_IMAGE,
-		&prodJSON.ProductDateAdded,
-		&prodJSON.ModifiedDate,
+		&variationJSON.Variation_ID,
+		&variationJSON.ProductID, 
+		&variationJSON.Name, 
+		&variationJSON.Description,  
+		&variationJSON.Price,
+		&variationJSON.PrimaryImage,
 	)
 	if err == sql.ErrNoRows{
-		helpers.WriteJSON(w,200,"Cant find product son")
+		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),404)
+		return
 	}
 	if err != nil{
 		fmt.Println("scanning error:",err)
 	}
 	
-	helpers.WriteJSON(w,200,prodJSON)
+	helpers.WriteJSON(w,200,&variationJSON)
 
 }
 
-
-func (prdRoutes *ProductRoutesTray) InsertIntoTblProducts(w http.ResponseWriter, r *http.Request){
-	// tRes, err := transaction.Exec("INSERT INTO tblProducts(Product_Name, Product_Description) VALUES(?,?)", productRetrieve.Name,productRetrieve.Description)
-	// if err != nil{
-	// 	fmt.Println("transaction at tblProduct has failed")
-	// 	fmt.Println(err)
-	// 	transaction.Rollback()
-	// }
-}
-
-
-func (prdRoutes *ProductRoutesTray) InsertIntoTblProductVariation(w http.ResponseWriter, r *http.Request){
-	// tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)",prodID, productRetrieve.VariationName, productRetrieve.VariationDescription, productRetrieve.VariationPrice)
-	// if err != nil{
-	// 	fmt.Println("transaction at tblProductVariation has failed")
-	// 	fmt.Println(err)
-	// 	transaction.Rollback()
-	// 	return
-	// }
-}
-
-
-func (prdRoutes *ProductRoutesTray) InsertIntoTblProductInventoryLocation(w http.ResponseWriter, r *http.Request){
-	// tRes, err = transaction.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_AT) VALUES(?,?,?)",  ProdVarID,productRetrieve.VariationQuantity, productRetrieve.LocationAt)
-	// if err != nil {
-	// 	fmt.Println("transaction at tblProductInventory has failed")
-	// 	fmt.Println(err)
-	// }
-
-}

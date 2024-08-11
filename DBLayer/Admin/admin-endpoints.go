@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/APouzi/DBLayer/helpers"
 	"github.com/go-chi/chi/v5"
@@ -103,24 +104,15 @@ func (prdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.ResponseWrite
 func (prdRoutes *ProductRoutesTray) CreateProductVariation(w http.ResponseWriter, r *http.Request) {
 
 	ProductID := chi.URLParam(r, "ProductID")
-	variation := VariationCreate{}
+	fmt.Println("productID", ProductID)
+	variation := VariationCreate{PrimaryImage: ""}
 	helpers.ReadJSON(w,r, &variation)
-	var prodID int64
-	err := prdRoutes.DB.QueryRow("SELECT Product_ID FROM tblProducts WHERE Product_ID = ?",ProductID).Scan(&prodID)
-	if err == sql.ErrNoRows{
-		msg := ProdExist{}
-		msg.ProductExists = false
-		msg.Message = "Product provided does not exist"
-		helpers.WriteJSON(w,http.StatusAccepted,msg)
-		log.Println("Variation Creation failed, Product doesn't exist")
-		return
-	}
-	// Implement the returns for this to allow for proper exiting 
-
-	var varit sql.Result
+	// var prodID int64
+	varitCrt := variCrtd{}
+	// var varit sql.Result
 	if variation.PrimaryImage != "" {
-		varitCrt := variCrtd{}
-		varit, err = prdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price)
+		
+		varit, err := prdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price)
 		if err != nil{
 			log.Println("insert into tblProductVariation failed")
 			log.Println(err)
@@ -135,12 +127,16 @@ func (prdRoutes *ProductRoutesTray) CreateProductVariation(w http.ResponseWriter
 		}
 		helpers.WriteJSON(w, http.StatusCreated,varitCrt)
 	}
-	varit, err = prdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price, PRIMARY_IMAGE) VALUES(?,?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price, variation.PrimaryImage)
+	prodid, err := strconv.Atoi(ProductID)
+	varit, err := prdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", prodid,variation.Name, variation.Description, variation.Price)
 	if err != nil{
 		fmt.Println("insert into tblProductVariation failed")
 		fmt.Println(err)
 		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
 	}
+	varitCrt.VariationID, err = varit.LastInsertId()
+	
+	helpers.WriteJSON(w, http.StatusCreated,varitCrt)
 }
 
 
@@ -171,3 +167,5 @@ func (prdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWrite
 	pilReturn.Location = pil.Location
 	helpers.WriteJSON(w, http.StatusAccepted, pil)
 }
+
+
