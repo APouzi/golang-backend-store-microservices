@@ -144,17 +144,7 @@ func (prdRoutes *ProductRoutesTray) CreateProductVariation(w http.ResponseWriter
 }
 
 
-type ProdInvLocCreation struct{
-	VarID int64 `json:"Variation_ID"`
-	Quantity int `json:"Quantity"`
-	Location string `json:"Location"`
-}
 
-type PILCreated struct{
-	InvID int64 `json:"Inv_ID"`
-	Quantity int `json:"Quantity"`
-	Location string `json:"Location"`
-}
 
 func (prdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWriter, r *http.Request) {
 

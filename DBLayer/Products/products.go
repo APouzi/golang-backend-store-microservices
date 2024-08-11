@@ -109,6 +109,20 @@ func (prdRoutes *ProductRoutesTray) GetOneProductEndPoint(w http.ResponseWriter,
 
 }
 
+type VariationRetrieve struct{
+	Variation_ID int64 `json:"Variation_ID"`
+	ProductID int64 `json:"Product_ID"`
+	Name string `json:"Variation_Name"`
+	Description string `json:"Variation_Description"`
+	Price float32 `json:"Variation_Price"`
+	PrimaryImage sql.NullString `json:"PRIMARY_IMAGE,omitempty"`
+
+}
+
+type FailedDBQuery struct {
+	Msg string `json:"message"`
+}
+
 func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("hit getoneproductendpoint")
 	productID, err :=  strconv.Atoi(chi.URLParam(r,"VariationID"))

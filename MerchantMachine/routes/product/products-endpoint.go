@@ -23,17 +23,6 @@ func InstanceProductsRoutes( ) *ProductRoutes {
 }
 
 //Delete THIS AFTER FIX!!!!
-type Product struct {
-	Product_ID          int
-	Product_Name        string
-	Product_Description string
-	Product_Price       float32
-	SKU                 string
-	UPC                 string
-	PRIMARY_IMAGE       string
-	ProductDateAdded    string
-	ModifiedDate        string
-}
 
 
 func (route *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *http.Request) {

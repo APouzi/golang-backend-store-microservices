@@ -47,23 +47,7 @@ func(route *AdminRoutes)  AdminTableScopeCheck(adminTable string, tableName stri
 	return true
 }
 
-// Product automatically creates Variation
-type ProductCreate struct{
-	Name string `json:"Product_Name"`
-	Description string `json:"Product_Description"`
-	Price float64 `json:"Product_Price"`
-	VariationName string `json:"Variation_Name"`
-	VariationDescription string `json:"Variation_Description"`
-	VariationPrice float32 `json:"Variation_Price"`
-	VariationQuantity int  `json:"Variation_Quantity"`
-	LocationAt string `json:"Location_At"`
-}
-type ProductCreateRetrieve struct{
-	ProductID int64 `json:"Product_ID"`
-	VarID int64 `json:"Variation_ID"`
-	ProdInvLoc int64 `json:"Inv_ID,omitempty"`
 
-}
 
 // Needs to get SKU, UPC, Primary Image to get created. Primary Image needs to be a google/AWS bucket
 func(route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request){
@@ -94,26 +78,6 @@ func(route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request){
 
 }
 
-
-type VariationCreate struct{
-	ProductID int64 `json:"Product_ID"`
-	Name string `json:"Variation_Name"`
-	Description string `json:"Variation_Description"`
-	Price float32 `json:"Variation_Price"`
-	PrimaryImage string `json:"Primary_Image,omitempty"`
-	VariationQuantity int  `json:"Variation_Quantity"`
-	LocationAt string `json:"Location_At"`
-}
-
-type ProdExist struct{
-	ProductExists bool `json:"Product_Exists"`
-	Message string `json:"Message"`
-}
-
-type variCrtd struct{
-	VariationID int64 `json:"Product_ID"`
-	LocationExists bool `json:"Location_Exists"`
-}
 
 func (route *AdminRoutes) CreateVariation(w http.ResponseWriter, r *http.Request){
 	ProductID := chi.URLParam(r, "ProductID")
@@ -285,10 +249,6 @@ func (route *AdminRoutes) CreateFinalCategory(w http.ResponseWriter, r *http.Req
 	helpers.WriteJSON(w, http.StatusAccepted, resultID)
 }
 
-type CatToCat struct {
-	CatStart int `json:"CategoryStart"`
-	CatEnd int `json:"CategoryEnd"`
-}
 
 
 func (route *AdminRoutes) ConnectPrimeToSubCategory(w http.ResponseWriter, r *http.Request){
@@ -329,10 +289,7 @@ func (route *AdminRoutes) ConnectSubToFinalCategory(w http.ResponseWriter, r *ht
 	helpers.WriteJSON(w, http.StatusAccepted, resultID)
 }
 
-type CatToProd struct {
-	Cat int `json:"Category"`
-	Prod int `json:"Product"`
-}
+
 func (route *AdminRoutes) ConnectFinalToProdCategory(w http.ResponseWriter, r *http.Request){
 	// Frontend will have the names and ids, so I PROBABLY wont need to do a search regarding the names of category to get ids
 	FinalProd := CatToProd{}
@@ -354,9 +311,6 @@ func (route *AdminRoutes) ConnectFinalToProdCategory(w http.ResponseWriter, r *h
 }
 
 
-type ReadCat struct{
-	Category int `json:"category"`
-}
 func (route *AdminRoutes) InsertIntoFinalProd(w http.ResponseWriter, r *http.Request){
 	ReadCatR := ReadCat{}
 	err := helpers.ReadJSON(w,r,&ReadCatR)
@@ -427,10 +381,7 @@ func (route *AdminRoutes) ReturnAllFinalCategories(w http.ResponseWriter, r *htt
 }
 
 
-type ProductEdit struct{
-	Name string `json:"Product_Name"`
-	Description string `json:"Product_Description"`
-}
+
 
 
 func (route *AdminRoutes) EditProduct(w http.ResponseWriter, r *http.Request){
@@ -476,18 +427,7 @@ func (route *AdminRoutes) EditProduct(w http.ResponseWriter, r *http.Request){
 	
 }
 
-type VariationEdit struct{
-	VariationID int64 `json:"Variation_ID"`
-	VariationProductID int64 `json:"Product_ID"`
-	VariationName string `json:"Variation_Name"`
-	VariationDescription string `json:"Variation_Description"`
-	VariationPrice float32 `json:"Variation_Price"`
-	SKU string `json:"SKU"`
-	UPC string `json:"UPC"`
-	PrimaryImage string `json:"Primary_Image,omitempty"`
-	VariationQuantity int  `json:"Variation_Quantity"`
-	LocationAt string `json:"Location_At"`
-}
+
 
 func (route *AdminRoutes) EditVariation(w http.ResponseWriter, r *http.Request){
 	r.Header.Get("Authorization")
@@ -552,12 +492,8 @@ func (route *AdminRoutes) EditVariation(w http.ResponseWriter, r *http.Request){
 	helpers.WriteJSON(w, http.StatusAccepted, VaritEdit)
 }
 
-type DeletedSendBack struct{
-	SendBack bool `json:"Deleted"`
-}
-type AddedSendBack struct{
-	IDSendBack int64 `json:"AddedID"`
-}
+
+
 func (route *AdminRoutes) DeletePrimeCategory(w http.ResponseWriter, r *http.Request){
 	CatName := chi.URLParam(r,"CatPrimeName")
 	if CatName == ""{
@@ -612,9 +548,9 @@ func (route *AdminRoutes) DeleteFinalCategory(w http.ResponseWriter, r *http.Req
 	sendBack := DeletedSendBack{SendBack:false}
 	helpers.WriteJSON(w,200,sendBack)
 }
-type Attribute struct{
-	Attribute string `json:"attribute"`
-}
+
+
+
 func (route *AdminRoutes) AddAttribute(w http.ResponseWriter, r *http.Request){
 	VarID := chi.URLParam(r,"VariationID")
 	if VarID == ""{
