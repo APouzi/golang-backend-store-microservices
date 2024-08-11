@@ -2,10 +2,10 @@ package productendpoints
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
 	"github.com/go-chi/chi/v5"
@@ -26,7 +26,7 @@ func InstanceProductsRoutes( ) *ProductRoutes {
 
 
 func (route *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *http.Request) {
-	var ProdJSON *[]Product = &[]Product{}
+	var ProdJSON *[]ProductRetrieve = &[]ProductRetrieve{}
 	// ProdJSON := route.ProductQuery.GetAllProducts(route.DB)
 	ret, err := http.Get("http://dblayer:8080/db/products/")
 	if err != nil{
@@ -50,10 +50,22 @@ func (route *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *htt
 
 
 func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *http.Request){
-	var ProdJSON *Product = &Product{}
-	_, err :=  strconv.Atoi(chi.URLParam(r,"ProductID"))
+	var ProdJSON *ProductRetrieve = &ProductRetrieve{}
+	prodID :=  chi.URLParam(r,"ProductID")
+	
+	url := "http://dblayer:8080/products/" + prodID
+	resp, err := http.Get(url)
+	jd := json.NewDecoder(resp.Body)
+	jd.Decode(ProdJSON)
 	if err != nil{
-		fmt.Println("String to Int failed:", err)
+		fmt.Println("failed to decode response:", err)
+	}
+	if ProdJSON.ProductID == 0{
+		helpers.ErrorJSON(w, errors.New("there was no response"), 404)
+		return
+	}
+	if err != nil{
+		fmt.Println("failed to pull product:", err)
 	}
 	// ProdJSON, err := route.ProductQuery.GetOneProduct(route.DB,query)
 	if err != nil {
@@ -87,24 +99,24 @@ func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *htt
 // }
 
 
-func (route *ProductRoutes) GetProductCategoryEndPointFinal(w http.ResponseWriter, r *http.Request){
-	var ProdJSON *Product = &Product{}
-	// category := chi.URLParam(r, "CategoryName")
+// func (route *ProductRoutes) GetProductCategoryEndPointFinal(w http.ResponseWriter, r *http.Request){
+// 	var ProdJSON *Product = &Product{}
+// 	// category := chi.URLParam(r, "CategoryName")
 
-	// if err != nil{
-	// 	fmt.Println("Get Product Category ")
-	// }
-// TODO needs error handling for none existent categories!
-	// ProdJSON := route.ProductQuery.GetProductCategoryFinal(route.DB,category)
-	JSONWrite, err := json.Marshal(ProdJSON)
+// 	// if err != nil{
+// 	// 	fmt.Println("Get Product Category ")
+// 	// }
+// // TODO needs error handling for none existent categories!
+// 	// ProdJSON := route.ProductQuery.GetProductCategoryFinal(route.DB,category)
+// 	JSONWrite, err := json.Marshal(ProdJSON)
 
-	if err != nil{
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprint("Failed")))
-	}
+// 	if err != nil{
+// 		fmt.Println(err)
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		w.Write([]byte(fmt.Sprint("Failed")))
+// 	}
 
-	w.WriteHeader((http.StatusAccepted))
-	w.Write(JSONWrite)
+// 	w.WriteHeader((http.StatusAccepted))
+// 	w.Write(JSONWrite)
 
-}
+// }
