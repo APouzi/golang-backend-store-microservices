@@ -1,5 +1,7 @@
 package adminendpoints
 
+import "database/sql"
+
 type ProductCreate struct {
 	Name                 string  `json:"Product_Name"`
 	Description          string  `json:"Product_Description"`
@@ -23,12 +25,12 @@ type ProductRetrieve struct {
 }
 
 type VariationRetrieve struct {
-	Variation_ID int64   `json:"Variation_ID"`
-	ProductID    int64   `json:"Product_ID"`
-	Name         string  `json:"Variation_Name"`
-	Description  string  `json:"Variation_Description"`
-	Price        float32 `json:"Variation_Price"`
-	PrimaryImage string  `json:"PRIMARY_IMAGE,omitempty"`
+	Variation_ID int64          `json:"Variation_ID"`
+	ProductID    int64          `json:"Product_ID"`
+	Name         string         `json:"Variation_Name"`
+	Description  string         `json:"Variation_Description"`
+	Price        float32        `json:"Variation_Price"`
+	PrimaryImage sql.NullString `json:"PRIMARY_IMAGE,omitempty"`
 }
 
 type VariationCreate struct {
@@ -102,4 +104,19 @@ type AddedSendBack struct {
 }
 type Attribute struct {
 	Attribute string `json:"attribute"`
+}
+
+type CategoryInsert struct{
+	CategoryName string `json:"CategoryName"`
+	CategoryDescription string `json:"CategoryDescription"`
+}
+
+type CategoryReturn struct{
+	CategoryId int64 `json:"Category_ID"`
+	CategoryName string `json:"CategoryName"`
+	CategoryDescription string `json:"CategoryDescription"`
+}
+
+type CategoriesList struct{
+	collection []CategoryReturn
 }

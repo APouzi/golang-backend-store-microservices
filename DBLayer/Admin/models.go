@@ -66,3 +66,14 @@ type PILCreated struct{
 	Quantity int `json:"Quantity"`
 	Location string `json:"Location"`
 }
+
+type CategoryInsert struct{
+	CategoryName string `json:"CategoryName"`
+	CategoryDescription string `json:"CategoryDescription"`
+}
+
+type CategoryReturn struct{
+	CategoryId int64 `json:"Category_ID"`
+	CategoryName string `json:"CategoryName"`
+	CategoryDescription string `json:"CategoryDescription"`
+}
