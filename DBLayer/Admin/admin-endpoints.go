@@ -144,10 +144,10 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 
 func (adminProdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWriter, r *http.Request) {
 
-	pil := ProdInvLocCreation{}
-	helpers.ReadJSON(w,r,&pil)
-
-	res ,err:= prdRoutes.DB.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_At) VALUES(?,?,?)", pil.VarID,pil.Quantity,pil.Location)
+	prodInvLoc := ProdInvLocCreation{}
+	helpers.ReadJSON(w,r,&prodInvLoc)
+	
+	res ,err:= adminProdRoutes.DB.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_At) VALUES(?,?,?)", prodInvLoc.VarID,prodInvLoc.Quantity,prodInvLoc.Location)
 	
 	if err != nil{
 		fmt.Println("failed to create tblProductInventoryLocation")
@@ -161,7 +161,34 @@ func (adminProdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.Respons
 	if err != nil{
 		fmt.Println("result of tblProductInventoryLocation failed")
 	}
+	pilReturn := PILCreated{InvID:pilID, Quantity: prodInvLoc.Quantity, Location: prodInvLoc.Location }
+	helpers.WriteJSON(w, http.StatusAccepted, pilReturn)
+}
+
+
 func (adminProdRoutes *ProductRoutesTray) CreatePrimeCategory(w http.ResponseWriter, r *http.Request) {
+	category_read := CategoryInsert{}
+	err := helpers.ReadJSON(w, r, &category_read)
+	if err != nil{
+		fmt.Println(err)
+	}
+
+	fmt.Println("in dblayer: CreatePrimeCategory",category_read)
+	result, err := adminProdRoutes.DB.Exec("INSERT INTO tblCategoriesPrime(CategoryName, CategoryDescription) VALUES(?,?)", category_read.CategoryName, category_read.CategoryDescription )
+	if err != nil{
+		fmt.Println(err)
+	}
+	resultID, err := result.LastInsertId()
+	if err != nil{
+		fmt.Println(err)
+	}
+
+	catReturn := CategoryReturn{CategoryId: resultID, CategoryName: category_read.CategoryName, CategoryDescription: category_read.CategoryDescription}
+	err = helpers.WriteJSON(w,200,catReturn)
+	if err != nil{
+		fmt.Println("There was an error trying to send data back",err)
+	}
+
 }
 
 
