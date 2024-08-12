@@ -25,8 +25,8 @@ func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
 	}
 }
 
-func (prdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.ResponseWriter, r *http.Request) {
-	transaction, err := prdRoutes.DB.Begin()
+func (adminProdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.ResponseWriter, r *http.Request) {
+	transaction, err := adminProdRoutes.DB.Begin()
 	if err != nil {
 		log.Println("Error creating a transation in CreateProduct")
 		log.Println(err)
@@ -101,7 +101,7 @@ func (prdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.ResponseWrite
 
 
 
-func (prdRoutes *ProductRoutesTray) CreateProductVariation(w http.ResponseWriter, r *http.Request) {
+func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.ResponseWriter, r *http.Request) {
 
 	ProductID := chi.URLParam(r, "ProductID")
 	fmt.Println("productID", ProductID)
@@ -142,7 +142,7 @@ func (prdRoutes *ProductRoutesTray) CreateProductVariation(w http.ResponseWriter
 
 
 
-func (prdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWriter, r *http.Request) {
+func (adminProdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWriter, r *http.Request) {
 
 	pil := ProdInvLocCreation{}
 	helpers.ReadJSON(w,r,&pil)
@@ -161,11 +161,7 @@ func (prdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWrite
 	if err != nil{
 		fmt.Println("result of tblProductInventoryLocation failed")
 	}
-	pilReturn := PILCreated{}
-	pilReturn.InvID = pilID
-	pilReturn.Quantity = pil.Quantity
-	pilReturn.Location = pil.Location
-	helpers.WriteJSON(w, http.StatusAccepted, pil)
+func (adminProdRoutes *ProductRoutesTray) CreatePrimeCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 
