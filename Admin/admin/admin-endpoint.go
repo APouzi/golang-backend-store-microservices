@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,10 +25,7 @@ func InstanceAdminRoutes(  ) *AdminRoutes {
 	return r
 }
 
-type CategoryInsert struct{
-	CategoryName string `json:"CategoryName"`
-	CategoryDescription string `json:"CategoryDescription"`
-}
+
 
 func(route *AdminRoutes)  AdminTableScopeCheck(adminTable string, tableName string ,adminID any, w http.ResponseWriter) bool{
 	// strQ := "SELECT AdminID FROM" + adminTable + "WHERE Tablename = " + string(adminID) + " AND AdminID = " + adminID
@@ -131,44 +128,46 @@ func (route *AdminRoutes) CreateVariation(w http.ResponseWriter, r *http.Request
 
 func(route *AdminRoutes) CreateInventoryLocation(w http.ResponseWriter, r *http.Request){
 	// Test for Variantion existness
-	pil := ProdInvLocCreation{}
-	helpers.ReadJSON(w,r,&pil)
-	row := route.DB.QueryRow("SELECT Variation_ID FROM tblProductVariation WHERE Variation_ID = ?",pil.VarID)
-	if row.Err() != nil{
-		fmt.Println(row.Err().Error())
-		return
-	}
-
-	var exists bool
-	if row.Scan(&exists); exists == false {
-		
-		msg := ProdExist{}
-		msg.ProductExists = false
-		msg.Message = "Variation record provided does not exist"
-		helpers.WriteJSON(w,http.StatusAccepted,msg)
-		log.Println("Location Creation failed")
-		return
-	}
-
-
-	res ,err:= route.DB.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_At) VALUES(?,?,?)", pil.VarID,pil.Quantity,pil.Location)
+	prodInvLoc := &ProdInvLocCreation{}
+	helpers.ReadJSON(w,r,&prodInvLoc)
 	
-	if err != nil{
-		fmt.Println("failed to create tblProductInventoryLocation")
-		fmt.Println(err)
-		helpers.ErrorJSON(w,err,http.StatusForbidden)
+	variation_id := strconv.Itoa(int(prodInvLoc.VarID))
+	
+	url := "http://dblayer:8080/products/variation/" + variation_id
+	fmt.Println("resulting url:", url)
+	resp, err := http.Get(url)
+	responsevariation := VariationRetrieve{}
+	if err != nil || resp.StatusCode == http.StatusForbidden{
+		helpers.ErrorJSON(w, errors.New("attempt to retrieve variation failed, could not retrieve varitation id"),resp.StatusCode)
 		return
 	}
 
-	pilID, err := res.LastInsertId()
-	
-	if err != nil{
-		fmt.Println("result of tblProductInventoryLocation failed")
+	jDecode := json.NewDecoder(resp.Body)
+	if err = jDecode.Decode(&responsevariation); err != nil{
+		fmt.Println("There is an error decoding!", err)
 	}
-	pilReturn := PILCreated{}
-	pilReturn.InvID = pilID
-	pilReturn.Quantity = pil.Quantity
-	pilReturn.Location = pil.Location
+	
+	prodinv, err := json.Marshal(prodInvLoc)
+	if err != nil{
+		fmt.Println("there was an error marshalling data")
+		helpers.ErrorJSON(w, errors.New("there was an error marshalling data"),resp.StatusCode)
+		return
+	}
+
+	prodinvreader := bytes.NewReader(prodinv)
+	resp, err = http.Post("http://dblayer:8080/products/inventory-location","application/json",prodinvreader)
+	if err != nil{
+		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed"),resp.StatusCode)
+		return
+	}
+	respDecode := json.NewDecoder(resp.Body)
+	pilReturn := &PILCreated{ }
+	err = respDecode.Decode(pilReturn)
+	if err != nil{
+		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed"),resp.StatusCode)
+		return
+	}
+	
 	helpers.WriteJSON(w, http.StatusAccepted, pilReturn)
 }
 
@@ -180,16 +179,26 @@ func (route *AdminRoutes) CreatePrimeCategory(w http.ResponseWriter, r *http.Req
 	if err != nil{
 		fmt.Println(err)
 	}
-	result, err := route.DB.Exec("INSERT INTO tblCategoriesPrime(CategoryName, CategoryDescription) VALUES(?,?)", category_read.CategoryName, category_read.CategoryDescription )
+	fmt.Println("in admin: CreatePrimeCategory",category_read)
+	url := "http://dblayer:8080/category/prime"
+	catBytes, err := json.Marshal(category_read)
 	if err != nil{
 		fmt.Println(err)
 	}
-	resultID, err := result.LastInsertId()
+	catDecode:= bytes.NewReader(catBytes)
+	resp, err := http.Post(url,"application/json",catDecode)
 	if err != nil{
-		fmt.Println(err)
+		fmt.Println("error trying to post to create prime category",err)
+	}
+
+	catret := &CategoryReturn{}
+	responseDecode := json.NewDecoder(resp.Body)
+	err = responseDecode.Decode(catret)
+	if err != nil{
+		fmt.Println("error trying to decode",err)
 	}
 	
-	helpers.WriteJSON(w, http.StatusAccepted, resultID)
+	helpers.WriteJSON(w,  200, catret)
 }
 
 func (route *AdminRoutes) CreateSubCategory(w http.ResponseWriter, r *http.Request){
@@ -301,14 +310,7 @@ func (route *AdminRoutes) InsertIntoFinalProd(w http.ResponseWriter, r *http.Req
 	route.DB.Exec(FinalProd, 1,ReadCatR.Category)
 }
 
-type CategoryReturn struct{
-	CategoryName string `json:"CategoryName"`
-	CategoryDescription string `json:"CategoryDescription"`
-}
 
-type CategoriesList struct{
-	collection []CategoryReturn
-}
 
 func (route *AdminRoutes) ReturnAllPrimeCategories(w http.ResponseWriter, r *http.Request){
 	query := "SELECT CategoryName, CategoryDescription FROM tblCategoriesPrime"
