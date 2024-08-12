@@ -112,7 +112,7 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 	// var varit sql.Result
 	if variation.PrimaryImage != "" {
 		
-		varit, err := prdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price)
+		varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price)
 		if err != nil{
 			log.Println("insert into tblProductVariation failed")
 			log.Println(err)
@@ -128,7 +128,7 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 		helpers.WriteJSON(w, http.StatusCreated,varitCrt)
 	}
 	prodid, err := strconv.Atoi(ProductID)
-	varit, err := prdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", prodid,variation.Name, variation.Description, variation.Price)
+	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", prodid,variation.Name, variation.Description, variation.Price)
 	if err != nil{
 		fmt.Println("insert into tblProductVariation failed")
 		fmt.Println(err)
