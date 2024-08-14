@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/APouzi/DBLayer/helpers"
 	"github.com/go-chi/chi/v5"
@@ -107,9 +109,7 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 	fmt.Println("productID", ProductID)
 	variation := VariationCreate{PrimaryImage: ""}
 	helpers.ReadJSON(w,r, &variation)
-	// var prodID int64
 	varitCrt := variCrtd{}
-	// var varit sql.Result
 	if variation.PrimaryImage != "" {
 		
 		varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price)

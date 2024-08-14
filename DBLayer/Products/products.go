@@ -152,7 +152,7 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 		&variationJSON.PrimaryImage,
 	)
 	if err == sql.ErrNoRows{
-		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),404)
+		helpers.ErrorJSON(w, errors.New("could not get variation"),404)
 		return
 	}
 	if err != nil{

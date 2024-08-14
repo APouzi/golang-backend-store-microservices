@@ -179,7 +179,7 @@ func (route *AdminRoutes) CreatePrimeCategory(w http.ResponseWriter, r *http.Req
 	if err != nil{
 		fmt.Println(err)
 	}
-	fmt.Println("in admin: CreatePrimeCategory",category_read)
+
 	url := "http://dblayer:8080/category/prime"
 	catBytes, err := json.Marshal(category_read)
 	if err != nil{
