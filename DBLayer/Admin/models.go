@@ -77,3 +77,50 @@ type CategoryReturn struct{
 	CategoryName string `json:"CategoryName"`
 	CategoryDescription string `json:"CategoryDescription"`
 }
+
+
+type CatToCat struct {
+	CatStart int `json:"CategoryStart"`
+	CatEnd   int `json:"CategoryEnd"`
+}
+
+type CatToProd struct {
+	Cat  int `json:"Category"`
+	Prod int `json:"Product"`
+}
+
+type ReadCat struct {
+	Category int `json:"category"`
+}
+
+type ProductEdit struct {
+	Name        string `json:"Product_Name"`
+	Description string `json:"Product_Description"`
+}
+
+type VariationEdit struct {
+	VariationID          int64   `json:"Variation_ID"`
+	VariationProductID   int64   `json:"Product_ID"`
+	VariationName        string  `json:"Variation_Name"`
+	VariationDescription string  `json:"Variation_Description"`
+	VariationPrice       float32 `json:"Variation_Price"`
+	SKU                  string  `json:"SKU"`
+	UPC                  string  `json:"UPC"`
+	PrimaryImage         string  `json:"Primary_Image,omitempty"`
+	VariationQuantity    int     `json:"Variation_Quantity"`
+	LocationAt           string  `json:"Location_At"`
+}
+
+type DeletedSendBack struct {
+	SendBack bool `json:"Deleted"`
+}
+type AddedSendBack struct {
+	IDSendBack int64 `json:"AddedID"`
+}
+type Attribute struct {
+	Attribute string `json:"attribute"`
+}
+
+type CategoriesList struct{
+	collection []CategoryReturn
+}
