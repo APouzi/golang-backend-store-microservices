@@ -269,11 +269,11 @@ func (route *ProductRoutesTray) ConnectSubToFinalCategory(w http.ResponseWriter,
 		fmt.Println(err)
 	}
 
-	resultID, err := result.LastInsertId()
+	_, err = result.LastInsertId()
 	if err != nil{
 		fmt.Println(err)
 	}
-	helpers.WriteJSON(w, http.StatusAccepted, resultID)
+	helpers.WriteJSON(w, http.StatusAccepted, FinalSub)
 }
 
 
@@ -291,11 +291,11 @@ func (route *ProductRoutesTray) ConnectFinalToProdCategory(w http.ResponseWriter
 		fmt.Println(err)
 	}
 
-	resultID, err := result.LastInsertId()
+	_, err = result.LastInsertId()
 	if err != nil{
 		fmt.Println(err)
 	}
-	helpers.WriteJSON(w, http.StatusAccepted, resultID)
+	helpers.WriteJSON(w, http.StatusAccepted, FinalProd)
 }
 
 
@@ -369,6 +369,7 @@ func (route *ProductRoutesTray) EditProduct(w http.ResponseWriter, r *http.Reque
 	ProdID := chi.URLParam(r, "ProductID")
 	prodEdit := ProductEdit{}
 	helpers.ReadJSON(w,r, &prodEdit)
+	fmt.Println("edit product:", prodEdit)
 	var buf strings.Builder
 	buf.WriteString("UPDATE tblProducts SET")
 	var count int = 0

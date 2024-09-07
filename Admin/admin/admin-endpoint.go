@@ -296,16 +296,25 @@ func (route *AdminRoutes) ConnectSubToFinalCategory(w http.ResponseWriter, r *ht
 	if err != nil{
 		fmt.Println(err)
 	}
-	result, err := route.DB.Exec("INSERT INTO tblCatSubFinal(CatSubID, CatFinalID) VALUES(?,?)", FinalSub.CatStart, FinalSub.CatEnd)
+	url := "http://dblayer:8080/category/subtofinal"
+	catBytes, err := json.Marshal(FinalSub)
 	if err != nil{
 		fmt.Println(err)
+	}
+	catDecode:= bytes.NewReader(catBytes)
+	resp, err := http.Post(url,"application/json",catDecode)
+	if err != nil{
+		fmt.Println("error trying to post to create prime category",err)
 	}
 
-	resultID, err := result.LastInsertId()
+	catret := &CatToCat{}
+	responseDecode := json.NewDecoder(resp.Body)
+	err = responseDecode.Decode(catret)
 	if err != nil{
-		fmt.Println(err)
+		fmt.Println("error trying to decode",err)
 	}
-	helpers.WriteJSON(w, http.StatusAccepted, resultID)
+
+	helpers.WriteJSON(w, http.StatusAccepted, catret)
 }
 
 
