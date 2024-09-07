@@ -17,8 +17,12 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
 	rAdmin := adminendpoints.InstanceAdminRoutes()
-
-	// AuthMiddleWare := authorization.InjectSystemRefrences()
+	fireAuth, err := firebaseAuth.Auth(context.Background())
+	if err != nil{
+		fmt.Println("There was an erroe trying to get auth",err)
+	}
+	AuthMiddleWare := middleware.AuthMiddleWare{}
+	AuthMiddleWare.Client = fireAuth
 
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
 
