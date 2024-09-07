@@ -452,63 +452,33 @@ func (route *AdminRoutes) EditProduct(w http.ResponseWriter, r *http.Request){
 func (route *AdminRoutes) EditVariation(w http.ResponseWriter, r *http.Request){
 	r.Header.Get("Authorization")
 	VarID := chi.URLParam(r, "VariationID")
-	VaritEdit := VariationEdit{}
-	helpers.ReadJSON(w,r, &VaritEdit)
-	var buf strings.Builder
-	Varib := []any{}
-	buf.WriteString("UPDATE tblProductVariation SET")
-	var count int = 0
-	if VaritEdit.VariationName != "" {
-		if count == 0{
-			buf.WriteString(" Variation_Name = ?")
-			Varib = append(Varib, VaritEdit.VariationName)
-			count++
-		}
-		buf.WriteString(", Variation_Name = ?")
-		Varib = append(Varib, VaritEdit.VariationName)
-	}
-	if VaritEdit.VariationDescription != ""{
-		if count == 0{
-			buf.WriteString(" Variation_Description = ?")
-			Varib = append(Varib, VaritEdit.VariationDescription)
-			count++
-		}
-		buf.WriteString(", Variation_Description = ?")
-		Varib = append(Varib, VaritEdit.VariationDescription)
-	}
-	if VaritEdit.SKU != ""{
-		if count == 0 {
-			buf.WriteString(" SKU = ?")
-			Varib = append(Varib, VaritEdit.SKU)
-			count++
-		}
-		buf.WriteString(", SKU = ?")
-		Varib = append(Varib, VaritEdit.SKU)
-	}
-	if VaritEdit.UPC != ""{
-		if count == 0{
-			buf.WriteString(" UPC = ?")
-			Varib = append(Varib, VaritEdit.UPC)
-			count++
-		}
-		buf.WriteString(", UPC = ?")
-		Varib = append(Varib, VaritEdit.UPC)
-	}
-	if VaritEdit.VariationPrice != 0 {
-		if count == 0{
-			buf.WriteString(" Variation_Price = ?")
-			Varib = append(Varib, VaritEdit.VariationPrice)
-			count++
-		}
-		buf.WriteString(", Variation_Price = ?")
-		Varib = append(Varib, VaritEdit.VariationPrice)
-	}
-	buf.WriteString(" WHERE Variation_ID = ?")
-	Varib = append(Varib, VarID)
-	_,err := route.DB.Exec(buf.String(),Varib...)
+	VaritEdit := &VariationEdit{}
+	helpers.ReadJSON(w,r, VaritEdit)
+	url := "http://dblayer:8080/variation/" + VarID
+
+	varitBytes, err := json.Marshal(VaritEdit)
 	if err != nil{
 		fmt.Println(err)
 	}
+	// prodDecode:= bytes.NewReader(prodBytes)
+	req, err := http.NewRequest("PATCH",url,bytes.NewReader(varitBytes))
+	if err != nil{
+		fmt.Println("error trying to post to create prime category",err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request using the default HTTP client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	responseDecode := json.NewDecoder(resp.Body)
+	varitReturn := &VariationEdit{}
+	err = responseDecode.Decode(varitReturn)
+	if err != nil{
+		fmt.Println("error trying to decode",err)
+	}
+
+
 	helpers.WriteJSON(w, http.StatusAccepted, VaritEdit)
 }
 
