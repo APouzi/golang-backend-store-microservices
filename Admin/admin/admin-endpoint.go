@@ -415,42 +415,33 @@ func (route *AdminRoutes) ReturnAllFinalCategories(w http.ResponseWriter, r *htt
 
 func (route *AdminRoutes) EditProduct(w http.ResponseWriter, r *http.Request){
 	ProdID := chi.URLParam(r, "ProductID")
-	prodEdit := ProductEdit{}
-	helpers.ReadJSON(w,r, &prodEdit)
-	var buf strings.Builder
-	buf.WriteString("UPDATE tblProducts SET")
-	var count int = 0
-	Varib := []any{}
-	if prodEdit.Name != "" {
-		if count == 0{
-			buf.WriteString(" Product_Name = ?")
-			Varib = append(Varib, prodEdit.Name)
-			count++
-		}
-		buf.WriteString(", Product_Name = ?")
-		Varib = append(Varib, prodEdit.Name)
-	}
-	if prodEdit.Description != "" {
-		if count == 0{
-			buf.WriteString(" Product_Description = ?")
-			Varib = append(Varib, prodEdit.Description)
-			count++
-		}
-		buf.WriteString(", Product_Description = ?")
-		Varib = append(Varib, prodEdit.Description)
-	}
-	if count  == 0 {
-		helpers.WriteJSON(w,http.StatusAccepted,"failed")
-		return
-	}
-
-	buf.WriteString(", Modified_Date = ? WHERE Product_ID = ?")
-	Varib = append(Varib, time.Now(),ProdID)
-	_, err := route.DB.Exec(buf.String(), Varib...)
+	prodEdit := &ProductEdit{}
+	helpers.ReadJSON(w,r, prodEdit)
+	
+	fmt.Println(prodEdit)
+	url := "http://dblayer:8080/products/"+ProdID
+	fmt.Println("url:", url)
+	prodBytes, err := json.Marshal(prodEdit)
 	if err != nil{
-		fmt.Println("err with exec Edit Product Update")
 		fmt.Println(err)
 	}
+	// prodDecode:= bytes.NewReader(prodBytes)
+	req, err := http.NewRequest("PATCH",url,bytes.NewReader(prodBytes))
+	if err != nil{
+		fmt.Println("error trying to post to create prime category",err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request using the default HTTP client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	responseDecode := json.NewDecoder(resp.Body)
+	err = responseDecode.Decode(prodEdit)
+	if err != nil{
+		fmt.Println("error trying to decode",err)
+	}
+
 
 	helpers.WriteJSON(w,http.StatusAccepted,&prodEdit)
 	
