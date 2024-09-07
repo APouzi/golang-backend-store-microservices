@@ -325,17 +325,25 @@ func (route *AdminRoutes) ConnectFinalToProdCategory(w http.ResponseWriter, r *h
 	if err != nil{
 		fmt.Println(err)
 	}
-	result, err := route.DB.Exec("INSERT INTO tblCatFinalProd(CatFinalID, Product_ID) VALUES(?,?)", FinalProd.Cat, FinalProd.Prod)
-
+	url := "http://dblayer:8080/category/finaltoprod"
+	catBytes, err := json.Marshal(FinalProd)
 	if err != nil{
 		fmt.Println(err)
 	}
-
-	resultID, err := result.LastInsertId()
+	catDecode:= bytes.NewReader(catBytes)
+	resp, err := http.Post(url,"application/json",catDecode)
 	if err != nil{
-		fmt.Println(err)
+		fmt.Println("error trying to post to create prime category",err)
 	}
-	helpers.WriteJSON(w, http.StatusAccepted, resultID)
+
+	catret := &CatToProd{}
+	responseDecode := json.NewDecoder(resp.Body)
+	err = responseDecode.Decode(catret)
+	if err != nil{
+		fmt.Println("error trying to decode",err)
+	}
+
+	helpers.WriteJSON(w, http.StatusAccepted, FinalProd)
 }
 
 
