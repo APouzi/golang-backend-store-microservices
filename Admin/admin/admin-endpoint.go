@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Apouzi/Golang-Admin-Service/helpers"
 	"github.com/go-chi/chi/v5"
@@ -554,19 +553,32 @@ func (route *AdminRoutes) AddAttribute(w http.ResponseWriter, r *http.Request){
 		helpers.ErrorJSON(w, err, 500)
 		return
 	}
-	sql, err := route.DB.Exec("INSERT INTO tblProductAttribute (Variation_ID, AttributeName) VALUES(?,?)",VarID,att.Attribute)
+
+	url := "http://dblayer:8080/variation/" + VarID + "/attribute"
+
+	attributeBytes, err := json.Marshal(att)
 	if err != nil{
-		helpers.ErrorJSON(w,err, 400)
-		return
+		fmt.Println(err)
 	}
-	var id int64
-	id, err = sql.LastInsertId()
+	// prodDecode:= bytes.NewReader(prodBytes)
+	req, err := http.NewRequest("POST",url,bytes.NewReader(attributeBytes))
 	if err != nil{
-		helpers.ErrorJSON(w,errors.New("failed attribute LastInsertID"))
-		return
+		fmt.Println("error trying to post to create prime category",err)
 	}
-	sendBack := AddedSendBack{IDSendBack: id}
-	helpers.WriteJSON(w, 200, sendBack)
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request using the default HTTP client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	responseDecode := json.NewDecoder(resp.Body)
+	attRet := &AddedSendBack{}
+	err = responseDecode.Decode(attRet)
+	if err != nil{
+		fmt.Println("error trying to decode",err)
+	}
+	
+	helpers.WriteJSON(w, 200, attRet)
 }
 
 func (route *AdminRoutes) DeleteAttribute(w http.ResponseWriter, r *http.Request){
