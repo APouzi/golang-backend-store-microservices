@@ -43,3 +43,15 @@ CREATE TABLE IF NOT EXISTS tblWishlistProduct(
   FOREIGN KEY (WishlistID) REFERENCES tblUserWishList (WishlistID) ON DELETE CASCADE,
   FOREIGN KEY (Product_ID) REFERENCES tblProducts (Product_ID) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS tblUserCustomWishList(
+  WishlistID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  UserProfileID INT,
+  FOREIGN KEY (UserProfileID) REFERENCES tblUserProfile (UserProfileID) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS tblUserCustomlistProduct(
+  WishlistID INT,
+  Product_ID INT,
+  FOREIGN KEY (WishlistID) REFERENCES tblUserWishList (WishlistID) ON DELETE CASCADE,
+  FOREIGN KEY (Product_ID) REFERENCES tblProducts (Product_ID) ON DELETE CASCADE
+);
