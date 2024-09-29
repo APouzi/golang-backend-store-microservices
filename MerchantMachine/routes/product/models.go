@@ -5,3 +5,7 @@ type ProductRetrieve struct {
 	Name        string `json:"Product_Name"`
 	Description string `json:"Product_Description"`
 }
+
+type ProductWrapper struct {
+	Product ProductRetrieve `json:"product"`
+}
