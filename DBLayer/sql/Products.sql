@@ -27,14 +27,14 @@ CREATE TABLE IF NOT EXISTS tblProductInventoryLocation (
   Location_ID INT NOT NULL,
   Quantity INT NOT NULL,
   Location_At VARCHAR(255) NOT NULL,
-  FOREIGN KEY (Variation_ID) REFERENCES tblProductVariation (Variation_ID) ON DELETE CASCADE
+  FOREIGN KEY (Variation_ID) REFERENCES tblProductVariation (Variation_ID) ON DELETE CASCADE,
   FOREIGN KEY (Location_ID) REFERENCES tblLocation (Location_ID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tblLocation (
   Location_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   Variation_ID INT NOT NULL,
-  Location_At VARCHAR(255) NOT NULL,
+  Location_At VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tblProductVariationImages (
