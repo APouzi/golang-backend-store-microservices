@@ -163,3 +163,85 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 
 }
 
+
+type VariationRet struct{
+	Variation_ID sql.NullInt64
+	ProductID sql.NullInt64
+	Name sql.NullString
+	Description sql.NullString 
+	Price sql.NullFloat64 
+	PrimaryImage sql.NullString 
+
+}
+
+
+func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter, r *http.Request){
+	query := r.URL.Query().Get("q")
+	if query == ""{
+		fmt.Println("no search term")
+		helpers.ErrorJSON(w, errors.New("no search term"),404)
+		return
+	}
+	fmt.Println(r.URL.Query().Get("q"))
+	fmt.Println("query from product end point", query)
+	sqlQuery := `
+		SELECT p.Product_ID, p.Product_Name, p.Product_Description,
+			   pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, pv.Variation_Price,
+			   pil.Inv_ID, pil.Quantity, pil.Location_At
+		FROM tblProducts p
+		LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+		LEFT JOIN tblProductInventoryLocation pil ON pv.Variation_ID = pil.Variation_ID
+		WHERE p.Product_Name LIKE ? OR pv.Variation_Name LIKE ?
+	`
+
+	//the question marks in the sql statement are replaced by the values of the query string, specifically the two parameters after the query string.
+	rows, err := prdRoutes.DB.Query(sqlQuery, "%"+query+"%", "%"+query+"%")
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var product_list []map[string]interface{}
+	for rows.Next() {
+		var product Product
+		var variation VariationRet
+		var inventory struct {
+			Inv_ID     sql.NullInt64
+			Quantity  sql.NullInt64
+			LocationAt sql.NullString
+		}
+
+		
+
+		err := rows.Scan(
+			&product.Product_ID, &product.Product_Name, &product.Product_Description,
+			&variation.Variation_ID, &variation.Name, &variation.Description, &variation.Price,
+			&inventory.Inv_ID, &inventory.Quantity, &inventory.LocationAt,
+		)
+		if err != nil {
+			helpers.ErrorJSON(w, fmt.Errorf("error scanning row: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		
+
+		result := map[string]interface{}{
+			"product": product,
+		}
+		if variation.Variation_ID.Valid{
+			result["variation"] = variation
+		}
+		if inventory.Inv_ID.Valid {
+			result["inventory"] = inventory
+		}
+		product_list = append(product_list, result)
+	}
+
+	if err = rows.Err(); err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("error iterating rows: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, product_list)
+} 
