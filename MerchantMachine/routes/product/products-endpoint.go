@@ -77,6 +77,40 @@ func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *htt
 
 }
 
+func (route *ProductRoutes) SearchProductsEndPoint(w http.ResponseWriter, r *http.Request){
+	searchQuery := r.URL.Query().Get("q")
+	if searchQuery == "" {
+		helpers.ErrorJSON(w, errors.New("search query is required"), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("searchQuery", searchQuery)
+	url := fmt.Sprintf("http://dblayer:8080/search/?q=%s", searchQuery)
+
+	resp, err := http.Get(url)
+
+	if resp.StatusCode != http.StatusOK {
+		helpers.ErrorJSON(w, fmt.Errorf("DBLayer service returned status: %d", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to search products: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	
+
+	var searchResults []ProductWrapper
+	err = json.NewDecoder(resp.Body).Decode(&searchResults)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to decode search results: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, searchResults)
+}
 // func (route *Routes) GetProductCategoryEndPoint(w http.ResponseWriter, r *http.Request){
 // 	category, err := strconv.Atoi(chi.URLParam(r, "CategoryName"))
 	

@@ -73,6 +73,8 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductEndPoint)
 	digest.Get("/db/products/",rProduct.GetAllProductsEndPoint)
+	digest.Get("/products/variation/{VariationID}", rProduct.GetOneVariationEndPoint)
+	digest.Get("/search/", rProduct.SearchProductsEndPoint)
 	// digest.Get("/products/{CategoryName}",r.GetProductCategoryEndPointFinal)
 
 	// digest.Get("/categories/",r.GetAllCategories)
@@ -86,7 +88,6 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 		digest.Post("/db/products/", rAdmin.CreateProductMultiChain)
 	// })
 	digest.Post("/products/{ProductID}/variation", rAdmin.CreateProductVariation)
-	digest.Get("/products/variation/{VariationID}", rProduct.GetOneVariationEndPoint)
 	digest.Post("/products/inventory-location", rAdmin.CreateInventoryLocation)
 	digest.Post("/category/prime", rAdmin.CreatePrimeCategory)
 	digest.Post("/category/sub", rAdmin.CreateSubCategory)
