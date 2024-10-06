@@ -17,17 +17,28 @@ type ProductRoutesTray struct{
 	getAllProductsStmt *sql.Stmt
 	getOneProductStmt *sql.Stmt
 	getOneVariationProductStment *sql.Stmt
+	getProductPrimeCategoryByID *sql.Stmt
+	getAllProductByCategoryStmt *sql.Stmt
+	getAllProductByCategoryPrimeStmt *sql.Stmt
+	getAllProductByCategorySubStmt *sql.Stmt
+	getAllProductByCategoryFinalStmt *sql.Stmt
 }
 
 func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
 	
 	routeMap := prepareProductRoutes(dbInst)
-	return &ProductRoutesTray{
+	prd_tray := &ProductRoutesTray{
 		getAllProductsStmt: routeMap["getAllProducts"],
 		getOneProductStmt: routeMap["getOneProducts"],
 		getOneVariationProductStment: routeMap["getOneVariationProducts"],
+		getProductPrimeCategoryByID: routeMap["getProductPrimeCategoryByID"],
+		getAllProductByCategoryStmt: routeMap["GetAllProductByCategoryStmt"],
+		getAllProductByCategoryPrimeStmt: routeMap["GetAllProductByCategoryPrimeStmt"],
+		getAllProductByCategorySubStmt: routeMap["GetAllProductByCategorySubStmt"],
+		getAllProductByCategoryFinalStmt: routeMap["GetAllProductByCategoryFinalStmt"],
 		DB: dbInst,
 	}
+	return prd_tray
 }
 
 func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
