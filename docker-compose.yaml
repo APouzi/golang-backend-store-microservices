@@ -37,6 +37,15 @@ services:
       - pouzikov
     depends_on:
     - merchantmachine
+  
+  customer-representative-manager:
+    build: Customer-Representative-Manager
+    ports:
+    - "8002:8002"
+    networks:
+    - pouzikov
+    depends_on:
+      - merchantmachine
 
     
   dblayer:

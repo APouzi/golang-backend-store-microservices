@@ -1,14 +1,44 @@
 package orders
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/jung-kurt/gofpdf"
 )
 
+type Product struct {
+	Product_ID string `json:"product_id"`
+	Quantity string `json:"quantity"`
+	Price float64 `json:"price"`
+	Discount string `json: "discount"`
+}
+
+type OrderSummary struct {
+    // Left Column Details
+    ShippingAddress string `json:"shipping_address"`
+    CustomerName    string `json:"customer_name"`
+    PaymentMethod   string `json:"payment_method"`
+    OrderName       string `json:"order_name"`
+    OrderDateTime   string `json:"order_date_time"`
+	ProductList     []Product `json:"product_list"`
+
+    // Right Column Details
+    TotalAmount     float64 `json:"total_amount"`
+    Taxes           float64 `json:"taxes"`
+    ShippingMethod  string  `json:"shipping_method"`
+    ShippingCost    float64 `json:"shipping_cost"`
+}
+
+
 func OrderHandler(w http.ResponseWriter, r *http.Request){
 	fmt.Println("hey!")
+
+	order_sum := &OrderSummary{ProductList: []Product{}}
+	decoder := json.NewDecoder(r.Body)
+	decoder.Decode(order_sum)
+	fmt.Println(order_sum)
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(10, 10, 10)
@@ -21,7 +51,7 @@ func OrderHandler(w http.ResponseWriter, r *http.Request){
 	drawBorder(pdf, 30)
 
 	// Add Order Table
-	addOrderTable(pdf)
+	addOrderTable(pdf, order_sum)
 
 	addOrderSummary(pdf)
 	// Add Footer
@@ -52,37 +82,42 @@ func drawBorder(pdf *gofpdf.Fpdf, yPosition float64) {
 	
 }
 
-func addOrderTable(pdf *gofpdf.Fpdf) {
+func addOrderTable(pdf *gofpdf.Fpdf, orSum *OrderSummary) {
+	// Define table column widths
+	colWidths := []float64{30, 40, 30, 30, 20} // Adjusted for smaller widths
+	tableWidth := 0.0
+	for _, width := range colWidths {
+		tableWidth += width
+	}
+
+	// Set initial position
+	pdf.SetXY(pdf.GetX(), pdf.GetY())
+
 	// Add Table Header
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(40, 10, "Order ID", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(40, 10, "Quantity", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(40, 10, "Price", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(40, 10, "Discount", "1", 1, "C", true, 0, "")
+
+	headers := []string{"Product ID", "Name", "Quantity", "Price", "Discount"}
+	for i, header := range headers {
+		pdf.CellFormat(colWidths[i], 10, header, "1", 0, "C", true, 0, "")
+	}
+	pdf.Ln(-1)
 
 	// Add Table Rows
 	pdf.SetFont("Arial", "", 12)
-	orderData := []struct {
-		ID       string
-		Quantity int
-		Price    float64
-		Discount float64
-	}{
-		{"12345", 2, 49.99, 5.00},
-		{"12346", 1, 19.99, 2.00},
-		{"12347", 5, 99.95, 10.00},
-	}
-
-	for _, order := range orderData {
-		pdf.CellFormat(40, 10, order.ID, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(40, 10, "45", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(40, 10, "$55.55", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(40, 10, "25%", "1", 1, "C", false, 0, "")
+	for _, product := range orSum.ProductList {
+		// pdf.SetX(pdf.GetX() - 10) // Ensure rows align to the right
+		pdf.CellFormat(colWidths[0], 6, product.Product_ID, "T", 0, "C", false, 0, "")
+		pdf.CellFormat(colWidths[1], 6, "Product Name", "T", 0, "C", false, 0, "") // Replace with real product name if available
+		pdf.CellFormat(colWidths[2], 6, product.Quantity, "T", 0, "C", false, 0, "")
+		pdf.CellFormat(colWidths[3], 6, fmt.Sprintf("$%.2f", product.Price), "T", 0, "C", false, 0, "")
+		pdf.CellFormat(colWidths[4], 6, product.Discount, "T", 1, "C", false, 0, "")
 	}
 
 	pdf.Ln(10)
 }
+
+
 
 func addFooter(pdf *gofpdf.Fpdf) {
 	pdf.SetY(-30)
@@ -102,14 +137,11 @@ func addOrderSummary(pdf *gofpdf.Fpdf) {
     leftWidth := (boxWidth - columnGap) / 2
     rightX := boxX + leftWidth + columnGap
 
-    // Draw the outer box
     pdf.SetDrawColor(0, 0, 0)
     pdf.Rect(boxX, boxY, boxWidth, boxHeight, "D")
 
-    // Set smaller font
     pdf.SetFont("Arial", "", 10)
 
-    // Left Column: Customer & Order Details
     leftColumnY := boxY + 5
     pdf.SetXY(boxX + 2, leftColumnY)
     pdf.CellFormat(leftWidth-4, 5, "Shipping Address:", "B", 1, "L", false, 0, "")
@@ -135,7 +167,6 @@ func addOrderSummary(pdf *gofpdf.Fpdf) {
     pdf.CellFormat(leftWidth-4, 5, "Order Date & Time:", "B", 1, "L", false, 0, "")
     pdf.CellFormat(leftWidth-4, 5, "2024-11-16 14:35:00", "", 1, "L", false, 0, "")
 
-    // Right Column: Order Totals
     pdf.SetXY(rightX, leftColumnY)
     pdf.CellFormat(leftWidth-4, 5, "Total:", "B", 1, "R", false, 0, "")
     pdf.SetX(rightX)

@@ -34,7 +34,7 @@ func RouteDigest(digest *chi.Mux) *chi.Mux {
     })
 	digest.Use(c.Handler)
 
-	digest.Get("/pdf",orders.OrderHandler)
+	digest.Post("/pdf",orders.OrderHandler)
 
 	return digest
 }
