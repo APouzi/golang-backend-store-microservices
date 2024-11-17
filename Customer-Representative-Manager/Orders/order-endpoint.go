@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
 	"github.com/jung-kurt/gofpdf"
 )
 
@@ -45,20 +44,12 @@ func OrderHandler(w http.ResponseWriter, r *http.Request){
 	pdf.SetMargins(10, 10, 10)
 	pdf.AddPage()
 
-	// Add Header
 	addHeader(pdf)
-
-	// Draw Border Below Header
 	drawBorder(pdf, 30)
-
-	// Add Order Table
 	addOrderTable(pdf, order_sum)
-
 	addOrderSummary(pdf)
-	// Add Footer
 	addFooter(pdf)
 
-	// Save PDF
 	err := pdf.OutputFileAndClose("order_summary.pdf")
 	if err != nil {
 		panic(err)
@@ -84,17 +75,16 @@ func drawBorder(pdf *gofpdf.Fpdf, yPosition float64) {
 }
 
 func addOrderTable(pdf *gofpdf.Fpdf, orSum *OrderSummary) {
-	// Define table column widths
-	colWidths := []float64{15, 100, 10, 30, 20} // Adjusted for smaller widths
+	// table column widths
+	colWidths := []float64{15, 100, 10, 30, 20}
 	tableWidth := 0.0
 	for _, width := range colWidths {
 		tableWidth += width
 	}
 
-	// Set initial position
+	//initial position
 	pdf.SetXY(pdf.GetX(), pdf.GetY())
 
-	// Add Table Header
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetFillColor(240, 240, 240)
 
@@ -104,10 +94,8 @@ func addOrderTable(pdf *gofpdf.Fpdf, orSum *OrderSummary) {
 	}
 	pdf.Ln(-1)
 
-	// Add Table Rows
 	pdf.SetFont("Arial", "", 12)
 	for _, product := range orSum.ProductList {
-		// pdf.SetX(pdf.GetX() - 10) // Ensure rows align to the right
 		pdf.CellFormat(colWidths[0], 6, product.Product_ID, "T", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths[1], 6, product.Product_Name, "T", 0, "C", false, 0, "") // Replace with real product name if available
 		pdf.CellFormat(colWidths[2], 6, product.Quantity, "T", 0, "C", false, 0, "")
@@ -188,13 +176,3 @@ func addOrderSummary(pdf *gofpdf.Fpdf) {
     pdf.SetX(rightX)
     pdf.CellFormat(leftWidth-4, 5, "$5.99", "", 1, "R", false, 0, "")
 }
-
-// // Helper functions for formatting
-// func formatInt(num int) string {
-// 	return gofpdf.IntToStr(num)
-// }
-
-// func formatFloat(num float64) string {
-// 	return gofpdf.Sprintf("$%.2f", num)
-// }
-
