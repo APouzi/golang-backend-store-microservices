@@ -10,6 +10,7 @@ import (
 
 type Product struct {
 	Product_ID string `json:"product_id"`
+	Product_Name string `json:"product_name"`
 	Quantity string `json:"quantity"`
 	Price float64 `json:"price"`
 	Discount string `json: "discount"`
@@ -66,12 +67,12 @@ func OrderHandler(w http.ResponseWriter, r *http.Request){
 
 func addHeader(pdf *gofpdf.Fpdf) {
 	pdf.SetFont("Arial", "B", 16)
-	pdf.Cell(0, 10, "Souhaila and Alex")
+	pdf.Cell(0, 10, "Moroccan Beauty Store")
 	pdf.SetFont("Arial", "", 12)
 	pdf.Ln(5)
-	pdf.Cell(0, 10, "123 Business St, Business City, BC 12345")
+	pdf.Cell(0, 10, "123 Business St, Las Vegas, NV 12345")
 	pdf.Ln(5)
-	pdf.Cell(0, 10, "Email: contact@company.com | Phone: (123) 456-7890")
+	pdf.Cell(0, 10, "Email: contact@moroccanbeautystore.com | Phone: (858) 456-7890")
 	pdf.Ln(5)
 }
 
@@ -84,7 +85,7 @@ func drawBorder(pdf *gofpdf.Fpdf, yPosition float64) {
 
 func addOrderTable(pdf *gofpdf.Fpdf, orSum *OrderSummary) {
 	// Define table column widths
-	colWidths := []float64{30, 40, 30, 30, 20} // Adjusted for smaller widths
+	colWidths := []float64{15, 100, 10, 30, 20} // Adjusted for smaller widths
 	tableWidth := 0.0
 	for _, width := range colWidths {
 		tableWidth += width
@@ -97,9 +98,9 @@ func addOrderTable(pdf *gofpdf.Fpdf, orSum *OrderSummary) {
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetFillColor(240, 240, 240)
 
-	headers := []string{"Product ID", "Name", "Quantity", "Price", "Discount"}
+	headers := []string{"Prd ID", "Name", "Qty", "Price", "Discount"}
 	for i, header := range headers {
-		pdf.CellFormat(colWidths[i], 10, header, "1", 0, "C", true, 0, "")
+		pdf.CellFormat(colWidths[i], 10, header, "B", 0, "C", false, 0, "")
 	}
 	pdf.Ln(-1)
 
@@ -108,7 +109,7 @@ func addOrderTable(pdf *gofpdf.Fpdf, orSum *OrderSummary) {
 	for _, product := range orSum.ProductList {
 		// pdf.SetX(pdf.GetX() - 10) // Ensure rows align to the right
 		pdf.CellFormat(colWidths[0], 6, product.Product_ID, "T", 0, "C", false, 0, "")
-		pdf.CellFormat(colWidths[1], 6, "Product Name", "T", 0, "C", false, 0, "") // Replace with real product name if available
+		pdf.CellFormat(colWidths[1], 6, product.Product_Name, "T", 0, "C", false, 0, "") // Replace with real product name if available
 		pdf.CellFormat(colWidths[2], 6, product.Quantity, "T", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths[3], 6, fmt.Sprintf("$%.2f", product.Price), "T", 0, "C", false, 0, "")
 		pdf.CellFormat(colWidths[4], 6, product.Discount, "T", 1, "C", false, 0, "")
