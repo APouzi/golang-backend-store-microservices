@@ -49,6 +49,8 @@ func (route *ProductRoutes) GetAllProductsEndPoint(w http.ResponseWriter, r *htt
 }
 
 
+
+
 func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *http.Request){
 	var ProdJSON *ProductRetrieve = &ProductRetrieve{}
 	prodID :=  chi.URLParam(r,"ProductID")
@@ -58,6 +60,7 @@ func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *htt
 	jd := json.NewDecoder(resp.Body)
 	jd.Decode(ProdJSON)
 	if err != nil{
+		helpers.ErrorJSON(w, err, 400)
 		fmt.Println("failed to decode response:", err)
 	}
 	if ProdJSON.ProductID == 0{
@@ -65,6 +68,7 @@ func (route *ProductRoutes) GetOneProductsEndPoint(w http.ResponseWriter, r *htt
 		return
 	}
 	if err != nil{
+		helpers.ErrorJSON(w, err, 400)
 		fmt.Println("failed to pull product:", err)
 	}
 	// ProdJSON, err := route.ProductQuery.GetOneProduct(route.DB,query)

@@ -71,6 +71,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 	
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductsEndPoint)
 	digest.Get("/products/",rProduct.GetAllProductsEndPoint)
+	digest.Get("/search/",rProduct.SearchProductsEndPoint)
 	// digest.Get("/products/{CategoryName}",rProduct.GetProductCategoryEndPointFinal)
 
 	// digest.Get("/categories/",r.GetAllCategories)

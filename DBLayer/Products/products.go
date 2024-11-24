@@ -56,6 +56,29 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 	if err != nil{
 		log.Fatal(err)
 	}
+
+	GetProductPrimeCategoryByID, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name FROM tblProducts JOIN tblCatFinalProd ON tblCatFinalProd.Product_ID = tblProducts.Product_ID JOIN tblCategoriesFinal ON tblCategoriesFinal.Category_ID = tblCatFinalProd.CatFinalID JOIN tblCatSubFinal ON tblCatSubFinal.CatFinalID = tblCategoriesFinal.Category_ID JOIN tblCategoriesSub ON tblCategoriesSub.Category_ID = tblCatSubFinal.CatSubID JOIN tblCatPrimeSub ON tblCatPrimeSub.CatSubID = tblCategoriesSub.Category_ID JOIN tblCategoriesPrime ON tblCategoriesPrime.Category_ID = tblCatPrimeSub.CatPrimeID where tblCategoriesPrime.Category_ID")
+	if err != nil{
+		log.Fatal(err)
+	}
+
+	GetAllProductByCategoryStmt, err := dbInst.Prepare("SELECT * FROM tblProducts JOIN tblCategory ON tblProducts.Category_ID = tblCategories.id WHERE tblCategori.id = ?")
+	if err != nil{
+		log.Fatal(err)
+	}
+
+	GetAllProductByCategoryPrimeStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description, tblProducts.Product_Price FROM tblProducts JOIN tblProductsCategoriesPrime ON tblProducts.Product_ID = tblProductsCategoriesPrime.Product_ID JOIN tblCategoriesPrime ON tblProductsCategoriesPrime.Category_ID = tblCategoriesPrime.Category_ID WHERE tblCategoriesPrime.CategoryName = ?") 
+	if err != nil{
+		log.Fatal(err)
+	}
+
+	GetAllProductByCategorySubStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description, tblProducts.Product_Price FROM tblProducts JOIN tblProductsCategoriesSub ON tblProducts.Product_ID = tblProductsCategoriesSub.Product_ID JOIN tblCategoriesSub ON tblProductsCategoriesSub.Category_ID = tblCategoriesSub.Category_ID WHERE tblCategoriesSub.CategoryName = ?") 
+	if err != nil{
+		log.Fatal(err)
+	}
+
+	GetAllProductByCategoryFinalStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description, tblProducts.Product_Price FROM tblProducts JOIN tblProductsCategoriesFinal ON tblProducts.Product_ID = tblProductsCategoriesFinal.Product_ID JOIN tblCategoriesFinal ON tblProductsCategoriesFinal.Category_ID = tblCategoriesFinal.Category_ID WHERE tblCategoriesFinal.CategoryName = ?") 
+
 	if err != nil{
 		fmt.Println("failed to create sql statements")
 	}
@@ -63,6 +86,11 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 	sqlStmentsMap["getAllProducts"] = getAllPrdStment
 	sqlStmentsMap["getOneProducts"] = GetOneProductStmt
 	sqlStmentsMap["getOneVariationProducts"] = GetOneVariationStmt
+	sqlStmentsMap["getProductPrimeCategoryByID"] = GetProductPrimeCategoryByID
+	sqlStmentsMap["GetAllProductByCategory"] = GetAllProductByCategoryStmt
+	sqlStmentsMap["GetAllProductByCategoryPrime"] = GetAllProductByCategoryPrimeStmt
+	sqlStmentsMap["GetAllProductByCategorySub"] = GetAllProductByCategorySubStmt
+	sqlStmentsMap["GetAllProductByCategoryFinal"] = GetAllProductByCategoryFinalStmt
 
 	return sqlStmentsMap
 }
@@ -102,6 +130,7 @@ type ProductJSON struct {
 }
 
 func (prdRoutes *ProductRoutesTray) GetOneProductEndPoint(w http.ResponseWriter, r *http.Request) {
+
 	fmt.Println("hit getoneproductendpoint")
 	productID, err :=  strconv.Atoi(chi.URLParam(r,"ProductID"))
 	if err != nil{
@@ -163,6 +192,7 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 		&variationJSON.PrimaryImage,
 	)
 	if err == sql.ErrNoRows{
+		fmt.Println("Doesnt work:",err)
 		helpers.ErrorJSON(w, errors.New("could not get variation"),404)
 		return
 	}
@@ -256,3 +286,10 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 
 	helpers.WriteJSON(w, http.StatusOK, product_list)
 } 
+
+
+
+// func GetAllProductByCategoryID(w http.ResponseWriter, r *http.Request){
+// 	var query string = chi.URLParam(r, "category")
+// }
+
