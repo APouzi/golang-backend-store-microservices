@@ -3,23 +3,25 @@ package initializingpopulation
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 )
 
 func PopulateProductTables(db *sql.DB) {
-
-	query, err := ioutil.ReadFile("./sql/Products.sql")
-
+	fmt.Println("start of initialiazing tables")
+	query, err := os.ReadFile("./sql/Products.sql")
 	if err != nil {
-		log.Fatal("Error when loading sql file", err)
+		log.Fatalf("Error reading file: %v", err)
 	}
+
+	fmt.Println("read sql file")
 
 	_, err = db.Exec(string(query))
 
 	if err != nil {
 		log.Fatal("Couldn't complete the execution of the file", err)
 	}
+	fmt.Println("executed sql file")
 
 	for i := 0.00; i <= 10; i++ {
 		_, err = db.Exec("INSERT INTO tblProducts (Product_Name, Product_Description) VALUES(?,?)", "testProductPopulate", "This is a description!")

@@ -43,55 +43,50 @@ func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
 
 func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 	sqlStmentsMap := make(map[string]*sql.Stmt)
-
+	
 	getAllPrdStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, Product_Description FROM tblProducts")
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
+	
 	GetOneProductStmt, err := dbInst.Prepare("SELECT Product_ID, Product_Name, Product_Description, PRIMARY_IMAGE, Date_Created, Modified_Date FROM tblProducts WHERE Product_ID = ?")
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
+	
 	GetOneVariationStmt, err := dbInst.Prepare("SELECT Variation_ID, Product_ID, Variation_Name, Variation_Description, Variation_Price, PRIMARY_IMAGE FROM tblProductVariation WHERE Variation_ID = ?")
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
-
-	GetProductPrimeCategoryByID, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name FROM tblProducts JOIN tblCatFinalProd ON tblCatFinalProd.Product_ID = tblProducts.Product_ID JOIN tblCategoriesFinal ON tblCategoriesFinal.Category_ID = tblCatFinalProd.CatFinalID JOIN tblCatSubFinal ON tblCatSubFinal.CatFinalID = tblCategoriesFinal.Category_ID JOIN tblCategoriesSub ON tblCategoriesSub.Category_ID = tblCatSubFinal.CatSubID JOIN tblCatPrimeSub ON tblCatPrimeSub.CatSubID = tblCategoriesSub.Category_ID JOIN tblCategoriesPrime ON tblCategoriesPrime.Category_ID = tblCatPrimeSub.CatPrimeID where tblCategoriesPrime.Category_ID")
-	if err != nil{
-		log.Fatal(err)
-	}
-
-	GetAllProductByCategoryStmt, err := dbInst.Prepare("SELECT * FROM tblProducts JOIN tblCategory ON tblProducts.Category_ID = tblCategories.id WHERE tblCategori.id = ?")
-	if err != nil{
-		log.Fatal(err)
-	}
-
-	GetAllProductByCategoryPrimeStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description, tblProducts.Product_Price FROM tblProducts JOIN tblProductsCategoriesPrime ON tblProducts.Product_ID = tblProductsCategoriesPrime.Product_ID JOIN tblCategoriesPrime ON tblProductsCategoriesPrime.Category_ID = tblCategoriesPrime.Category_ID WHERE tblCategoriesPrime.CategoryName = ?") 
-	if err != nil{
-		log.Fatal(err)
-	}
-
-	GetAllProductByCategorySubStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description, tblProducts.Product_Price FROM tblProducts JOIN tblProductsCategoriesSub ON tblProducts.Product_ID = tblProductsCategoriesSub.Product_ID JOIN tblCategoriesSub ON tblProductsCategoriesSub.Category_ID = tblCategoriesSub.Category_ID WHERE tblCategoriesSub.CategoryName = ?") 
-	if err != nil{
-		log.Fatal(err)
-	}
-
-	GetAllProductByCategoryFinalStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description, tblProducts.Product_Price FROM tblProducts JOIN tblProductsCategoriesFinal ON tblProducts.Product_ID = tblProductsCategoriesFinal.Product_ID JOIN tblCategoriesFinal ON tblProductsCategoriesFinal.Category_ID = tblCategoriesFinal.Category_ID WHERE tblCategoriesFinal.CategoryName = ?") 
-
-	if err != nil{
-		fmt.Println("failed to create sql statements")
-	}
+	
+	// GetAllProductsPrimeCategoryByID, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name FROM tblProducts JOIN tblCatFinalProd ON tblCatFinalProd.Product_ID = tblProducts.Product_ID JOIN tblCategoriesFinal ON tblCategoriesFinal.Category_ID = tblCatFinalProd.CatFinalID JOIN tblCatSubFinal ON tblCatSubFinal.CatFinalID = tblCategoriesFinal.Category_ID JOIN tblCategoriesSub ON tblCategoriesSub.Category_ID = tblCatSubFinal.CatSubID JOIN tblCatPrimeSub ON tblCatPrimeSub.CatSubID = tblCategoriesSub.Category_ID JOIN tblCategoriesPrime ON tblCategoriesPrime.Category_ID = tblCatPrimeSub.CatPrimeID WHERE tblCategoriesPrime.Category_ID = ?")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	
+	// GetAllProductByCategoryPrimeStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description  FROM tblProducts JOIN tblCategoriesPrime ON tblProducts.Product_ID = tblCategoriesPrime.Product_ID WHERE tblCategoriesPrime.CategoryName = ?")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	
+	// GetAllProductByCategorySubStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description  FROM tblProducts JOIN tblCategoriesSub ON tblProducts.Product_ID = tblCategoriesSub.Product_ID WHERE tblCategoriesSub.CategoryName = ?")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	
+	// GetAllProductByCategoryFinalStmt, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description  FROM tblProducts JOIN tblCategoriesFinal ON tblProducts.Product_ID = tblCategoriesFinal.Product_ID WHERE tblCategoriesFinal.CategoryName = ?")
+	// if err != nil {
+	// 	fmt.Println("failed to create sql statements")
+	// }
 	
 	sqlStmentsMap["getAllProducts"] = getAllPrdStment
 	sqlStmentsMap["getOneProducts"] = GetOneProductStmt
 	sqlStmentsMap["getOneVariationProducts"] = GetOneVariationStmt
-	sqlStmentsMap["getProductPrimeCategoryByID"] = GetProductPrimeCategoryByID
-	sqlStmentsMap["GetAllProductByCategory"] = GetAllProductByCategoryStmt
-	sqlStmentsMap["GetAllProductByCategoryPrime"] = GetAllProductByCategoryPrimeStmt
-	sqlStmentsMap["GetAllProductByCategorySub"] = GetAllProductByCategorySubStmt
-	sqlStmentsMap["GetAllProductByCategoryFinal"] = GetAllProductByCategoryFinalStmt
-
+	// sqlStmentsMap["getProductPrimeCategoryByID"] = GetAllProductsPrimeCategoryByID
+	// sqlStmentsMap["GetAllProductByCategoryPrime"] = GetAllProductByCategoryPrimeStmt
+	// sqlStmentsMap["GetAllProductByCategorySub"] = GetAllProductByCategorySubStmt
+	// sqlStmentsMap["GetAllProductByCategoryFinal"] = GetAllProductByCategoryFinalStmt
+	
 	return sqlStmentsMap
 }
 

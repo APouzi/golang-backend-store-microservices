@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS tblProductVariation (
   Modified_Date DATETIME NULL,
   FOREIGN KEY (Product_ID) REFERENCES tblProducts (Product_ID) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS tblLocation (
+  Location_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  Variation_ID INT NOT NULL,
+  Location_At VARCHAR(255) NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS tblProductInventoryLocation (
   Inv_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -31,11 +36,6 @@ CREATE TABLE IF NOT EXISTS tblProductInventoryLocation (
   FOREIGN KEY (Location_ID) REFERENCES tblLocation (Location_ID) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS tblLocation (
-  Location_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  Variation_ID INT NOT NULL,
-  Location_At VARCHAR(255) NOT NULL
-);
 
 CREATE TABLE IF NOT EXISTS tblProductVariationImages (
   ImageID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -116,4 +116,5 @@ CREATE TABLE IF NOT EXISTS tblCatFinalProd (
 --   VariationDescription TEXT,
 --   FOREIGN KEY (Product_ID) REFERENCES tblProducts (Product_ID) ON DELETE CASCADE
 -- );
+
 
