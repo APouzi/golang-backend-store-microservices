@@ -95,6 +95,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	digest.Delete("/category/prime/{CatPrimeName}",rAdmin.DeletePrimeCategory)
 	digest.Delete("/category/sub/{CatSubName}",rAdmin.DeleteSubCategory)
 	digest.Delete("/category/final/{CatFinalName}",rAdmin.DeleteFinalCategory)
+	digest.Get("/category/final/",rProduct.GetAllProductsInFinalCategoryViewEndPoint)
 	digest.Post("/category/primetosub",rAdmin.ConnectPrimeToSubCategory)
 	digest.Post("/category/subtofinal",rAdmin.ConnectSubToFinalCategory)
 	digest.Post("/category/finaltoprod",rAdmin.ConnectFinalToProdCategory)

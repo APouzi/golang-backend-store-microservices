@@ -58,6 +58,13 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	getAllFinalCatPrdStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInFinalView LIMIT 10 OFFSET ?")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+
 	
 	// GetAllProductsPrimeCategoryByID, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name FROM tblProducts JOIN tblCatFinalProd ON tblCatFinalProd.Product_ID = tblProducts.Product_ID JOIN tblCategoriesFinal ON tblCategoriesFinal.Category_ID = tblCatFinalProd.CatFinalID JOIN tblCatSubFinal ON tblCatSubFinal.CatFinalID = tblCategoriesFinal.Category_ID JOIN tblCategoriesSub ON tblCategoriesSub.Category_ID = tblCatSubFinal.CatSubID JOIN tblCatPrimeSub ON tblCatPrimeSub.CatSubID = tblCategoriesSub.Category_ID JOIN tblCategoriesPrime ON tblCategoriesPrime.Category_ID = tblCatPrimeSub.CatPrimeID WHERE tblCategoriesPrime.Category_ID = ?")
 	// if err != nil {
@@ -82,6 +89,7 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 	sqlStmentsMap["getAllProducts"] = getAllPrdStment
 	sqlStmentsMap["getOneProducts"] = GetOneProductStmt
 	sqlStmentsMap["getOneVariationProducts"] = GetOneVariationStmt
+	sqlStmentsMap["GetAllProductByCategoryFinalStmt"] = getAllFinalCatPrdStment
 	// sqlStmentsMap["getProductPrimeCategoryByID"] = GetAllProductsPrimeCategoryByID
 	// sqlStmentsMap["GetAllProductByCategoryPrime"] = GetAllProductByCategoryPrimeStmt
 	// sqlStmentsMap["GetAllProductByCategorySub"] = GetAllProductByCategorySubStmt
@@ -280,9 +288,66 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 	}
 
 	helpers.WriteJSON(w, http.StatusOK, product_list)
-} 
+}
 
 
+
+type CategoryRetrieval struct{
+	Product_ID sql.NullInt64 `json:"product_id"`
+	Product_Name sql.NullString `json:"product_name"`
+	CategoryName sql.NullString `json:"category_name"`
+}
+
+type CategorySendOff struct{
+	Product_ID int64 `json:"product_id"`
+	Product_Name string `json:"product_name"`
+	CategoryName string `json:"category_name"`
+}
+
+
+func (prdRoutes *ProductRoutesTray) GetAllProductsInFinalCategoryViewEndPoint(w http.ResponseWriter, r *http.Request) {
+
+	CatDBRet := &CategoryRetrieval{}
+	
+	category_name := r.URL.Query().Get("final_category_name")
+	page, err :=  strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("getting page failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	page = 10 * (page - 1)
+
+	res, err := prdRoutes.getAllProductByCategoryFinalStmt.Query(page)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	SendOffList := []CategorySendOff{}
+	CatDBSend := &CategorySendOff{}
+	for res.Next(){
+		
+		err := res.Scan(
+			&CatDBRet.Product_ID,
+			&CatDBRet.Product_Name,
+			&CatDBRet.CategoryName,
+		)
+		if err != nil {
+			fmt.Println("Error scanning row:", err)
+			continue
+		}
+		CatDBSend.Product_ID = CatDBRet.Product_ID.Int64
+		CatDBSend.Product_Name = CatDBRet.Product_Name.String
+		CatDBSend.CategoryName = CatDBRet.CategoryName.String
+
+		SendOffList = append(SendOffList, *CatDBSend)
+	}
+
+	fmt.Println("Category Name:", category_name)
+	
+	helpers.WriteJSON(w,http.StatusAccepted,SendOffList)
+}
 
 // func GetAllProductByCategoryID(w http.ResponseWriter, r *http.Request){
 // 	var query string = chi.URLParam(r, "category")
