@@ -19,12 +19,14 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 	// rProduct := productendpoints.InstanceProductsRoutes()
 
 	// rUser := userendpoints.InstanceUserRoutes(db)
-
+	fmt.Println("fireAuth before call", firebaseAuth)
 	rAdmin := adminendpoints.InstanceAdminRoutes()
+	rAdminCategories := adminendpoints.InstanceAdminCategoriesRoutes()
 	fireAuth, err := firebaseAuth.Auth(context.Background())
 	if err != nil{
 		fmt.Println("There was an erroe trying to get auth",err)
 	}
+	fmt.Println("fireAuth after call", fireAuth)
 	AuthMiddleWare := middleware.AuthMiddleWare{}
 	AuthMiddleWare.Client = fireAuth
 
@@ -72,18 +74,18 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 		digest.Post("/products/", rAdmin.CreateProduct)
 		digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
 		digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
-		digest.Post("/category/prime", rAdmin.CreatePrimeCategory)
-		digest.Post("/category/sub", rAdmin.CreateSubCategory)
-		digest.Post("/category/final", rAdmin.CreateFinalCategory)
+		digest.Post("/category/prime", rAdminCategories.CreatePrimeCategory)
+		digest.Post("/category/sub", rAdminCategories.CreateSubCategory)
+		digest.Post("/category/final", rAdminCategories.CreateFinalCategory)
 		digest.Delete("/category/prime/{CatPrimeName}",rAdmin.DeletePrimeCategory)
 		digest.Delete("/category/sub/{CatSubName}",rAdmin.DeleteSubCategory)
 		digest.Delete("/category/final/{CatFinalName}",rAdmin.DeleteFinalCategory)
-		digest.Post("/category/primetosub",rAdmin.ConnectPrimeToSubCategory)
-		digest.Post("/category/subtofinal",rAdmin.ConnectSubToFinalCategory)
-		digest.Post("/category/finaltoprod",rAdmin.ConnectFinalToProdCategory)
-		digest.Get("/category/primes", rAdmin.ReturnAllPrimeCategories)
-		digest.Get("/category/subs", rAdmin.ReturnAllSubCategories)
-		digest.Get("/category/finals", rAdmin.ReturnAllFinalCategories)
+		digest.Post("/category/primetosub",rAdminCategories.ConnectPrimeToSubCategory)
+		digest.Post("/category/subtofinal",rAdminCategories.ConnectSubToFinalCategory)
+		digest.Post("/category/finaltoprod",rAdminCategories.ConnectFinalToProdCategory)
+		digest.Get("/category/primes", rAdminCategories.ReturnAllPrimeCategories)
+		digest.Get("/category/subs", rAdminCategories.ReturnAllSubCategories)
+		digest.Get("/category/finals", rAdminCategories.ReturnAllFinalCategories)
 		digest.Patch("/products/{ProductID}",rAdmin.EditProduct)
 		digest.Patch("/variation/{VariationID}",rAdmin.EditVariation)
 		digest.Post("/variation/{VariationID}/attribute",rAdmin.AddAttribute)
