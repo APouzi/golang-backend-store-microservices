@@ -142,6 +142,12 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 
 
 
+// func (adminRoutes *ProductRoutesTray) CreateInventory(w http.ResponseWriter, r *http.Request){
+// 	prodInvLoc := ProdInvLocCreation{}
+// 	helpers.ReadJSON(w,r,&prodInvLoc)
+// }
+
+
 func (adminProdRoutes *ProductRoutesTray) CreateInventoryLocation(w http.ResponseWriter, r *http.Request) {
 
 	prodInvLoc := ProdInvLocCreation{}

@@ -23,8 +23,11 @@ type ProductJSONRetrieve struct {
 
 type Category struct {
 	Name string
+	test string `json:"test,omitempty"`
+
+	
 }
 
 type Inventory struct {
-	Quantity int
+
 }
