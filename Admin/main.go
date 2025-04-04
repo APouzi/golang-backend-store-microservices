@@ -94,13 +94,13 @@ func main() {
 
 func (app *Config) StartRouter(firebase *firebase.App) http.Handler { // Change the receiver to (*Config)
 	mux := chi.NewRouter()
-
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   app.GetAllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Link"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"}, // this is what the browser can *read* from the response
 		AllowCredentials: true,
-		MaxAge:           301,
+		MaxAge:           300, // how long the OPTIONS preflight can be cached
 	}))
 	// Test if this is working, maybe for microservice
 	mux.Use(middleware.Heartbeat("/ping"))
