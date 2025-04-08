@@ -51,42 +51,47 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.Respons
 		transaction.Rollback()
 		return
 	}
-	tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", prodID, productRetrieve.VariationName, productRetrieve.VariationDescription, productRetrieve.VariationPrice)
-	if err != nil {
-		fmt.Println("transaction at tblProductVariation has failed")
-		fmt.Println(err)
-		transaction.Rollback()
-		return
-	}
-
-	ProdVarID, err := tRes.LastInsertId()
-	if err != nil {
-		fmt.Println("retrieval of LastInsertID of tblProductVariation has failed")
-		fmt.Println(err)
-		transaction.Rollback()
-		return
-	}
-	PCR := ProductCreateRetrieve{
-		ProductID: prodID,
-		VarID:     ProdVarID,
-	}
-	if productRetrieve.LocationAt == "" {
-
-		err = transaction.Commit()
+	var ProdVarID int64
+	for _, variation := range productRetrieve.Variations{
+		tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", prodID, variation.Name, variation.Description, variation.Price)
 		if err != nil {
+			fmt.Println("transaction at tblProductVariation has failed")
 			fmt.Println(err)
 			transaction.Rollback()
 			return
 		}
-		helpers.WriteJSON(w, http.StatusAccepted, &PCR)
+
+		ProdVarID, err = tRes.LastInsertId()
+		if err != nil {
+			fmt.Println("retrieval of LastInsertID of tblProductVariation has failed")
+			fmt.Println(err)
+			transaction.Rollback()
+			return
+		}
+
+		tRes, err = transaction.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_AT) VALUES(?,?,?)", ProdVarID, variation.VariationQuantity, variation.LocationAt)
+		if err != nil {
+			fmt.Println("transaction at tblProductInventory has failed")
+			fmt.Println(err)
+		}
+	}
+	
+	PCR := ProductCreateRetrieve{
+		ProductID: prodID,
+		VarID:     ProdVarID,
+	}
+	
+
+
+	err = transaction.Commit()
+	if err != nil {
+		fmt.Println(err)
+		transaction.Rollback()
 		return
 	}
+	helpers.WriteJSON(w, http.StatusAccepted, &PCR)
 
-	tRes, err = transaction.Exec("INSERT INTO tblProductInventoryLocation(Variation_ID, Quantity, Location_AT) VALUES(?,?,?)", ProdVarID, productRetrieve.VariationQuantity, productRetrieve.LocationAt)
-	if err != nil {
-		fmt.Println("transaction at tblProductInventory has failed")
-		fmt.Println(err)
-	}
+	
 	invID, err := tRes.LastInsertId()
 	if err != nil {
 		fmt.Println(err)
