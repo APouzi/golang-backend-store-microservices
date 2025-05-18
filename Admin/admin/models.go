@@ -5,13 +5,19 @@ import "database/sql"
 type ProductCreate struct {
 	Name                 string  `json:"Product_Name"`
 	Description          string  `json:"Product_Description"`
-	Price                float64 `json:"Product_Price"`
-	VariationName        string  `json:"Variation_Name"`
-	VariationDescription string  `json:"Variation_Description"`
-	VariationPrice       float32 `json:"Variation_Price"`
-	VariationQuantity    int     `json:"Variation_Quantity"`
-	LocationAt           string  `json:"Location_At"`
+	Variations			 []VariationCreateWithProduct `json: "Variations"`
 }
+
+type VariationCreateWithProduct struct {
+	Name              string  `json:"Variation_Name"`
+	Description       string  `json:"Variation_Description"`
+	Price             float32 `json:"Variation_Price"`
+	PrimaryImage      string  `json:"Primary_Image,omitempty"`
+	VariationQuantity int     `json:"Variation_Quantity"`
+	LocationAt        string  `json:"Location_At"`
+}
+
+
 type ProductCreateRetrieve struct {
 	ProductID  int64 `json:"Product_ID"`
 	VarID      int64 `json:"Variation_ID"`
