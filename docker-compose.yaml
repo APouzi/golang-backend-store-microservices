@@ -39,7 +39,7 @@ services:
     - merchantmachine
   
   customer-representative-manager:
-    build: Customer-Representative-Manager
+    build: Customer-Representative-Manager/
     ports:
     - "8002:8002"
     networks:
@@ -47,6 +47,14 @@ services:
     depends_on:
       - merchantmachine
 
+  inventory-system-management:
+    build: Inventory/
+    ports:
+    - "8004:8004"
+    networks:
+    - pouzikov
+    depends_on:
+      - merchantmachine
     
   dblayer:
     build: DBLayer/
