@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	initializingpopulation "github.com/APouzi/DBLayer/Initializing_Population"
+	initializingpopulation "github.com/APouzi/DBLayer/initializing_population"
 	database "github.com/APouzi/DBLayer/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
