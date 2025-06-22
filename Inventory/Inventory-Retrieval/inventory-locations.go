@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/APouzi/inventory-management/helpers"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -58,67 +57,9 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func AllProductLocations(w http.ResponseWriter, r *http.Request){
 
 
 
-	response := map[string]bool{
-		"allProducts": true,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	helpers.WriteJSON(w,200,response)
-}
-
-
-func ProductsInSingularLocations(w http.ResponseWriter, r *http.Request){
-
-	location_param := chi.URLParam(r,"location")
-
-	response := map[string]string{
-		"allProducts": location_param,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	helpers.WriteJSON(w,200,response)
-}
-
-
-func AllTransfers(w http.ResponseWriter, r *http.Request){
-
-
-	response := map[string]bool{
-		"AllTransfers": true,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	helpers.WriteJSON(w,200,response)
-}
-
-func TransfersByID(w http.ResponseWriter, r *http.Request){
-
-	id_param := chi.URLParam(r,"id")
-
-	response := map[string]string{
-		"TransfersByID": id_param,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	helpers.WriteJSON(w,200,response)
-}
-
-
-func TransfersSearchByProduct(w http.ResponseWriter, r *http.Request){
-
-	searchTerm := r.URL.Query().Get("search")
-
-	response := map[string]string{
-		"TransfersSearchByProduct": searchTerm,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	helpers.WriteJSON(w,200,response)
-}
 
 
 
