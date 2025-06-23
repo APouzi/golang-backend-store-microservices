@@ -9,7 +9,7 @@ import (
 
 func PopulateProductTables(db *sql.DB) {
 	fmt.Println("start of initialiazing tables")
-	query, err := os.ReadFile("./sql/Products.sql")
+	query, err := os.ReadFile("./sql/products.sql")
 	if err != nil {
 		log.Fatalf("Error reading file: %v", err)
 	}
