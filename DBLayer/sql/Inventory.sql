@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS location_product (
 );
 
 
+
 CREATE TABLE IF NOT EXISTS inventory_product_detail (
     inventory_id INT AUTO_INCREMENT PRIMARY KEY,
     quantity INT NOT NULL,
@@ -40,7 +41,7 @@ CREATE TABLE IF NOT EXISTS transfers (
     status VARCHAR(15),
     FOREIGN KEY (source_location_id) REFERENCES location(id),
     FOREIGN KEY (destination_location_id) REFERENCES location(id),
-    FOREIGN KEY (product_id) REFERENCES products(product_id)
+    FOREIGN KEY (product_id) REFERENCES tblProductVariation(product_id)
 );
 
 
