@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS location (
     description TEXT,
     latitude DECIMAL(10, 8),
     longitude DECIMAL(10, 8),
-    street_address VARCHAR(300),
+    street_address VARCHAR(300)
 );
 
 CREATE TABLE IF NOT EXISTS location_product (
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS location_product (
     inventory_id INT NOT NULL,
     PRIMARY KEY (location_id, product_id),
     FOREIGN KEY (location_id) REFERENCES location(id),
-    FOREIGN KEY (product_id) REFERENCES tblProductVariation(product_id),
+    FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
     FOREIGN KEY (inventory_id) REFERENCES inventory_product_detail(inventory_id)
 );
 
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS inventory_product_detail (
     product_id INT NOT NULL,
     location_id INT NOT NULL,
     description TEXT,
-    FOREIGN KEY (product_id) REFERENCES tblProductVariation(product_id),
+    FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
     FOREIGN KEY (location_id) REFERENCES location(id)
 );
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS transfers (
     status VARCHAR(15),
     FOREIGN KEY (source_location_id) REFERENCES location(id),
     FOREIGN KEY (destination_location_id) REFERENCES location(id),
-    FOREIGN KEY (product_id) REFERENCES tblProductVariation(product_id)
+    FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID)
 );
 
 
