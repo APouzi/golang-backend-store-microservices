@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	admin "github.com/APouzi/DBLayer/admin"
+	inventory "github.com/APouzi/DBLayer/inventory"
 	products "github.com/APouzi/DBLayer/products"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -16,6 +17,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 	rProduct := products.GetProductRouteInstance(dbInstance)
 
+	rInventory := inventory.GetInventoryRoutesTrayInstance(dbInstance)
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
 	rAdmin := admin.GetProductRouteInstance(dbInstance)
@@ -112,5 +114,9 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// digest.Post("/admin/{UserID}", rAdmin.UserToAdmin)
 
 	// digest.Get("/tables",rAdmin.GetAllTables)
+
+
+	digest.Get("/inventory/locations",rInventory.GetAllLocations)
+	digest.Get("/inventory/locations/{product-variation-id}",rInventory.GetAllProductInventoriesFromLocation)
 	return digest
 }

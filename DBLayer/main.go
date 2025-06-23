@@ -128,9 +128,6 @@ func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Conf
 	// Test if this is working, maybe for microservice
 	mux.Use(middleware.Heartbeat("/ping"))
 
-	
-
-
 	//Pass the mux to routes to use.
 	RouteDigest(mux, app.DB)
 	return mux
