@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 
-	admin "github.com/APouzi/DBLayer/Admin"
-	products "github.com/APouzi/DBLayer/Products"
+	admin "github.com/APouzi/DBLayer/admin"
+	products "github.com/APouzi/DBLayer/products"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
