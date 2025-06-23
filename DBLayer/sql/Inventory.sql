@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS tblLocationProduct (
     product_id INT NOT NULL,
     inventory_id INT NOT NULL,
     PRIMARY KEY (location_product_id, product_id),
-    FOREIGN KEY (location_product_id) REFERENCES location(id),
+    FOREIGN KEY (location_product_id) REFERENCES tblLocation(location_id),
     FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
     FOREIGN KEY (inventory_id) REFERENCES tblInventoryProductDetail(inventory_id)
 );
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS tblInventoryProductDetail (
     location_id INT NOT NULL,
     description TEXT,
     FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
-    FOREIGN KEY (location_id) REFERENCES location(id)
+    FOREIGN KEY (location_id) REFERENCES tblLocation(location_id)
 );
 
 CREATE TABLE IF NOT EXISTS tblInventoryLocationTransfers (
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS tblInventoryLocationTransfers (
     transfer_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     description TEXT,
     status VARCHAR(15),
-    FOREIGN KEY (source_location_id) REFERENCES location(id),
-    FOREIGN KEY (destination_location_id) REFERENCES location(id),
+    FOREIGN KEY (source_location_id) REFERENCES tblLocation(location_id),
+    FOREIGN KEY (destination_location_id) REFERENCES tblLocation(location_id),
     FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID)
 );
