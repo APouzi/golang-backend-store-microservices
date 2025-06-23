@@ -8,11 +8,13 @@ CREATE TABLE IF NOT EXISTS location (
 );
 
 CREATE TABLE IF NOT EXISTS location_product (
-    location_id VARCHAR(50) NOT NULL,
+    location_id INT NOT NULL,
     product_id INT NOT NULL,
     inventory_id INT NOT NULL,
-    FOREIGN KEY (inventory_id),
-    PRIMARY KEY (product_id)
+    PRIMARY KEY (location_id, product_id),
+    FOREIGN KEY (location_id) REFERENCES location(id),
+    FOREIGN KEY (product_id) REFERENCES tblProductVariation(product_id),
+    FOREIGN KEY (inventory_id) REFERENCES inventory_product_detail(inventory_id)
 );
 
 
