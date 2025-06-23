@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS transfers (
     transfer_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     description TEXT,
     status VARCHAR(15),
-    FOREIGN KEY (source_location_id) REFERENCES inventory_product_detail(location_id),
-    FOREIGN KEY (destination_location_id) REFERENCES inventory_product_detail(location_id),
+    FOREIGN KEY (source_location_id) REFERENCES location(id),
+    FOREIGN KEY (destination_location_id) REFERENCES location(id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
