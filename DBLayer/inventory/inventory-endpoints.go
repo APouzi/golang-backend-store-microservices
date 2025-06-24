@@ -309,6 +309,35 @@ func (routes *InventoryRoutesTray) GetInventoryShelfDetailByInventoryID(w http.R
 		return
 	}
 }
+
+func (routes *InventoryRoutesTray) GetInventoryShelfDetailByParameter(w http.ResponseWriter, r *http.Request) {
+	inventoryID := r.URL.Query().Get("inventory_id")
+	productID := r.URL.Query().Get("product_id")
+	shelf := r.URL.Query().Get("shelf")
+	var query string
+	var queried_var string
+	if inventoryID != "" {
+		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE location_id = ?"
+		queried_var = inventoryID
+	}else if productID != "" {
+		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
+		queried_var = productID
+	}else if shelf != ""{
+		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
+		queried_var = productID
+	}else{
+		http.Error(w,"No Parameter Found",http.StatusBadRequest)
+	}
+	
+	tx, err := routes.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to start DB transaction", http.StatusInternalServerError)
+		log.Println("Begin transaction error:", err)
+		return
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(query, queried_var)
 	if err != nil {
 		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
 		log.Println("Query error:", err)
