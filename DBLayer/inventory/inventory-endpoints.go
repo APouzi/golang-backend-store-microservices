@@ -215,6 +215,51 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByProduct(w http
 	}
 
 }
+
+
+func (routes *InventoryRoutesTray) GetAllInventoryShelfDetail(w http.ResponseWriter, r *http.Request) {
+	
+	tx, err := routes.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to start DB transaction", http.StatusInternalServerError)
+		log.Println("Begin transaction error:", err)
+		return
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query("SELECT inventory_shelf_id, quantity_at_shelf, product_id, inventory_id, shelf FROM tblInventoryShelfDetail")
+	if err != nil {
+		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
+		log.Println("Query error:", err)
+		return
+	}
+	defer rows.Close()
+
+	var locations []InventoryProductDetail
+	for rows.Next() {
+		var loc InventoryProductDetail
+		err := rows.Scan(&loc.InventoryID, &loc.Quantity,&loc.ProductID,&loc.LocationID,&loc.Description)
+		if err != nil {
+			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
+			log.Println("Row scan error:", err)
+			return
+		}
+		locations = append(locations, loc)
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		log.Println("Commit error:", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(locations); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		log.Println("JSON encode error:", err)
+		return
+	}
+}
 	if err != nil {
 		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
 		log.Println("Query error:", err)
