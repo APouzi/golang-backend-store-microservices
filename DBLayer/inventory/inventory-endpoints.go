@@ -217,6 +217,7 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByProduct(w http
 }
 
 
+
 func (routes *InventoryRoutesTray) GetAllInventoryShelfDetail(w http.ResponseWriter, r *http.Request) {
 	
 	tx, err := routes.DB.Begin()

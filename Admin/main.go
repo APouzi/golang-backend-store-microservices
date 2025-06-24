@@ -71,7 +71,6 @@ func main() {
 		log.Panic(err)
 	}
 
-
 	serve := &http.Server{
 		Addr:    fmt.Sprintf(":%d", webport),
 		Handler: app.StartRouter(fbDB),
