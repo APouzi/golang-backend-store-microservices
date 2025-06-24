@@ -7,24 +7,34 @@ CREATE TABLE IF NOT EXISTS tblLocation (
     street_address VARCHAR(300)
 );
 
-CREATE TABLE IF NOT EXISTS tblLocationProduct (
-    location_product_id INT NOT NULL,
-    product_id INT NOT NULL,
-    inventory_id INT NOT NULL,
-    PRIMARY KEY (location_product_id, product_id),
-    FOREIGN KEY (location_product_id) REFERENCES tblLocation(location_id),
-    FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
-    FOREIGN KEY (inventory_id) REFERENCES tblInventoryProductDetail(inventory_id)
-);
+-- CREATE TABLE IF NOT EXISTS tblLocationProduct (
+--     location_product_id INT NOT NULL,
+--     product_id INT NOT NULL,
+--     inventory_id INT NOT NULL,
+--     PRIMARY KEY (location_product_id, product_id),
+--     FOREIGN KEY (location_product_id) REFERENCES tblLocation(location_id),
+--     FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
+--     FOREIGN KEY (inventory_id) REFERENCES tblInventoryProductDetail(inventory_id)
+-- );
 
 CREATE TABLE IF NOT EXISTS tblInventoryProductDetail (
     inventory_id INT AUTO_INCREMENT PRIMARY KEY,
-    quantity INT NOT NULL,
+    quantity_at_location INT NOT NULL,
     product_id INT NOT NULL,
     location_id INT NOT NULL,
     description TEXT,
     FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
     FOREIGN KEY (location_id) REFERENCES tblLocation(location_id)
+);
+
+CREATE TABLE IF NOT EXISTS tblInventoryShelfDetail (
+    inventory_shelf_id INT AUTO_INCREMENT PRIMARY KEY,
+    inventory_id INT,
+    quantity_at_shelf INT NOT NULL,
+    product_id INT NOT NULL,
+    shelf TEXT NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
+    FOREIGN KEY (inventory_id) REFERENCES tblInventoryProductDetail(inventory_id)
 );
 
 CREATE TABLE IF NOT EXISTS tblInventoryLocationTransfers (
