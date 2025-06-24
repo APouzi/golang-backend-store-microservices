@@ -117,6 +117,11 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 
 	digest.Get("/inventory/locations",rInventory.GetAllLocations)
-	digest.Get("/inventory/locations/{product-variation-id}",rInventory.GetAllProductInventoriesFromLocation)
+	digest.Get("/inventory/inventory-product-details",rInventory.GetAllInventoryProductDetails)
+	digest.Get("/inventory/inventory-product-details/{inventory-id}",rInventory.GetAllInventoryProductDetailsByProduct)
+	digest.Get("/inventory/inventory-product-details/",rInventory.GetProductInventoriesFromParameter)
+	digest.Get("/inventory/inventory-shelf-details",rInventory.GetAllInventoryShelfDetail)
+	digest.Get("/inventory/inventory-shelf-details/{inventory-id}",rInventory.GetInventoryShelfDetailByInventoryID)
+	digest.Get("/inventory/inventory-shelf-details/",rInventory.GetInventoryShelfDetailByParameter)
 	return digest
 }
