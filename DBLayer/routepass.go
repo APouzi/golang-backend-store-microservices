@@ -18,6 +18,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	rProduct := products.GetProductRouteInstance(dbInstance)
 
 	rInventory := inventory.GetInventoryRoutesTrayInstance(dbInstance)
+
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
 	rAdmin := admin.GetProductRouteInstance(dbInstance)
@@ -117,11 +118,16 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 
 	digest.Get("/inventory/locations",rInventory.GetAllLocations)
+	digest.Get("/inventory/locations/",rInventory.GetLocationByParam)
+	digest.Get("/inventory/locations/{location-id}",rInventory.GetLocationByID)
 	digest.Get("/inventory/inventory-product-details",rInventory.GetAllInventoryProductDetails)
 	digest.Get("/inventory/inventory-product-details/{inventory-id}",rInventory.GetAllInventoryProductDetailsByProduct)
 	digest.Get("/inventory/inventory-product-details/",rInventory.GetProductInventoriesFromParameter)
 	digest.Get("/inventory/inventory-shelf-details",rInventory.GetAllInventoryShelfDetail)
 	digest.Get("/inventory/inventory-shelf-details/{inventory-id}",rInventory.GetInventoryShelfDetailByInventoryID)
 	digest.Get("/inventory/inventory-shelf-details/",rInventory.GetInventoryShelfDetailByParameter)
+	digest.Get("/inventory/inventory-location-transfers",rInventory.GetAllLocationTransfers)
+	digest.Get("/inventory/inventory-location-transfers/",rInventory.GetLocationTransfersByParam)
+	digest.Get("/inventory/inventory-location-transfers/{transfer-id}",rInventory.GetLocationTransfersById)
 	return digest
 }
