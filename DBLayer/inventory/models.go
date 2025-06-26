@@ -1,5 +1,11 @@
 package inventory
 
+import "database/sql"
+
+type InventoryRoutesTray struct {
+	DB *sql.DB
+}
+
 type Location struct {
 	LocationID    int     `json:"location_id" db:"location_id"`
 	Name          string  `json:"name" db:"name"`
