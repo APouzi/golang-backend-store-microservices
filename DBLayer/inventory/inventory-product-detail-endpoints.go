@@ -2,9 +2,11 @@ package inventory
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
+	"github.com/APouzi/DBLayer/helpers"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -54,10 +56,10 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetails(w http.Response
 	}
 }
 
-func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByProduct(w http.ResponseWriter, r *http.Request) {
+func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByID(w http.ResponseWriter, r *http.Request) {
 	inventory_id := chi.URLParam(r, "inventory-id")
 	if inventory_id == "" {
-		http.Error(w, "Missing product-variation-id parameter", http.StatusBadRequest)
+		http.Error(w, "Missing inventory-id parameter", http.StatusBadRequest)
 		return
 	}
 
@@ -69,9 +71,9 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByProduct(w http
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE inventory_id = ?", inventory_id)
+	rows, err := tx.Query("SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail WHERE inventory_id = ?", inventory_id)
 	if err != nil {
-		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("failed to fetch locations:" + err.Error()), http.StatusInternalServerError)
 		log.Println("Query error:", err)
 		return
 	}
@@ -82,8 +84,8 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByProduct(w http
 		var loc InventoryProductDetail
 		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description)
 		if err != nil {
-			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
-			log.Println("Row scan error:", err)
+			helpers.ErrorJSON(w,errors.New("failed to parse result"), http.StatusInternalServerError)
+			log.Println("row scan error:", err)
 			return
 		}
 		locations = append(locations, loc)
@@ -95,17 +97,17 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByProduct(w http
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
+	if len(locations) == 0{
+		helpers.WriteJSON(w,http.StatusAccepted, []InventoryProductDetail{})	
 		return
 	}
+
+	helpers.WriteJSON(w,http.StatusAccepted, locations)
 
 }
 
 func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http.ResponseWriter, r *http.Request) {
-	locationID := r.URL.Query().Get("location-id")
+	locationID := r.URL.Query().Get("location_id")
 	productID := r.URL.Query().Get("product_id")
 	var query string
 	var queried_var string
