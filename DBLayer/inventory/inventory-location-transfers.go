@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -19,7 +20,7 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, product_id, transfer_date, description, status FROM tblInventoryLocationTransfers")
+	rows, err := tx.Query("SELECT transfers_id, quantity, source_location_id, destination_location_id, product_id, transfer_date, description, status FROM tblInventoryLocationTransfers")
 	if err != nil {
 		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
 		log.Println("Query error:", err)
@@ -27,16 +28,35 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var transfers []InventoryLocationTransfer
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description)
+		var transfer InventoryLocationTransfer
+		var description sql.NullString
+		var status sql.NullString
+		err := rows.Scan(
+			&transfer.TransfersID,
+			&transfer.Quantity,
+			&transfer.ProductID,
+			&transfer.SourceLocationID,
+			&transfer.DestinationLocationID,
+			&transfer.TransferDate,
+			&description,
+			&status,
+		)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+
+		if description.Valid {
+			transfer.Description = &status.String
+		}
+		if status.Valid {
+			transfer.Status = &status.String
+		}
+
+		transfers = append(transfers, transfer)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -46,7 +66,7 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
+	if err := json.NewEncoder(w).Encode(transfers); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 		log.Println("JSON encode error:", err)
 		return
