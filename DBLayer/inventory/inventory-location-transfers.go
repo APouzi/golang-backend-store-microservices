@@ -77,7 +77,7 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 
 
 func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.ResponseWriter, r *http.Request) {
-	transfers_id := chi.URLParam(r, "transfers_id")
+	transfers_id := chi.URLParam(r, "transfers-id")
 	if transfers_id == "" {
 		http.Error(w, "Missing transfers_id parameter", http.StatusBadRequest)
 		return
@@ -91,46 +91,45 @@ func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.Resp
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, product_id, transfer_date, description, status FROM tblInventoryLocationTransfers WHERE transfers_id = ?", transfers_id)
-	if err != nil {
-		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
-		log.Println("Query error:", err)
-		return
-	}
-	defer rows.Close()
+	row := tx.QueryRow("SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, transfer_date, description, status FROM tblInventoryLocationTransfers WHERE transfers_id = ?", transfers_id)
+	
+	
 
 	var transfers []InventoryLocationTransfer
-	for rows.Next() {
-		var transfer InventoryLocationTransfer
-		var description sql.NullString
-		var status sql.NullString
+	
+	var transfer InventoryLocationTransfer
+	var description sql.NullString
+	var status sql.NullString
 
-		err := rows.Scan(
-			&transfer.TransfersID,
-			&transfer.Quantity,
-			&transfer.ProductID,
-			&transfer.SourceLocationID,
-			&transfer.DestinationLocationID,
-			&transfer.TransferDate,
-			&description,
-			&status,
-		)
-		if err != nil {
-			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
-			log.Println("Row scan error:", err)
-			return
-		}
-
-		if description.Valid {
-			transfer.Description = &description.String
-		}
-		if status.Valid {
-			transfer.Status = &status.String
-		}
-
-		transfers = append(transfers, transfer)
+	err = row.Scan(
+		&transfer.TransfersID,
+		&transfer.Quantity,
+		&transfer.ProductID,
+		&transfer.SourceLocationID,
+		&transfer.DestinationLocationID,
+		&transfer.TransferDate,
+		&description,
+		&status,
+	)
+	if err == sql.ErrNoRows{
+		http.Error(w, "No records for Transfers with id of " + transfers_id, http.StatusInternalServerError)
+		return
+	}
+	if err != nil {
+		http.Error(w, "Failed to parse result", http.StatusInternalServerError)
+		log.Println("Row scan error:", err)
+		return
 	}
 
+	if description.Valid {
+		transfer.Description = &description.String
+	}
+	if status.Valid {
+		transfer.Status = &status.String
+	}
+
+	transfers = append(transfers, transfer)
+	
 
 	if err := tx.Commit(); err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
