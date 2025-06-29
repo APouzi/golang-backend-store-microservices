@@ -86,16 +86,16 @@ func (routes *InventoryRoutesTray) GetAllInventoryShelfDetail(w http.ResponseWri
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var shelves []InventoryShelfDetail
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description)
+		var shelve InventoryShelfDetail
+		err := rows.Scan(&shelve.InventoryShelfID, &shelve.InventoryID,&shelve.ProductID,&shelve.QuantityAtShelf,&shelve.Shelf)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+		shelves = append(shelves, shelve)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -104,12 +104,7 @@ func (routes *InventoryRoutesTray) GetAllInventoryShelfDetail(w http.ResponseWri
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
-		return
-	}
+	helpers.WriteJSON(w,http.StatusAccepted,shelves)
 }
 
 func (routes *InventoryRoutesTray) GetInventoryShelfDetailByInventoryShelfID(w http.ResponseWriter, r *http.Request) {
