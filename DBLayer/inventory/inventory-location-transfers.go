@@ -139,7 +139,7 @@ func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.Resp
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
+	if err := json.NewEncoder(w).Encode(transfers); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 		log.Println("JSON encode error:", err)
 		return

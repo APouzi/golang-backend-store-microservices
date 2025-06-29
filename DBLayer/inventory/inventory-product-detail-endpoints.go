@@ -20,9 +20,9 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetails(w http.Response
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail WHERE ")
+	rows, err := tx.Query("SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail")
 	if err != nil {
-		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch Inventory Product Detail", http.StatusInternalServerError)
 		log.Println("Query error:", err)
 		return
 	}
@@ -104,7 +104,7 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByProduct(w http
 
 }
 
-func (routes *InventoryRoutesTray) GetProductInventoriesFromParameter(w http.ResponseWriter, r *http.Request) {
+func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http.ResponseWriter, r *http.Request) {
 	locationID := r.URL.Query().Get("location-id")
 	productID := r.URL.Query().Get("product_id")
 	var query string
