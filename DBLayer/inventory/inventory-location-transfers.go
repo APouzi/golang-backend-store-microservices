@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 
@@ -14,15 +15,15 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 
 	tx, err := routes.DB.Begin()
 	if err != nil {
-		http.Error(w, "Failed to start DB transaction", http.StatusInternalServerError)
-		log.Println("Begin transaction error:", err)
+		helpers.ErrorJSON(w,errors.New("failed to start DB transaction"), http.StatusInternalServerError)
+		log.Println("Could not start db transation:", err)
 		return
 	}
 	defer tx.Rollback()
 
 	rows, err := tx.Query("SELECT transfers_id, quantity, source_location_id, destination_location_id, product_id, transfer_date, description, status FROM tblInventoryLocationTransfers")
 	if err != nil {
-		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("failed to fetch DB transaction"), http.StatusInternalServerError)
 		log.Println("Query error:", err)
 		return
 	}
@@ -44,7 +45,7 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 			&status,
 		)
 		if err != nil {
-			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
+			helpers.ErrorJSON(w,errors.New("failed to parse result"), http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
@@ -60,7 +61,7 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 	}
 
 	if err := tx.Commit(); err != nil {
-		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("failed to commit transaction"), http.StatusInternalServerError)
 		log.Println("Commit error:", err)
 		return
 	}
@@ -74,13 +75,13 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.ResponseWriter, r *http.Request) {
 	transfers_id := chi.URLParam(r, "transfers-id")
 	if transfers_id == "" {
-		http.Error(w, "Missing transfers_id parameter", http.StatusBadRequest)
+		helpers.ErrorJSON(w,errors.New("missing transfers_id parameter"), http.StatusInternalServerError)
 		return
 	}
 	
 	tx, err := routes.DB.Begin()
 	if err != nil {
-		http.Error(w, "Failed to start DB transaction", http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("failed to start DB transaction"), http.StatusInternalServerError)
 		log.Println("Begin transaction error:", err)
 		return
 	}
@@ -107,11 +108,11 @@ func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.Resp
 		&status,
 	)
 	if err == sql.ErrNoRows{
-		http.Error(w, "No records for Transfers with id of " + transfers_id, http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("No records for Transfers with id of " + transfers_id), http.StatusInternalServerError)
 		return
 	}
 	if err != nil {
-		http.Error(w, "Failed to parse result", http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("failed to parse result"), http.StatusInternalServerError)
 		log.Println("Row scan error:", err)
 		return
 	}
@@ -127,7 +128,7 @@ func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.Resp
 	
 
 	if err := tx.Commit(); err != nil {
-		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("failed to commit transaction"), http.StatusInternalServerError)
 		log.Println("Commit error:", err)
 		return
 	}
