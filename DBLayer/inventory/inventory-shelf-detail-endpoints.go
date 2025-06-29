@@ -122,11 +122,6 @@ func (routes *InventoryRoutesTray) GetInventoryShelfDetailByInventoryShelfID(w h
 	defer tx.Rollback()
 
 	row := tx.QueryRow("SELECT inventory_shelf_id, inventory_id, quantity_at_shelf, product_id, shelf FROM tblInventoryShelfDetail WHERE inventory_shelf_id = ?",inventory_id)
-	if err != nil {
-		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
-		log.Println("Query error:", err)
-		return
-	}
 
 	
 	var shelve InventoryShelfDetail
