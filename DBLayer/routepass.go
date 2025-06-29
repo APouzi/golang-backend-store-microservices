@@ -116,18 +116,24 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 	// digest.Get("/tables",rAdmin.GetAllTables)
 
-
+//  __  .__   __. ____    ____  _______ .__   __. .___________.  ______   .______     ____    ____    .______        ______    __    __  .___________. _______     _______.
+// |  | |  \ |  | \   \  /   / |   ____||  \ |  | |           | /  __  \  |   _  \    \   \  /   /    |   _  \      /  __  \  |  |  |  | |           ||   ____|   /       |
+// |  | |   \|  |  \   \/   /  |  |__   |   \|  | `---|  |----`|  |  |  | |  |_)  |    \   \/   /     |  |_)  |    |  |  |  | |  |  |  | `---|  |----`|  |__     |   (----`
+// |  | |  . `  |   \      /   |   __|  |  . `  |     |  |     |  |  |  | |      /      \_    _/      |      /     |  |  |  | |  |  |  |     |  |     |   __|     \   \    
+// |  | |  |\   |    \    /    |  |____ |  |\   |     |  |     |  `--'  | |  |\  \----.   |  |        |  |\  \----.|  `--'  | |  `--'  |     |  |     |  |____.----)   |   
+// |__| |__| \__|     \__/     |_______||__| \__|     |__|      \______/  | _| `._____|   |__|        | _| `._____| \______/   \______/      |__|     |_______|_______/    
+//                                                                                                                                                                                                         
 	digest.Get("/inventory/locations",rInventory.GetAllLocations)
 	digest.Get("/inventory/locations/",rInventory.GetLocationByParam)
 	digest.Get("/inventory/locations/{location-id}",rInventory.GetLocationByID)
 	digest.Get("/inventory/inventory-product-details",rInventory.GetAllInventoryProductDetails)
+	digest.Get("/inventory/inventory-product-details/",rInventory.GetInventoryProductDetailFromParameter)
 	digest.Get("/inventory/inventory-product-details/{inventory-id}",rInventory.GetAllInventoryProductDetailsByProduct)
-	digest.Get("/inventory/inventory-product-details/",rInventory.GetProductInventoriesFromParameter)
 	digest.Get("/inventory/inventory-shelf-details",rInventory.GetAllInventoryShelfDetail)
-	digest.Get("/inventory/inventory-shelf-details/{inventory-id}",rInventory.GetInventoryShelfDetailByInventoryID)
-	digest.Get("/inventory/inventory-shelf-details/",rInventory.GetInventoryShelfDetailByParameter)
+	digest.Get("/inventory/inventory-shelf-details/",rInventory.GetInventoryShelfDetailsByParameter)
+	digest.Get("/inventory/inventory-shelf-details/{inventory-id}",rInventory.GetInventoryShelfDetailByInventoryShelfID)
 	digest.Get("/inventory/inventory-location-transfers",rInventory.GetAllLocationTransfers)
 	digest.Get("/inventory/inventory-location-transfers/",rInventory.GetLocationTransfersByParam)
-	digest.Get("/inventory/inventory-location-transfers/{transfer-id}",rInventory.GetLocationTransfersById)
+	digest.Get("/inventory/inventory-location-transfers/{transfer-id}",rInventory.GetInventoryLocationTransfersById)
 	return digest
 }
