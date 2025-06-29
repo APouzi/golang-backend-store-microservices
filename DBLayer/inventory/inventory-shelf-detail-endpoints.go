@@ -131,19 +131,22 @@ func (routes *InventoryRoutesTray) GetInventoryShelfDetailByInventoryShelfID(w h
 	
 	var shelve InventoryShelfDetail
 	err = row.Scan(&shelve.InventoryShelfID, &shelve.InventoryID,&shelve.QuantityAtShelf,&shelve.ProductID,&shelve.Shelf)
-	if err != nil {
-		http.Error(w, "Failed to parse result", http.StatusInternalServerError)
-		log.Println("Row scan error:", err)
-		return
-	}
+	
 	
 	if err == sql.ErrNoRows{
 		helpers.ErrorJSON(w,errors.New("no rows for record:" + inventory_id),http.StatusInternalServerError)
+		return
 	}
 
 	if err := tx.Commit(); err != nil {
 		helpers.ErrorJSON(w,errors.New("failed to commit transaction"), http.StatusInternalServerError)
 		log.Println("Commit error:", err)
+		return
+	}
+
+	if err != nil {
+		helpers.ErrorJSON(w,errors.New("failed to parse result for inventory_shelf_id:" + inventory_id),http.StatusInternalServerError)
+		log.Println("Row scan error:", err)
 		return
 	}
 
