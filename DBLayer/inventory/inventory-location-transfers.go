@@ -2,10 +2,10 @@ package inventory
 
 import (
 	"database/sql"
-	"encoding/json"
 	"log"
 	"net/http"
 
+	"github.com/APouzi/DBLayer/helpers"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -65,12 +65,7 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(transfers); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
-		return
-	}
+	helpers.WriteJSON(w,200,transfers)
 }
 
 
@@ -137,12 +132,7 @@ func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.Resp
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(transfers); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
-		return
-	}
+	helpers.WriteJSON(w,200,transfers)
 
 }
 
@@ -231,10 +221,5 @@ func (routes *InventoryRoutesTray) GetLocationTransfersByParam(w http.ResponseWr
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(transfers); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
-		return
-	}
+	helpers.WriteJSON(w,200,transfers)
 }
