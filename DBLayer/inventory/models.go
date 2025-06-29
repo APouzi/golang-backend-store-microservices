@@ -2,7 +2,6 @@ package inventory
 
 import (
 	"database/sql"
-	"time"
 )
 
 type InventoryRoutesTray struct {
@@ -42,8 +41,8 @@ type InventoryLocationTransfer struct {
     DestinationLocationID int      `db:"destination_location_id" json:"destination_location_id"`
     ProductID            int       `db:"product_id" json:"product_id"`
     Quantity             int       `db:"quantity" json:"quantity"`
-    TransferDate         time.Time `db:"transfer_date" json:"transfer_date"`
-    Description          *string   `db:"description" json:"description,omitempty"`
+    TransferDate         *string `db:"transfer_date" json:"transfer_date"`
+    Description          *string  `db:"description" json:"description,omitempty"`
     Status               *string   `db:"status" json:"status,omitempty"`
 }
 
