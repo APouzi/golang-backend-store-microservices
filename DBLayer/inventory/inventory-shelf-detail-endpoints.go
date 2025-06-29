@@ -114,8 +114,8 @@ func (routes *InventoryRoutesTray) GetAllInventoryShelfDetail(w http.ResponseWri
 	}
 }
 
-func (routes *InventoryRoutesTray) GetInventoryShelfDetailByInventoryID(w http.ResponseWriter, r *http.Request) {
-	inventory_id := chi.URLParam(r, "product-variation-id")
+func (routes *InventoryRoutesTray) GetInventoryShelfDetailByInventoryShelfID(w http.ResponseWriter, r *http.Request) {
+	inventory_id := chi.URLParam(r, "inventory-shelf-id")
 	if inventory_id == "" {
 		http.Error(w, "Missing product-variation-id parameter", http.StatusBadRequest)
 		return
@@ -128,36 +128,31 @@ func (routes *InventoryRoutesTray) GetInventoryShelfDetailByInventoryID(w http.R
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT inventory_shelf_id, quantity_at_shelf, product_id, inventory_id, shelf FROM tblInventoryShelfDetail")
+	row := tx.QueryRow("SELECT inventory_shelf_id, inventory_id, quantity_at_shelf, product_id, shelf FROM tblInventoryShelfDetail WHERE inventory_shelf_id = ?",inventory_id)
 	if err != nil {
 		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
 		log.Println("Query error:", err)
 		return
 	}
-	defer rows.Close()
 
-	var locations []InventoryProductDetail
-	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description)
-		if err != nil {
-			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
-			log.Println("Row scan error:", err)
-			return
-		}
-		locations = append(locations, loc)
+	
+	var shelve InventoryShelfDetail
+	err = row.Scan(&shelve.InventoryShelfID, &shelve.InventoryID,&shelve.QuantityAtShelf,&shelve.ProductID,&shelve.Shelf)
+	if err != nil {
+		http.Error(w, "Failed to parse result", http.StatusInternalServerError)
+		log.Println("Row scan error:", err)
+		return
+	}
+	
+	if err == sql.ErrNoRows{
+		helpers.ErrorJSON(w,errors.New("no rows for record:" + inventory_id),http.StatusInternalServerError)
 	}
 
 	if err := tx.Commit(); err != nil {
-		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		helpers.ErrorJSON(w,errors.New("failed to commit transaction"), http.StatusInternalServerError)
 		log.Println("Commit error:", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
-		return
-	}
+	helpers.WriteJSON(w,http.StatusAccepted,shelve)
 }
