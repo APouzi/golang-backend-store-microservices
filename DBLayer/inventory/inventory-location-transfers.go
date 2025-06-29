@@ -76,10 +76,10 @@ func (routes *InventoryRoutesTray) GetAllLocationTransfers(w http.ResponseWriter
 
 
 
-func (routes *InventoryRoutesTray) GetLocationTransfersById(w http.ResponseWriter, r *http.Request) {
-	inventory_id := chi.URLParam(r, "inventory-id")
-	if inventory_id == "" {
-		http.Error(w, "Missing product-variation-id parameter", http.StatusBadRequest)
+func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.ResponseWriter, r *http.Request) {
+	transfers_id := chi.URLParam(r, "transfers_id")
+	if transfers_id == "" {
+		http.Error(w, "Missing transfers_id parameter", http.StatusBadRequest)
 		return
 	}
 	
@@ -91,7 +91,7 @@ func (routes *InventoryRoutesTray) GetLocationTransfersById(w http.ResponseWrite
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE inventory_id = ?", inventory_id)
+	rows, err := tx.Query("SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, product_id, transfer_date, description, status FROM tblInventoryLocationTransfers WHERE transfers_id = ?", transfers_id)
 	if err != nil {
 		http.Error(w, "Failed to fetch locations", http.StatusInternalServerError)
 		log.Println("Query error:", err)
@@ -99,17 +99,38 @@ func (routes *InventoryRoutesTray) GetLocationTransfersById(w http.ResponseWrite
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var transfers []InventoryLocationTransfer
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity,&loc.ProductID,&loc.LocationID,&loc.Description)
+		var transfer InventoryLocationTransfer
+		var description sql.NullString
+		var status sql.NullString
+
+		err := rows.Scan(
+			&transfer.TransfersID,
+			&transfer.Quantity,
+			&transfer.ProductID,
+			&transfer.SourceLocationID,
+			&transfer.DestinationLocationID,
+			&transfer.TransferDate,
+			&description,
+			&status,
+		)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+
+		if description.Valid {
+			transfer.Description = &description.String
+		}
+		if status.Valid {
+			transfer.Status = &status.String
+		}
+
+		transfers = append(transfers, transfer)
 	}
+
 
 	if err := tx.Commit(); err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
