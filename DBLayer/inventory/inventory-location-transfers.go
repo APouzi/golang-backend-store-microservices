@@ -150,20 +150,30 @@ func (routes *InventoryRoutesTray) GetInventoryLocationTransfersById(w http.Resp
 
 
 func (routes *InventoryRoutesTray) GetLocationTransfersByParam(w http.ResponseWriter, r *http.Request) {
-	inventoryID := r.URL.Query().Get("inventory_id")
+
+	sourceLocationID := r.URL.Query().Get("source_location_id")
+	destinationLocationID := r.URL.Query().Get("destination_location_id")
+	transferDate := r.URL.Query().Get("transfer_date")
+	status := r.URL.Query().Get("status")
 	productID := r.URL.Query().Get("product_id")
-	shelf := r.URL.Query().Get("shelf")
-	var query string
-	var queried_var string
-	if inventoryID != "" {
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE location_id = ?"
-		queried_var = inventoryID
+	var query, queried_var string
+
+
+	if sourceLocationID != "" {
+		query = "SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, transfer_date, description, status FROM tblInventoryLocationTransfers WHERE source_location_id = ?"
+		queried_var = sourceLocationID
 	}else if productID != "" {
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
+		query = "SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id,  transfer_date, description, status FROM tblInventoryLocationTransfers WHERE product_id = ?"
 		queried_var = productID
-	}else if shelf != ""{
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
-		queried_var = productID
+	}else if destinationLocationID != ""{
+		query = "SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, transfer_date, description, status FROM tblInventoryLocationTransfers WHERE destination_location_id = ?"
+		queried_var = destinationLocationID
+	}else if transferDate != ""{
+		query = "SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, transfer_date, description, status FROM tblInventoryLocationTransfers WHERE transfer_date = ?"
+		queried_var = transferDate
+	}else if status != ""{
+		query = "SELECT transfers_id, quantity, product_id, source_location_id, destination_location_id, transfer_date, description, status FROM tblInventoryLocationTransfers WHERE status = ?"
+		queried_var = status
 	}else{
 		http.Error(w,"No Parameter Found",http.StatusBadRequest)
 	}
@@ -184,16 +194,36 @@ func (routes *InventoryRoutesTray) GetLocationTransfersByParam(w http.ResponseWr
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var transfers []InventoryLocationTransfer
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity,&loc.ProductID,&loc.LocationID,&loc.Description)
+		var transfer InventoryLocationTransfer
+		// var description sql.NullString
+		// var status sql.NullString
+
+		err := rows.Scan(
+			&transfer.TransfersID,
+			&transfer.Quantity,
+			&transfer.ProductID,
+			&transfer.SourceLocationID,
+			&transfer.DestinationLocationID,
+			&transfer.TransferDate,
+			&transfer.Description,
+			&transfer.Status,
+		)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+
+		// if description.Valid {
+		// 	transfer.Description = &description.String
+		// }
+		// if status.Valid {
+		// 	transfer.Status = &status.String
+		// }
+
+		transfers = append(transfers, transfer)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -203,7 +233,7 @@ func (routes *InventoryRoutesTray) GetLocationTransfersByParam(w http.ResponseWr
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
+	if err := json.NewEncoder(w).Encode(transfers); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 		log.Println("JSON encode error:", err)
 		return
