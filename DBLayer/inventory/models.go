@@ -1,6 +1,9 @@
 package inventory
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 type InventoryRoutesTray struct {
 	DB *sql.DB
@@ -22,3 +25,26 @@ type InventoryProductDetail struct {
 	LocationID  int     `json:"location_id" db:"location_id"`
 	Description *string `json:"description,omitempty" db:"description"`
 }
+
+
+type InventoryShelfDetail struct {
+    InventoryShelfID  int    `db:"inventory_shelf_id" json:"inventory_shelf_id"`
+    InventoryID       int    `db:"inventory_id" json:"inventory_id"`
+    QuantityAtShelf   int    `db:"quantity_at_shelf" json:"quantity_at_shelf"`
+    ProductID         int    `db:"product_id" json:"product_id"`
+    Shelf             string `db:"shelf" json:"shelf"`
+}
+
+
+type InventoryLocationTransfer struct {
+    TransfersID          int       `db:"transfers_id" json:"transfers_id"`
+    SourceLocationID     int       `db:"source_location_id" json:"source_location_id"`
+    DestinationLocationID int      `db:"destination_location_id" json:"destination_location_id"`
+    ProductID            int       `db:"product_id" json:"product_id"`
+    Quantity             int       `db:"quantity" json:"quantity"`
+    TransferDate         time.Time `db:"transfer_date" json:"transfer_date"`
+    Description          *string   `db:"description" json:"description,omitempty"`
+    Status               *string   `db:"status" json:"status,omitempty"`
+}
+
+
