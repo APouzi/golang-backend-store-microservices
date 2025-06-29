@@ -1,29 +1,32 @@
 package inventory
 
 import (
-	"encoding/json"
+	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 
+	"github.com/APouzi/DBLayer/helpers"
 	"github.com/go-chi/chi/v5"
 )
 
 
-func (routes *InventoryRoutesTray) GetInventoryShelfDetailByParameter(w http.ResponseWriter, r *http.Request) {
-	inventoryID := r.URL.Query().Get("inventory_id")
-	productID := r.URL.Query().Get("product_id")
+func (routes *InventoryRoutesTray) GetInventoryShelfDetailsByParameter(w http.ResponseWriter, r *http.Request) {
+	inventoryID := r.URL.Query().Get("inventory-shelf-id")
+	productID := r.URL.Query().Get("product-id")
 	shelf := r.URL.Query().Get("shelf")
 	var query string
 	var queried_var string
 	if inventoryID != "" {
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE location_id = ?"
+		query = "SELECT inventory_shelf_id, inventory_id,quantity_at_shelf, product_id, shelf FROM tblInventoryShelfDetail WHERE inventory_id = ?"
 		queried_var = inventoryID
 	}else if productID != "" {
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
+		query = "SELECT inventory_shelf_id, inventory_id,quantity_at_shelf, product_id, shelf FROM tblInventoryShelfDetail WHERE product_id = ?"
 		queried_var = productID
 	}else if shelf != ""{
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
-		queried_var = productID
+		shelf += "%"
+		query = "SELECT inventory_shelf_id, inventory_id,quantity_at_shelf, product_id, shelf FROM tblInventoryShelfDetail WHERE shelf LIKE ?"
+		queried_var = shelf
 	}else{
 		http.Error(w,"No Parameter Found",http.StatusBadRequest)
 	}
@@ -44,16 +47,16 @@ func (routes *InventoryRoutesTray) GetInventoryShelfDetailByParameter(w http.Res
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var shelves []InventoryShelfDetail
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity,&loc.ProductID,&loc.LocationID,&loc.Description)
+		var shelve InventoryShelfDetail
+		err := rows.Scan(&shelve.InventoryShelfID, &shelve.InventoryID,&shelve.QuantityAtShelf,&shelve.ProductID,&shelve.Shelf)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+		shelves = append(shelves, shelve)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -62,12 +65,7 @@ func (routes *InventoryRoutesTray) GetInventoryShelfDetailByParameter(w http.Res
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
-		return
-	}
+	helpers.WriteJSON(w,http.StatusAccepted,shelves)
 }
 
 func (routes *InventoryRoutesTray) GetAllInventoryShelfDetail(w http.ResponseWriter, r *http.Request) {
