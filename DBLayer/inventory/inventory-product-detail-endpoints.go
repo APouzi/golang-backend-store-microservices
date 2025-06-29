@@ -155,10 +155,5 @@ func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-		log.Println("JSON encode error:", err)
-		return
-	}
+	helpers.WriteJSON(w,http.StatusAccepted,locations)
 }
