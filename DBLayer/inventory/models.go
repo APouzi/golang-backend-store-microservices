@@ -23,6 +23,8 @@ type InventoryProductDetail struct {
 	ProductID   int     `json:"product_id" db:"product_id"`
 	LocationID  int     `json:"location_id" db:"location_id"`
 	Description *string `json:"description,omitempty" db:"description"`
+	Variation_Name *string `json:"product_variation_name,omitempty" db:"Variation_Name"`
+
 }
 
 

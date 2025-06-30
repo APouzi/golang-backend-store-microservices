@@ -71,7 +71,7 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByID(w http.Resp
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail WHERE inventory_id = ?", inventory_id)
+	rows, err := tx.Query("SELECT ipd.inventory_id, ipd.quantity_at_location, ipd.product_id, ipd.location_id, ipd.description, pv.Variation_Name FROM tblInventoryProductDetail ipd JOIN tblProductVariation pv ON pv.Variation_ID = ipd.product_id WHERE inventory_id = ? ", inventory_id)
 	if err != nil {
 		helpers.ErrorJSON(w,errors.New("failed to fetch locations:" + err.Error()), http.StatusInternalServerError)
 		log.Println("Query error:", err)
@@ -82,7 +82,7 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByID(w http.Resp
 	var locations []InventoryProductDetail
 	for rows.Next() {
 		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description)
+		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description, &loc.Variation_Name)
 		if err != nil {
 			helpers.ErrorJSON(w,errors.New("failed to parse result"), http.StatusInternalServerError)
 			log.Println("row scan error:", err)
