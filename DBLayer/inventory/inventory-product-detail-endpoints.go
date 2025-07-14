@@ -219,4 +219,27 @@ func (adminProdRoutes *InventoryRoutesTray) CreateLocation(w http.ResponseWriter
 	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
 }
 
+func (adminProdRoutes *InventoryRoutesTray) CreateInventoryShelfDetail(w http.ResponseWriter, r *http.Request) {
+
+	invShelfDtl := InventoryShelfDetail{}
+	helpers.ReadJSON(w,r, &invShelfDtl)
+	createConfirm := Confirmation{}
+		
+	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblInventoryShelfDetail(inventory_shelf_id, inventory_id, quantity_at_shelf, product_id, shelf) VALUES(?,?,?,?,?)", invShelfDtl.InventoryShelfID,invShelfDtl.InventoryID, invShelfDtl.QuantityAtShelf, invShelfDtl.ProductID, invShelfDtl.Shelf)
+	if err != nil{
+		log.Println("insert into tblInventoryShelfDetail failed")
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryShelfDetail failed"),400)
+		return
+	}
+	createConfirm.Createdid, err = varit.LastInsertId()
+	if err != nil{
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryShelfDetail failed, could not retrieve varitation id"),400)
+		return
+	}	
+	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
+}
+
+
 
