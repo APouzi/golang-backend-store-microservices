@@ -242,4 +242,25 @@ func (adminProdRoutes *InventoryRoutesTray) CreateInventoryShelfDetail(w http.Re
 }
 
 
+func (adminProdRoutes *InventoryRoutesTray) CreateInventoryLocationTransfer(w http.ResponseWriter, r *http.Request) {
+
+	invShelfDtl := InventoryLocationTransfer{}
+	helpers.ReadJSON(w,r, &invShelfDtl)
+	createConfirm := Confirmation{}
+		
+	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblInventoryLocationTransfers(transfers_id, source_location_id, destination_location_id, product_id, quantity, transfer_date, description, status) VALUES(?,?,?,?,?,?,?,?)", invShelfDtl.TransfersID,invShelfDtl.SourceLocationID, invShelfDtl.DestinationLocationID, invShelfDtl.ProductID, invShelfDtl.Quantity, invShelfDtl.TransferDate, invShelfDtl.Description, invShelfDtl.Status)
+	if err != nil{
+		log.Println("insert into tblInventoryLocationTransfers failed")
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryLocationTransfers failed"),400)
+		return
+	}
+	createConfirm.Createdid, err = varit.LastInsertId()
+	if err != nil{
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryLocationTransfers failed, could not retrieve varitation id"),400)
+		return
+	}	
+	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
+}
 
