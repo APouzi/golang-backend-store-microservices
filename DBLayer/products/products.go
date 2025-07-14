@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/APouzi/DBLayer/helpers"
 	"github.com/go-chi/chi/v5"
@@ -91,7 +92,63 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 	return sqlStmentsMap
 }
 
+var allowed = map[string]string{
+	"variation_id":"Variation_ID",
+    "product_id": "Product_ID",
+    "variation_name": "Variation_Name",
+    "sku": "SKU",
+    "upc": "UPC",
+}
 
+func (prdRoutes *ProductRoutesTray) GetOneProductVariationSearchByParamEndPoint(w http.ResponseWriter, r *http.Request){
+	q := r.URL.Query()
+	var filters []string
+	// var args []interface{}
+	// argPos := 1 // for positional placeholders like $1
+	for key, values := range q {
+		key = strings.ToLower(key)
+		fmt.Println("key and value",key,values)
+		if _, ok := allowed[key]; !ok {
+			helpers.ErrorJSON(w,errors.New("unknown paramater in Variation table"),http.StatusBadRequest)
+			return // ignore unknown
+		}
+		// "key is the key and values is an array
+		filters = append(filters, fmt.Sprintf("%s = %s", allowed[key], values[0]))
+	}
+
+	query := "SELECT Variation_ID, Product_ID, Variation_Name, Variation_Description, Variation_Price, SKU, UPC FROM tblProductVariation"
+	query += " WHERE "
+
+	if len(filters) > 0 {
+		query += strings.Join(filters, " AND ")
+	}
+	rows, err := prdRoutes.DB.Query(query)
+	if err != nil{
+		fmt.Println("HANLDE THIS")
+	}
+	ListProducts := []ProductVariation{}
+	prodJSON := ProductVariation{}
+	for rows.Next(){
+		
+		err := rows.Scan(
+			&prodJSON.VariationID,
+			&prodJSON.ProductID,
+			&prodJSON.VariationName,
+			&prodJSON.VariationDescription,
+			&prodJSON.VariationPrice,
+			&prodJSON.SKU,
+			&prodJSON.UPC,
+		)
+
+		if err != nil{
+			fmt.Println("Scanning Error:",err)
+		}
+		ListProducts = append(ListProducts, prodJSON)
+	}
+
+	helpers.WriteJSON(w, http.StatusAccepted,ListProducts)
+
+}
 func (prdRoutes *ProductRoutesTray) GetAllProductsEndPoint(w http.ResponseWriter, r *http.Request) {
 
 	rows, _ := prdRoutes.getAllProductsStmt.Query()
