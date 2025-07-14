@@ -114,6 +114,10 @@ func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Clie
 	return mux
 }
 
+func NewStripeClient() *stripe.Client {
+    return stripe.NewClient(stripe.Key)
+}
+
 func (app *Config) GetAllowedOrigins() []string{
 	allowedHostString := os.Getenv("ALLOWED_HOSTS")
 	var AllowedOriginsFromEnv []string
