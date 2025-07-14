@@ -264,3 +264,33 @@ func (adminProdRoutes *InventoryRoutesTray) CreateInventoryLocationTransfer(w ht
 	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
 }
 
+
+//  ___          _           _          
+// (  _`\       (_ )        ( )_        
+// | | ) |   __  | |    __  | ,_)   __  
+// | | | ) /'__`\| |  /'__`\| |   /'__`\
+// | |_) |(  ___/| | (  ___/| |_ (  ___/
+// (____/'`\____|___)`\____)`\__)`\____)
+
+func (adminProdRoutes *InventoryRoutesTray) DeleteInventoryLocationTransfer(w http.ResponseWriter, r *http.Request) {
+
+	invShelfDtl := InventoryLocationTransfer{}
+	helpers.ReadJSON(w,r, &invShelfDtl)
+	createConfirm := Confirmation{}
+		
+	varit, err := adminProdRoutes.DB.Exec("DELETE FROM tblInventoryLocationTransfers WHERE transfers_id = ?", invShelfDtl.TransfersID)
+	if err != nil{
+		log.Println("insert into tblInventoryLocationTransfers failed")
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryLocationTransfers failed"),400)
+		return
+	}
+	createConfirm.Createdid, err = varit.LastInsertId()
+	if err != nil{
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryLocationTransfers failed, could not retrieve varitation id"),400)
+		return
+	}	
+	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
+}
+
