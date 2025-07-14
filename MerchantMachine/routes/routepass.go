@@ -2,17 +2,21 @@ package routes
 
 import (
 	firebase "firebase.google.com/go"
+	"github.com/APouzi/MerchantMachinee/routes/checkout"
 	productendpoints "github.com/APouzi/MerchantMachinee/routes/product"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/stripe/stripe-go/v82"
 )
 
 
 
-func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
+func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stripe.Client) *chi.Mux{
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
 	rProduct := productendpoints.InstanceProductsRoutes()
+
+	rCheckout := checkout.InstanceCheckoutRoutes(stripeClient)
 
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
@@ -72,6 +76,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductsEndPoint)
 	digest.Get("/products/",rProduct.GetAllProductsEndPoint)
 	digest.Get("/search/",rProduct.SearchProductsEndPoint)
+	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
 	// digest.Get("/products/{CategoryName}",rProduct.GetProductCategoryEndPointFinal)
 
 	// digest.Get("/categories/",r.GetAllCategories)
