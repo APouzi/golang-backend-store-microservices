@@ -3,6 +3,7 @@ package inventory
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -10,7 +11,11 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-
+//   ____        _ _
+//  |  _ \ _   _| | |___
+//  | |_) | | | | | / __|
+//  |  __/| |_| | | \__ \
+//  |_|    \__,_|_|_|___/
 
 func (routes *InventoryRoutesTray) GetAllInventoryProductDetails(w http.ResponseWriter, r *http.Request) {
 
