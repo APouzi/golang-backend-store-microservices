@@ -340,4 +340,27 @@ func (adminProdRoutes *InventoryRoutesTray) DeleteInventoryProductDetail(w http.
 }
 
 
+func (adminProdRoutes *InventoryRoutesTray) DeleteLocation(w http.ResponseWriter, r *http.Request) {
+
+	invShelfDtl := Location{}
+	helpers.ReadJSON(w,r, &invShelfDtl)
+	createConfirm := Confirmation{}
+		
+	varit, err := adminProdRoutes.DB.Exec("DELETE FROM tblLocation WHERE location_id = ?", invShelfDtl.LocationID)
+	if err != nil{
+		log.Println("insert into tblLocation failed")
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblLocation failed"),400)
+		return
+	}
+	createConfirm.Createdid, err = varit.LastInsertId()
+	if err != nil{
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryProductDetail failed, could not retrieve varitation id"),400)
+		return
+	}	
+	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
+}
+
+
 
