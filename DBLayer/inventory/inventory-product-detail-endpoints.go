@@ -196,3 +196,27 @@ func (adminProdRoutes *InventoryRoutesTray) CreateInventoryProductDetail(w http.
 	helpers.WriteJSON(w, http.StatusCreated,varitCrt)
 }
 
+
+func (adminProdRoutes *InventoryRoutesTray) CreateLocation(w http.ResponseWriter, r *http.Request) {
+
+	location := Location{}
+	helpers.ReadJSON(w,r, &location)
+	createConfirm := Confirmation{}
+		
+	varit, err := adminProdRoutes.DB.Exec("INSERT INTO Location(product_id, LocationID, Name, Description, Latitude, Longitude) VALUES(?,?,?,?)", location.LocationID,location.Name, location.Description, location.Latitude, )
+	if err != nil{
+		log.Println("insert into tblProductVariation failed")
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed"),400)
+		return
+	}
+	createConfirm.Createdid, err = varit.LastInsertId()
+	if err != nil{
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
+		return
+	}	
+	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
+}
+
+
