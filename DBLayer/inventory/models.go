@@ -19,7 +19,7 @@ type Location struct {
 
 type InventoryProductDetail struct {
 	InventoryID int     `json:"inventory_id" db:"inventory_id"`
-	Quantity    int     `json:"quantity" db:"quantity"`
+	Quantity    int     `json:"quantity" db:"quantity_at_location"`
 	ProductID   int     `json:"product_id" db:"product_id"`
 	LocationID  int     `json:"location_id" db:"location_id"`
 	Description *string `json:"description,omitempty" db:"description"`
@@ -46,6 +46,10 @@ type InventoryLocationTransfer struct {
     TransferDate         *string `db:"transfer_date" json:"transfer_date"`
     Description          *string  `db:"description" json:"description,omitempty"`
     Status               *string   `db:"status" json:"status,omitempty"`
+}
+
+type Confirmation struct {
+	 Createdid int64 `json:"created_id"`
 }
 
 

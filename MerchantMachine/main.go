@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	"github.com/stripe/stripe-go/v82"
 	"google.golang.org/api/option"
 )
 type Config struct{
@@ -71,10 +72,11 @@ func main() {
 		log.Panic(err)
 	}
 
+	sc := NewStripeClient()
 
 	serve := &http.Server{
 		Addr:    fmt.Sprintf(":%d", webport),
-		Handler: app.StartRouter(fbDB),
+		Handler: app.StartRouter(fbDB,sc),
 	}
 
 	
@@ -91,13 +93,13 @@ func main() {
 
 }
 
-func (app *Config) StartRouter(firebase *firebase.App) http.Handler { // Change the receiver to (*Config)
+func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Client) http.Handler { // Change the receiver to (*Config)
 	mux := chi.NewRouter()
 
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   app.GetAllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Link"},
+		AllowedHeaders:   []string{"Link","Content-Type","Accept"},
 		AllowCredentials: true,
 		MaxAge:           301,
 	}))
@@ -108,7 +110,7 @@ func (app *Config) StartRouter(firebase *firebase.App) http.Handler { // Change 
 
 
 	//Pass the mux to routes to use.
-	routes.RouteDigest(mux,firebase)
+	routes.RouteDigest(mux,firebase, stripeclient)
 	return mux
 }
 
