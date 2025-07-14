@@ -162,3 +162,37 @@ func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http
 
 	helpers.WriteJSON(w,http.StatusAccepted,locations)
 }
+
+
+
+
+//   ___                     _       
+//  |_ _|_ __  ___  ___ _ __| |_ ___ 
+//   | || '_ \/ __|/ _ \ '__| __/ __|
+//   | || | | \__ \  __/ |  | |_\__ \
+//  |___|_| |_|___/\___|_|   \__|___/    
+                                                                          
+func (adminProdRoutes *InventoryRoutesTray) CreateInventoryProductDetail(w http.ResponseWriter, r *http.Request) {
+
+	ProductID := chi.URLParam(r, "ProductID")
+	fmt.Println("productID", ProductID)
+	variation := InventoryProductDetail{}
+	helpers.ReadJSON(w,r, &variation)
+	varitCrt := Confirmation{}
+		
+	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblInventoryProductDetail(product_id, quantity_at_location, location_id, description) VALUES(?,?,?,?)", variation.ProductID,variation.Quantity, variation.Description, variation.Description)
+	if err != nil{
+		log.Println("insert into tblProductVariation failed")
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed"),400)
+		return
+	}
+	varitCrt.Createdid, err = varit.LastInsertId()
+	if err != nil{
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
+		return
+	}	
+	helpers.WriteJSON(w, http.StatusCreated,varitCrt)
+}
+
