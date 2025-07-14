@@ -317,4 +317,27 @@ func (adminProdRoutes *InventoryRoutesTray) DeleteInventoryShelfDetail(w http.Re
 	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
 }
 
+func (adminProdRoutes *InventoryRoutesTray) DeleteInventoryProductDetail(w http.ResponseWriter, r *http.Request) {
+
+	invShelfDtl := InventoryShelfDetail{}
+	helpers.ReadJSON(w,r, &invShelfDtl)
+	createConfirm := Confirmation{}
+		
+	varit, err := adminProdRoutes.DB.Exec("DELETE FROM tblInventoryProductDetail WHERE inventory_id = ?", invShelfDtl.InventoryShelfID)
+	if err != nil{
+		log.Println("insert into tblInventoryProductDetail failed")
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryProductDetail failed"),400)
+		return
+	}
+	createConfirm.Createdid, err = varit.LastInsertId()
+	if err != nil{
+		log.Println(err)
+		helpers.ErrorJSON(w, errors.New("insert into tblInventoryProductDetail failed, could not retrieve varitation id"),400)
+		return
+	}	
+	helpers.WriteJSON(w, http.StatusCreated,createConfirm)
+}
+
+
 
