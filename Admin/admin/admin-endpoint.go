@@ -376,7 +376,7 @@ func (route *AdminRoutes) UpdateAttribute(w http.ResponseWriter, r *http.Request
 		helpers.ErrorJSON(w, errors.New("please input VariationID"),400)
 		return
 	}
-	AttRead := Attribute{}
+	AttRead := Attribute{} 
 	helpers.ReadJSON(w,r,&AttRead)
 	fmt.Println(AttRead.Attribute,"variatio id and atttribute name", VarID,AttName)
 	sql, err := route.DB.Exec("UPDATE tblProductAttribute SET AttributeName = ? WHERE Variation_ID = ? AND AttributeName = ?",AttRead.Attribute ,VarID, AttName)
