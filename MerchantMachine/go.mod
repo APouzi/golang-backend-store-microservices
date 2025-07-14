@@ -48,6 +48,7 @@ require (
 require (
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/stripe/stripe-go/v82 v82.3.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
