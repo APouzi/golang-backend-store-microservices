@@ -26,6 +26,8 @@ services:
     build: MerchantMachine/
     ports:
       - "8000:8000"
+    depends_on:
+      - dblayer
     networks:
       - pouzikov
 
@@ -54,7 +56,7 @@ services:
     networks:
     - pouzikov
     depends_on:
-      - merchantmachine
+      - dblayer
     
   dblayer:
     build: DBLayer/
