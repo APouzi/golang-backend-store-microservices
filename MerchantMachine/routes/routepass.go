@@ -74,7 +74,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// digest.Post("/superusercreation",rUser.AdminSuperUserCreation)
 	
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductsEndPoint)
-	digest.Get("/products/",rProduct.GetAllProductsEndPoint)
+	digest.Get("/products",rProduct.GetAllProductsAndVariationsEndPoint)
 	digest.Get("/search/",rProduct.SearchProductsEndPoint)
 	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
 	// digest.Get("/products/{CategoryName}",rProduct.GetProductCategoryEndPointFinal)
