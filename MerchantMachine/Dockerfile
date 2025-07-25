@@ -1,4 +1,4 @@
-FROM golang:1.20
+FROM golang:1.24
 
 # RUN apk add --no-cache gcc musl-dev
 
