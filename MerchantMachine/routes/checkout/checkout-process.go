@@ -28,8 +28,8 @@ func GetProductByID(prodID string, ProdJSON *ProductJSONRetrieve, w http.Respons
 	}
 }
 
-func GetProductVariationByID(prodID string, ProdJSON *ProductVariation, w http.ResponseWriter) {
-	url := "http://dblayer:8080/products/variation/" + prodID
+func GetProductVariationByID(prodID string, ProdJSON *[]ProductResponse, w http.ResponseWriter) {
+	url := "http://dblayer:8080/products/variations/" + prodID
 	resp, err := http.Get(url)
 	jd := json.NewDecoder(resp.Body)
 	jd.Decode(ProdJSON)
@@ -37,7 +37,26 @@ func GetProductVariationByID(prodID string, ProdJSON *ProductVariation, w http.R
 		helpers.ErrorJSON(w, err, 400)
 		fmt.Println("failed to decode response:", err)
 	}
-	if ProdJSON.VariationID == 0 {
+	if len(*ProdJSON) == 0 {
+		helpers.ErrorJSON(w, errors.New("there was no response"), 404)
+		return
+	}
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		fmt.Println("failed to pull product:", err)
+	}
+}
+
+func GetProductInventoryDetailByID(prodID string, InvProdJSON *[]InventoryProductDetail, w http.ResponseWriter) {
+	url := "http://dblayer:8080/inventory/inventory-product-details/?product_id=" + prodID
+	resp, err := http.Get(url)
+	jd := json.NewDecoder(resp.Body)
+	jd.Decode(InvProdJSON)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		fmt.Println("failed to decode response:", err)
+	}
+	if len(*InvProdJSON) == 0 {
 		helpers.ErrorJSON(w, errors.New("there was no response"), 404)
 		return
 	}
