@@ -24,8 +24,9 @@
 - [ ] User Account Features
     - [ ] User orders endpoints
 - [ ] Orders System
-    - [ ] 
-- [ ] 
+    - [ ] Implement a system to keep track of order progress
+- [ ] Admin
+- [ ] Envrinment Variables handling, better!
 
 
 ## Frontend Improvements:
@@ -37,4 +38,4 @@
         - [ ] Order summary information (Products, paid, address, etc)
         - [ ] Order status (Processing, shipped, delivered)
         - [ ] Shipping details (Shipping Tracking/Link)
-- [ ] 
+- [ ] Admin features
