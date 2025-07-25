@@ -1,6 +1,9 @@
 package products
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type Product struct {
 	Product_ID          int
@@ -42,4 +45,69 @@ type Category struct {
 }
 
 type Inventory struct {
+}
+type rowData struct {
+    ProductID          int64
+    ProductName        string
+    ProductDescription string
+    VariationID        *int64
+    VariationName      *string
+    VariationDesc      *string
+    VariationPrice     *float64
+    InvID              *int64
+    Quantity           *int64
+    LocationAt         *string
+    SizeID             *int64
+    SizeName           *string
+    SizeDesc           *string
+    SizeVariationID    *int64
+    SizeVariationPrice sql.NullFloat64
+    SKU                *string
+    UPC                *string
+    PrimaryImage       *string
+}
+
+type ProductSize struct {
+    SizeID          *int64          `json:"size_id" db:"Size_ID"`
+    SizeName        *string         `json:"size_name" db:"Size_Name"`
+    SizeDescription *string        `json:"size_description,omitempty" db:"Size_Description"`
+    VariationID     *int64          `json:"variation_id" db:"Variation_ID"`
+    VariationPrice  *float64        `json:"variation_price" db:"Variation_Price"`
+    SKU             *string        `json:"sku,omitempty" db:"SKU"`
+    UPC             *string        `json:"upc,omitempty" db:"UPC"`
+    PrimaryImage    *string        `json:"primary_image,omitempty" db:"PRIMARY_IMAGE"`
+}
+
+type ProductPaginated struct {
+    ProductID          int64   `json:"product_id"`
+    ProductName        string  `json:"product_name"`
+    ProductDescription string  `json:"product_description"`
+	Variations map[int64]Variation `json:"variations"`
+}
+
+type Variation struct {
+    VariationID   *int64    `json:"variation_id"`
+    Name          *string   `json:"name"`
+    Description   *string `json:"description,omitempty"`
+	ProductSize map[int64]ProductSize `json:"product_size"`
+}
+
+type InventoryPaginated struct {
+    InvID      *int64  `json:"inv_id,omitempty"`
+    Quantity   *int64  `json:"quantity,omitempty"`
+    LocationAt *string `json:"location_at,omitempty"`
+}
+type ProductVariationPaginated struct {
+    Product   ProductPaginated    `json:"product"`
+    Variation []Variation  `json:"variation"`
+    Inventory InventoryPaginated  `json:"inventory"`
+	
+}
+
+type PaginatedResponse struct {
+    Data       []ProductPaginated `json:"data"`
+    Page       int                `json:"page"`
+    PageSize   int                `json:"page_size"`
+    TotalCount int                `json:"total_count"`
+    TotalPages int                `json:"total_pages"`
 }
