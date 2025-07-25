@@ -10,7 +10,33 @@ type ProductJSONRetrieve struct {
 	ModifiedDate        string `json:"ModifiedDate,omitempty"`
 }
 
-type ProductVariation struct {
+type ProductResponse struct {
+    Inventory struct {
+        InvID      int    `json:"Inv_ID"`
+        Quantity   int    `json:"Quantity"`
+        LocationAt string `json:"LocationAt"`
+    } `json:"inventory"`
+    Product struct {
+        ProductID          int     `json:"Product_ID"`
+        ProductName        string  `json:"Product_Name"`
+        ProductDescription string  `json:"Product_Description"`
+        ProductPrice       float64 `json:"Product_Price"`
+        SKU                string  `json:"SKU"`
+        UPC                string  `json:"UPC"`
+        PrimaryImage       string  `json:"PRIMARY_IMAGE"`
+        ProductDateAdded   string  `json:"ProductDateAdded"`
+        ModifiedDate       string  `json:"ModifiedDate"`
+    } `json:"product"`
+    Variation struct {
+        VariationID int     `json:"variation_id"`
+        Name        string  `json:"name"`
+        Description string  `json:"description"`
+        Price       float64 `json:"price"`
+    } `json:"variation"`
+}
+
+
+type ProductVariation []struct {
 	VariationID          int        `db:"Variation_ID" json:"variation_id"`
 	ProductID            int        `db:"Product_ID" json:"product_id"`
 	VariationName        string     `db:"Variation_Name" json:"variation_name"`
@@ -22,6 +48,16 @@ type ProductVariation struct {
 	DateCreated          time.Time  `db:"Date_Created" json:"date_created"`
 	ModifiedDate         *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
 }
+
+
+type InventoryProductDetail struct {
+    InventoryID int64  `json:"inventory_id" db:"inventory_id"`    // Primary Key
+    Quantity    int64  `json:"quantity" db:"quantity"`            // NOT NULL
+    ProductID   int64  `json:"product_id" db:"product_id"`        // Foreign Key to tblProductVariation
+    LocationID  int64  `json:"location_id" db:"location_id"`      // Foreign Key to tblLocation
+    Description string `json:"description,omitempty" db:"description"` // TEXT (nullable)
+}
+
 
 type FrontendRequest struct {
 	Items []struct {
