@@ -341,6 +341,133 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 }
 
 
+func (prdRoutes *ProductRoutesTray) GetProductAndVariationsPaginated(w http.ResponseWriter, r *http.Request) {
+    // Parse pagination params from query
+    pageStr := r.URL.Query().Get("page")
+    pageSizeStr := r.URL.Query().Get("page_size")
+
+
+	page, err := strconv.Atoi(pageStr)
+
+	pageSize, err := strconv.Atoi(pageSizeStr)
+
+    if page < 1 {
+        page = 1
+    }
+    if pageSize < 1 {
+        pageSize = 10
+    }
+
+    offset := (page - 1) * pageSize
+
+    // Count total records
+    var totalCount int
+    countQuery := `SELECT COUNT(*) FROM tblProducts p
+                   LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+                	`
+    err = prdRoutes.DB.QueryRow(countQuery).Scan(&totalCount)
+    if err != nil {
+        helpers.ErrorJSON(w, fmt.Errorf("failed to get count: %v", err), http.StatusInternalServerError)
+        return
+    }
+
+    totalPages := (totalCount + pageSize - 1) / pageSize
+	fmt.Println("total pages",totalPages)
+    // Main query with LIMIT/OFFSET
+    sqlQuery := `
+        SELECT p.Product_ID, p.Product_Name, p.Product_Description,
+               pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, ps.Size_ID,
+               ps.Size_Name, ps.Size_Description, ps.Variation_ID, ps.Variation_Price, ps.SKU, ps.UPC, ps.PRIMARY_IMAGE
+        FROM tblProducts p
+        LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+		LEFT JOIN tblProductSize ps ON ps.Variation_ID = pv.Variation_ID 
+        LIMIT ? OFFSET ?
+    `
+
+    rows, err := prdRoutes.DB.Query(sqlQuery, pageSize, offset)
+    if err != nil {
+        helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
+	// var products []ProductVariationPaginated = []ProductVariationPaginated{}
+    var productsMapForJoins map[int64]ProductPaginated = map[int64]ProductPaginated{}
+	dataSendBack := []ProductPaginated{}
+    for rows.Next() {
+        var product rowData
+
+        err := rows.Scan(
+            &product.ProductID, &product.ProductName, &product.ProductDescription,
+            &product.VariationID, &product.VariationName, &product.VariationDesc,
+            &product.SizeID,&product.SizeName, &product.SizeDesc, &product.SizeVariationPrice,&product.VariationPrice,&product.SKU, &product.UPC,&product.PrimaryImage,
+        )
+		if _,ok := productsMapForJoins[product.ProductID]; !ok{
+			productsMapForJoins[product.ProductID] =  ProductPaginated{
+				ProductID: product.ProductID,
+				ProductName: product.ProductName,
+				ProductDescription: product.ProductDescription,
+				Variations: map[int64]Variation{},
+			}
+		}
+		
+		if product.VariationID == nil || *product.VariationID == 0{
+				continue
+		}
+		if _, ok:= productsMapForJoins[product.ProductID].Variations[*product.VariationID]; !ok {
+		productsMapForJoins[product.ProductID].Variations[*product.VariationID] = Variation{
+				Name: product.VariationName,
+				Description: product.VariationDesc,
+				ProductSize: map[int64]ProductSize{},
+		}
+			
+		}
+		if product.SizeID == nil || *product.SizeID == 0 {
+			fmt.Println("product size doesn't exist doesn't exist, continue",product.VariationID)
+			continue
+		}
+		if _,ok := productsMapForJoins[product.ProductID].Variations[*product.VariationID].ProductSize[*product.SizeID]; !ok{
+			productsMapForJoins[product.ProductID].Variations[*product.VariationID].ProductSize[*product.SizeID] = ProductSize{
+				SizeID:product.SizeID,
+				SizeName:product.SizeName,
+				SizeDescription:product.SizeDesc,
+				VariationPrice: &product.SizeVariationPrice.Float64, 
+				SKU: product.SKU, 
+				UPC: product.UPC, 
+				PrimaryImage: product.PrimaryImage,
+			}
+		}
+	
+		if err != nil {
+			helpers.ErrorJSON(w, fmt.Errorf("error scanning row: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		if err = rows.Err(); err != nil {
+			helpers.ErrorJSON(w, fmt.Errorf("error iterating rows: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+    
+	}
+	for _, v := range productsMapForJoins {
+		dataSendBack = append(dataSendBack, v)
+	}
+	sort.Slice(dataSendBack, func(i, j int) bool {
+		return dataSendBack[i].ProductID  < dataSendBack[j].ProductID
+	})
+	response := PaginatedResponse{
+        Data:       dataSendBack,
+        Page:       page,
+        PageSize:   pageSize,
+        TotalCount: totalCount,
+        TotalPages: totalPages,
+    }
+	helpers.WriteJSON(w, http.StatusOK, response)
+
+}
+
+
+
 
 type CategoryRetrieval struct{
 	Product_ID sql.NullInt64 `json:"product_id"`
