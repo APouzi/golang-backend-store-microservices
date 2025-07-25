@@ -117,10 +117,10 @@ func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http
 	var query string
 	var queried_var string
 	if locationID != "" {
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE location_id = ?"
+		query = "SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail WHERE location_id = ?"
 		queried_var = locationID
 	}else if productID != "" {
-		query = "SELECT inventory_id, quantity, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
+		query = "SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
 		queried_var = productID
 	}else{
 		http.Error(w,"No Parameter Found",http.StatusBadRequest)
