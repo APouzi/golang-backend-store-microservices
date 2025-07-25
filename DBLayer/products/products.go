@@ -257,15 +257,13 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 
 }
 
-
-type VariationRet struct{
-	Variation_ID sql.NullInt64
-	ProductID sql.NullInt64
-	Name sql.NullString
-	Description sql.NullString 
-	Price sql.NullFloat64 
-	PrimaryImage sql.NullString 
-
+type VariationRet struct {
+    Variation_ID  *int64   `json:"variation_id,omitempty"`
+    ProductID    *int64   `json:"product_id,omitempty"`
+    Name         *string  `json:"name,omitempty"`
+    Description  *string  `json:"description,omitempty"`
+    Price        *float64 `json:"price,omitempty"`
+    PrimaryImage *string  `json:"primary_image,omitempty"`
 }
 
 
