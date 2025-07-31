@@ -19,7 +19,7 @@ import (
 
 func (routes *InventoryRoutesTray) GetAllInventoryProductDetails(w http.ResponseWriter, r *http.Request) {
 
-	tx, err := routes.DB.Begin()
+	tx, err := routes.DB.Begin() 
 	if err != nil {
 		http.Error(w, "Failed to start DB transaction", http.StatusInternalServerError)
 		log.Println("Begin transaction error:", err)
@@ -27,7 +27,7 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetails(w http.Response
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query("SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail")
+	rows, err := tx.Query("SELECT inventory_id, quantity_at_location, product_size_id, location_id, description FROM tblInventoryProductDetail")
 	if err != nil {
 		http.Error(w, "Failed to fetch Inventory Product Detail", http.StatusInternalServerError)
 		log.Println("Query error:", err)
@@ -35,16 +35,16 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetails(w http.Response
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var inventory_product_detail []InventoryProductDetail
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description)
+		var invprddetail InventoryProductDetail
+		err := rows.Scan(&invprddetail.InventoryID, &invprddetail.Quantity, &invprddetail.SizeID, &invprddetail.LocationID, &invprddetail.Description)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+		inventory_product_detail = append(inventory_product_detail, invprddetail)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -54,7 +54,7 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetails(w http.Response
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(locations); err != nil {
+	if err := json.NewEncoder(w).Encode(inventory_product_detail); err != nil {
 		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 		log.Println("JSON encode error:", err)
 		return
