@@ -20,7 +20,7 @@ type Location struct {
 type InventoryProductDetail struct {
 	InventoryID int     `json:"inventory_id" db:"inventory_id"`
 	Quantity    int     `json:"quantity" db:"quantity_at_location"`
-	ProductID   int     `json:"product_id" db:"product_id"`
+	SizeID   int     `json:"product_size_id" db:"product_size_id"`
 	LocationID  int     `json:"location_id" db:"location_id"`
 	Description *string `json:"description,omitempty" db:"description"`
 	Variation_Name *string `json:"product_variation_name,omitempty" db:"Variation_Name"`
