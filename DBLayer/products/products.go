@@ -469,7 +469,7 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsPaginated(w http.Resp
         err := rows.Scan(
             &product.ProductID, &product.ProductName, &product.ProductDescription,
             &product.VariationID, &product.VariationName, &product.VariationDesc,
-            &product.SizeID,&product.SizeName, &product.SizeDesc, &product.SizeVariationPrice,&product.VariationPrice,&product.SKU, &product.UPC,&product.PrimaryImage,
+            &product.SizeID,&product.SizeName, &product.SizeDesc, &product.VariationID, &product.SizeVariationPrice,&product.SKU, &product.UPC,&product.PrimaryImage,
         )
 		if _,ok := productsMapForJoins[product.ProductID]; !ok{
 			productsMapForJoins[product.ProductID] =  ProductPaginated{
@@ -503,7 +503,6 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsPaginated(w http.Resp
 				VariationPrice: &product.SizeVariationPrice.Float64, 
 				SKU: product.SKU, 
 				UPC: product.UPC, 
-				PrimaryImage: product.PrimaryImage,
 			}
 		}
 	
@@ -682,6 +681,45 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInPrimeCategoryViewEndPoint(w 
 	fmt.Println("Category Name:", category_name)
 	
 	helpers.WriteJSON(w,http.StatusAccepted,SendOffList)
+}
+
+
+
+func (prdRoutes *ProductRoutesTray) GetOneProductSizeEndPoint(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("hit GetOneProductSizeEndPoint")
+	productSizeID, err :=  strconv.Atoi(chi.URLParam(r,"SizeID"))
+	if err != nil{
+		fmt.Println("String to Int failed:", err)
+	}
+
+	row := prdRoutes.DB.QueryRow("SELECT Size_ID, Size_Name, Size_Description, Variation_ID, Variation_Price, SKU, UPC, Date_Created, Modified_Date FROM tblProductSize WHERE Size_ID = ?",productSizeID)
+
+	// row := prdRoutes.getOneVariationProductStment.QueryRow(productVariationID)
+	variationJSON := &ProductSize{}
+	
+	err = row.Scan(
+		&variationJSON.SizeID,
+		&variationJSON.SizeName, 
+		&variationJSON.SizeDescription, 
+		&variationJSON.VariationID,  
+		&variationJSON.VariationPrice,
+		&variationJSON.SKU,
+		&variationJSON.UPC,
+		&variationJSON.DateCreated,
+		&variationJSON.ModifiedDate,
+
+	)
+	if err == sql.ErrNoRows{
+		fmt.Println("Doesnt work:",err)
+		helpers.ErrorJSON(w, errors.New("could not get variation"),404)
+		return
+	}
+	if err != nil{
+		fmt.Println("scanning error:",err)
+	}
+	
+	helpers.WriteJSON(w,200,&variationJSON)
+
 }
 
 // func GetAllProductByCategoryID(w http.ResponseWriter, r *http.Request){
