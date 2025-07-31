@@ -84,16 +84,16 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByID(w http.Resp
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var inventory_product_details []InventoryProductDetail
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity, &loc.ProductID, &loc.LocationID, &loc.Description, &loc.Variation_Name)
+		var invprddet InventoryProductDetail
+		err := rows.Scan(&invprddet.InventoryID, &invprddet.Quantity, &invprddet.SizeID, &invprddet.LocationID, &invprddet.Description, &invprddet.Variation_Name)
 		if err != nil {
 			helpers.ErrorJSON(w,errors.New("failed to parse result"), http.StatusInternalServerError)
 			log.Println("row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+		inventory_product_details = append(inventory_product_details, invprddet)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -102,12 +102,12 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByID(w http.Resp
 		return
 	}
 
-	if len(locations) == 0{
+	if len(inventory_product_details) == 0{
 		helpers.WriteJSON(w,http.StatusAccepted, []InventoryProductDetail{})	
 		return
 	}
 
-	helpers.WriteJSON(w,http.StatusAccepted, locations)
+	helpers.WriteJSON(w,http.StatusAccepted, inventory_product_details)
 
 }
 
