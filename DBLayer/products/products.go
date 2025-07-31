@@ -339,6 +339,42 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 	helpers.WriteJSON(w, http.StatusOK, product_list)
 }
 
+
+func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.ResponseWriter, r *http.Request){
+	productID := chi.URLParam(r,"productID")
+	if productID == ""{
+		fmt.Println("no search term")
+		helpers.ErrorJSON(w, errors.New("no search term"),404)
+		return
+	}
+	fmt.Println(r.URL.Query().Get("q"))
+	fmt.Println("query from product end point", productID)
+	sqlQuery := `
+		SELECT p.Product_ID, p.Product_Name, p.Product_Description,
+			    pv.Variation_ID,pv.Variation_Name, pv.Variation_Description, pv.Variation_Price,
+			   pil.Inv_ID, pil.Quantity, pil.Location_At
+		FROM tblProducts p
+		LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+		LEFT JOIN tblProductInventoryLocation pil ON pv.Variation_ID = pil.Variation_ID
+		WHERE p.Product_ID = ?
+	`
+
+	//the question marks in the sql statement are replaced by the values of the query string, specifically the two parameters after the query string.
+	rows, err := prdRoutes.DB.Query(sqlQuery, productID)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var product_list []map[string]interface{}
+	for rows.Next() {
+		var product Product
+		var variation VariationRet
+		var inventory struct {
+			Inv_ID     *int64
+			Quantity  *int64
+			LocationAt *string
 		}
 
 		
@@ -358,12 +394,11 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 		result := map[string]interface{}{
 			"product": product,
 		}
-		if variation.Variation_ID.Valid{
 			result["variation"] = variation
-		}
-		if inventory.Inv_ID.Valid {
+
+
 			result["inventory"] = inventory
-		}
+
 		product_list = append(product_list, result)
 	}
 
