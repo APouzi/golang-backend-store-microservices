@@ -68,14 +68,16 @@ type rowData struct {
 }
 
 type ProductSize struct {
-    SizeID          *int64          `json:"size_id" db:"Size_ID"`
-    SizeName        *string         `json:"size_name" db:"Size_Name"`
-    SizeDescription *string        `json:"size_description,omitempty" db:"Size_Description"`
-    VariationID     *int64          `json:"variation_id" db:"Variation_ID"`
-    VariationPrice  *float64        `json:"variation_price" db:"Variation_Price"`
-    SKU             *string        `json:"sku,omitempty" db:"SKU"`
-    UPC             *string        `json:"upc,omitempty" db:"UPC"`
-    PrimaryImage    *string        `json:"primary_image,omitempty" db:"PRIMARY_IMAGE"`
+    SizeID         *int64       `db:"Size_ID" json:"size_id"`
+    SizeName       *string     `db:"Size_Name" json:"size_name"`
+    SizeDescription *string    `db:"Size_Description,omitempty" json:"size_description,omitempty"`
+    VariationID    *int64        `db:"Variation_ID" json:"variation_id"`
+    VariationPrice *float64    `db:"Variation_Price" json:"variation_price"`
+    SKU            *string    `db:"SKU,omitempty" json:"sku,omitempty"`
+    UPC            *string    `db:"UPC,omitempty" json:"upc,omitempty"`
+         *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
+    DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
+    ModifiedDate   *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
 }
 
 type ProductPaginated struct {
