@@ -77,10 +77,11 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductEndPoint)
 	digest.Get("/products",rProduct.GetAllProductsEndPoint)
 	digest.Get("/variations/{VariationID}", rProduct.GetOneVariationEndPoint) //This needs to change to just 
-	digest.Get("/products/variation/",rProduct.GetOneProductVariationSearchByParamEndPoint)
+	digest.Get("/products/variations/",rProduct.GetOneProductVariationByParamEndPoint)
 	digest.Get("/products/search/", rProduct.SearchProductsEndPoint)
 	digest.Get("/products/variations/{productID}",rProduct.GetProductAndVariationsByProductID)
 	digest.Get("/products/variations/pagination/",rProduct.GetProductAndVariationsPaginated)
+	digest.Get("/product-size/{SizeID}",rProduct.GetOneProductSizeEndPoint)
 	// digest.Get("/products/{CategoryName}",r.GetProductCategoryEndPointFinal)
 
 	// digest.Get("/categories/",r.GetAllCategories)
@@ -112,7 +113,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// digest.Get("/category/finals", rAdmin.ReturnAllFinalCategories)
 	digest.Patch("/products/{ProductID}",rAdmin.EditProduct)
 	digest.Patch("/variation/{VariationID}",rAdmin.EditVariation)
-	digest.Post("/variation/{VariationID}/attribute",rAdmin.AddAttribute)
+	digest.Post("/variation/{VariationID}/attribute",rAdmin.AddAttribute)	
 	// digest.Patch("/variation/{VariationID}/attribute/{AttributeName}",rAdmin.UpdateAttribute)
 	// digest.Delete("/variation/{VariationID}/attribute/{AttributeName}",rAdmin.DeleteAttribute)
 	// digest.Post("/admin/{UserID}", rAdmin.UserToAdmin)
