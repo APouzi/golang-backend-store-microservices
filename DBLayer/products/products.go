@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -100,7 +101,7 @@ var allowed = map[string]string{
     "upc": "UPC",
 }
 
-func (prdRoutes *ProductRoutesTray) GetOneProductVariationSearchByParamEndPoint(w http.ResponseWriter, r *http.Request){
+func (prdRoutes *ProductRoutesTray) GetOneProductVariationByParamEndPoint(w http.ResponseWriter, r *http.Request){
 	q := r.URL.Query()
 	var filters []string
 	// var args []interface{}
@@ -299,9 +300,45 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 		var product Product
 		var variation VariationRet
 		var inventory struct {
-			Inv_ID     sql.NullInt64
-			Quantity  sql.NullInt64
-			LocationAt sql.NullString
+			Inv_ID     *int64  `json:"inv_id,omitempty"`
+			Quantity  *int64  `json:"quantity,omitempty"`
+			LocationAt  *string `json:"location,omitempty"`
+		}
+
+		
+
+		err := rows.Scan(
+			&product.Product_ID, &product.Product_Name, &product.Product_Description,
+			&variation.Variation_ID, &variation.Name, &variation.Description, &variation.Price,
+			&inventory.Inv_ID, &inventory.Quantity, &inventory.LocationAt,
+		)
+		if err != nil {
+			helpers.ErrorJSON(w, fmt.Errorf("error scanning row: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		
+
+		result := map[string]interface{}{
+			"product": product,
+		}
+
+		result["variation"] = variation
+
+
+		result["inventory"] = inventory
+
+		product_list = append(product_list, result)
+	}
+
+	if err = rows.Err(); err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("error iterating rows: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, product_list)
+}
+
 		}
 
 		
