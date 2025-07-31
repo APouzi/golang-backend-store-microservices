@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -100,7 +101,7 @@ var allowed = map[string]string{
     "upc": "UPC",
 }
 
-func (prdRoutes *ProductRoutesTray) GetOneProductVariationSearchByParamEndPoint(w http.ResponseWriter, r *http.Request){
+func (prdRoutes *ProductRoutesTray) GetOneProductVariationByParamEndPoint(w http.ResponseWriter, r *http.Request){
 	q := r.URL.Query()
 	var filters []string
 	// var args []interface{}
@@ -257,15 +258,13 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 
 }
 
-
-type VariationRet struct{
-	Variation_ID sql.NullInt64
-	ProductID sql.NullInt64
-	Name sql.NullString
-	Description sql.NullString 
-	Price sql.NullFloat64 
-	PrimaryImage sql.NullString 
-
+type VariationRet struct {
+    Variation_ID  *int64   `json:"variation_id,omitempty"`
+    ProductID    *int64   `json:"product_id,omitempty"`
+    Name         *string  `json:"name,omitempty"`
+    Description  *string  `json:"description,omitempty"`
+    Price        *float64 `json:"price,omitempty"`
+    PrimaryImage *string  `json:"primary_image,omitempty"`
 }
 
 
@@ -301,9 +300,9 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 		var product Product
 		var variation VariationRet
 		var inventory struct {
-			Inv_ID     sql.NullInt64
-			Quantity  sql.NullInt64
-			LocationAt sql.NullString
+			Inv_ID     *int64  `json:"inv_id,omitempty"`
+			Quantity  *int64  `json:"quantity,omitempty"`
+			LocationAt  *string `json:"location,omitempty"`
 		}
 
 		
@@ -323,12 +322,12 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 		result := map[string]interface{}{
 			"product": product,
 		}
-		if variation.Variation_ID.Valid{
-			result["variation"] = variation
-		}
-		if inventory.Inv_ID.Valid {
-			result["inventory"] = inventory
-		}
+
+		result["variation"] = variation
+
+
+		result["inventory"] = inventory
+
 		product_list = append(product_list, result)
 	}
 
@@ -339,6 +338,203 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 
 	helpers.WriteJSON(w, http.StatusOK, product_list)
 }
+
+
+func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.ResponseWriter, r *http.Request){
+	productID := chi.URLParam(r,"productID")
+	if productID == ""{
+		fmt.Println("no search term")
+		helpers.ErrorJSON(w, errors.New("no search term"),404)
+		return
+	}
+	fmt.Println(r.URL.Query().Get("q"))
+	fmt.Println("query from product end point", productID)
+	sqlQuery := `
+		SELECT p.Product_ID, p.Product_Name, p.Product_Description,
+			    pv.Variation_ID,pv.Variation_Name, pv.Variation_Description, pv.Variation_Price,
+			   pil.Inv_ID, pil.Quantity, pil.Location_At
+		FROM tblProducts p
+		LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+		LEFT JOIN tblProductInventoryLocation pil ON pv.Variation_ID = pil.Variation_ID
+		WHERE p.Product_ID = ?
+	`
+
+	//the question marks in the sql statement are replaced by the values of the query string, specifically the two parameters after the query string.
+	rows, err := prdRoutes.DB.Query(sqlQuery, productID)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var product_list []map[string]interface{}
+	for rows.Next() {
+		var product Product
+		var variation VariationRet
+		var inventory struct {
+			Inv_ID     *int64
+			Quantity  *int64
+			LocationAt *string
+		}
+
+		
+
+		err := rows.Scan(
+			&product.Product_ID, &product.Product_Name, &product.Product_Description,
+			&variation.Variation_ID, &variation.Name, &variation.Description, &variation.Price,
+			&inventory.Inv_ID, &inventory.Quantity, &inventory.LocationAt,
+		)
+		if err != nil {
+			helpers.ErrorJSON(w, fmt.Errorf("error scanning row: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		
+
+		result := map[string]interface{}{
+			"product": product,
+		}
+			result["variation"] = variation
+
+
+			result["inventory"] = inventory
+
+		product_list = append(product_list, result)
+	}
+
+	if err = rows.Err(); err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("error iterating rows: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, product_list)
+}
+
+
+func (prdRoutes *ProductRoutesTray) GetProductAndVariationsPaginated(w http.ResponseWriter, r *http.Request) {
+    // Parse pagination params from query
+    pageStr := r.URL.Query().Get("page")
+    pageSizeStr := r.URL.Query().Get("page_size")
+
+
+	page, err := strconv.Atoi(pageStr)
+
+	pageSize, err := strconv.Atoi(pageSizeStr)
+
+    if page < 1 {
+        page = 1
+    }
+    if pageSize < 1 {
+        pageSize = 10
+    }
+
+    offset := (page - 1) * pageSize
+
+    // Count total records
+    var totalCount int
+    countQuery := `SELECT COUNT(*) FROM tblProducts p
+                   LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+                	`
+    err = prdRoutes.DB.QueryRow(countQuery).Scan(&totalCount)
+    if err != nil {
+        helpers.ErrorJSON(w, fmt.Errorf("failed to get count: %v", err), http.StatusInternalServerError)
+        return
+    }
+
+    totalPages := (totalCount + pageSize - 1) / pageSize
+	fmt.Println("total pages",totalPages)
+    // Main query with LIMIT/OFFSET
+    sqlQuery := `
+        SELECT p.Product_ID, p.Product_Name, p.Product_Description,
+               pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, ps.Size_ID,
+               ps.Size_Name, ps.Size_Description, ps.Variation_ID, ps.Variation_Price, ps.SKU, ps.UPC, ps.PRIMARY_IMAGE
+        FROM tblProducts p
+        LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+		LEFT JOIN tblProductSize ps ON ps.Variation_ID = pv.Variation_ID 
+        LIMIT ? OFFSET ?
+    `
+
+    rows, err := prdRoutes.DB.Query(sqlQuery, pageSize, offset)
+    if err != nil {
+        helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
+	// var products []ProductVariationPaginated = []ProductVariationPaginated{}
+    var productsMapForJoins map[int64]ProductPaginated = map[int64]ProductPaginated{}
+	dataSendBack := []ProductPaginated{}
+    for rows.Next() {
+        var product rowData
+
+        err := rows.Scan(
+            &product.ProductID, &product.ProductName, &product.ProductDescription,
+            &product.VariationID, &product.VariationName, &product.VariationDesc,
+            &product.SizeID,&product.SizeName, &product.SizeDesc, &product.VariationID, &product.SizeVariationPrice,&product.SKU, &product.UPC,&product.PrimaryImage,
+        )
+		if _,ok := productsMapForJoins[product.ProductID]; !ok{
+			productsMapForJoins[product.ProductID] =  ProductPaginated{
+				ProductID: product.ProductID,
+				ProductName: product.ProductName,
+				ProductDescription: product.ProductDescription,
+				Variations: map[int64]Variation{},
+			}
+		}
+		
+		if product.VariationID == nil || *product.VariationID == 0{
+				continue
+		}
+		if _, ok:= productsMapForJoins[product.ProductID].Variations[*product.VariationID]; !ok {
+		productsMapForJoins[product.ProductID].Variations[*product.VariationID] = Variation{
+				Name: product.VariationName,
+				Description: product.VariationDesc,
+				ProductSize: map[int64]ProductSize{},
+		}
+			
+		}
+		if product.SizeID == nil || *product.SizeID == 0 {
+			fmt.Println("product size doesn't exist doesn't exist, continue",product.VariationID)
+			continue
+		}
+		if _,ok := productsMapForJoins[product.ProductID].Variations[*product.VariationID].ProductSize[*product.SizeID]; !ok{
+			productsMapForJoins[product.ProductID].Variations[*product.VariationID].ProductSize[*product.SizeID] = ProductSize{
+				SizeID:product.SizeID,
+				SizeName:product.SizeName,
+				SizeDescription:product.SizeDesc,
+				VariationPrice: &product.SizeVariationPrice.Float64, 
+				SKU: product.SKU, 
+				UPC: product.UPC, 
+			}
+		}
+	
+		if err != nil {
+			helpers.ErrorJSON(w, fmt.Errorf("error scanning row: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		if err = rows.Err(); err != nil {
+			helpers.ErrorJSON(w, fmt.Errorf("error iterating rows: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+    
+	}
+	for _, v := range productsMapForJoins {
+		dataSendBack = append(dataSendBack, v)
+	}
+	sort.Slice(dataSendBack, func(i, j int) bool {
+		return dataSendBack[i].ProductID  < dataSendBack[j].ProductID
+	})
+	response := PaginatedResponse{
+        Data:       dataSendBack,
+        Page:       page,
+        PageSize:   pageSize,
+        TotalCount: totalCount,
+        TotalPages: totalPages,
+    }
+	helpers.WriteJSON(w, http.StatusOK, response)
+
+}
+
 
 
 
@@ -485,6 +681,45 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInPrimeCategoryViewEndPoint(w 
 	fmt.Println("Category Name:", category_name)
 	
 	helpers.WriteJSON(w,http.StatusAccepted,SendOffList)
+}
+
+
+
+func (prdRoutes *ProductRoutesTray) GetOneProductSizeEndPoint(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("hit GetOneProductSizeEndPoint")
+	productSizeID, err :=  strconv.Atoi(chi.URLParam(r,"SizeID"))
+	if err != nil{
+		fmt.Println("String to Int failed:", err)
+	}
+
+	row := prdRoutes.DB.QueryRow("SELECT Size_ID, Size_Name, Size_Description, Variation_ID, Variation_Price, SKU, UPC, Date_Created, Modified_Date FROM tblProductSize WHERE Size_ID = ?",productSizeID)
+
+	// row := prdRoutes.getOneVariationProductStment.QueryRow(productVariationID)
+	variationJSON := &ProductSize{}
+	
+	err = row.Scan(
+		&variationJSON.SizeID,
+		&variationJSON.SizeName, 
+		&variationJSON.SizeDescription, 
+		&variationJSON.VariationID,  
+		&variationJSON.VariationPrice,
+		&variationJSON.SKU,
+		&variationJSON.UPC,
+		&variationJSON.DateCreated,
+		&variationJSON.ModifiedDate,
+
+	)
+	if err == sql.ErrNoRows{
+		fmt.Println("Doesnt work:",err)
+		helpers.ErrorJSON(w, errors.New("could not get variation"),404)
+		return
+	}
+	if err != nil{
+		fmt.Println("scanning error:",err)
+	}
+	
+	helpers.WriteJSON(w,200,&variationJSON)
+
 }
 
 // func GetAllProductByCategoryID(w http.ResponseWriter, r *http.Request){

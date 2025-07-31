@@ -77,6 +77,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	digest.Get("/products",rProduct.GetAllProductsAndVariationsEndPoint)
 	digest.Get("/search/",rProduct.SearchProductsEndPoint)
 	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
+	digest.Post("/stripe/webhook/payment-confirmation", rCheckout.PaymentConfirmation)
 	// digest.Get("/products/{CategoryName}",rProduct.GetProductCategoryEndPointFinal)
 
 	// digest.Get("/categories/",r.GetAllCategories)
