@@ -140,7 +140,7 @@ func (routes *InventoryRoutesTray) GetLocationByParam(w http.ResponseWriter, r *
 	var locations []InventoryProductDetail
 	for rows.Next() {
 		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity,&loc.ProductID,&loc.LocationID,&loc.Description)
+		err := rows.Scan(&loc.InventoryID, &loc.Quantity,&loc.SizeID,&loc.LocationID,&loc.Description)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
