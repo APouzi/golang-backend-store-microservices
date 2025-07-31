@@ -176,11 +176,11 @@ func (adminProdRoutes *InventoryRoutesTray) CreateInventoryProductDetail(w http.
 
 	ProductID := chi.URLParam(r, "ProductID")
 	fmt.Println("productID", ProductID)
-	variation := InventoryProductDetail{}
-	helpers.ReadJSON(w,r, &variation)
+	inventory_product_detail := InventoryProductDetail{}
+	helpers.ReadJSON(w,r, &inventory_product_detail)
 	varitCrt := Confirmation{}
 		
-	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblInventoryProductDetail(product_id, quantity_at_location, location_id, description) VALUES(?,?,?,?)", variation.ProductID,variation.Quantity, variation.Description, variation.Description)
+	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblInventoryProductDetail(product_size_id, quantity_at_location, location_id, description) VALUES(?,?,?,?)", inventory_product_detail.SizeID,inventory_product_detail.Quantity, inventory_product_detail.Description, inventory_product_detail.Description)
 	if err != nil{
 		log.Println("insert into tblProductVariation failed")
 		log.Println(err)
