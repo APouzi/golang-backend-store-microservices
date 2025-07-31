@@ -16,12 +16,7 @@ services:
       MYSQL_DATABASE: 'database'
     networks:
       - pouzikov
-  # redis:
-  #   image: redis:latest
-  #   restart: always
-  #   command: redis-server --save 20 1 --loglevel warning --requirepass REDISPASS
-  #   ports:
-  #     - "6379:6379" 
+
   merchantmachine:
     build: MerchantMachine/
     ports:
@@ -72,7 +67,12 @@ services:
       - mysql
     networks:
     - pouzikov
-
+  # redis:
+  #   image: redis:latest
+  #   restart: always
+  #   command: redis-server --save 20 1 --loglevel warning --requirepass REDISPASS
+  #   ports:
+  #     - "6379:6379" 
 
 networks:
   pouzikov:
