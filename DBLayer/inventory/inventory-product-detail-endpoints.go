@@ -113,14 +113,14 @@ func (routes *InventoryRoutesTray) GetAllInventoryProductDetailsByID(w http.Resp
 
 func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http.ResponseWriter, r *http.Request) {
 	locationID := r.URL.Query().Get("location_id")
-	productID := r.URL.Query().Get("product_id")
+	productID := r.URL.Query().Get("product_size_id")
 	var query string
 	var queried_var string
 	if locationID != "" {
-		query = "SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail WHERE location_id = ?"
+		query = "SELECT inventory_id, quantity_at_location, product_size_id, location_id, description FROM tblInventoryProductDetail WHERE location_id = ?"
 		queried_var = locationID
 	}else if productID != "" {
-		query = "SELECT inventory_id, quantity_at_location, product_id, location_id, description FROM tblInventoryProductDetail WHERE product_id = ?"
+		query = "SELECT inventory_id, quantity_at_location, product_size_id, location_id, description FROM tblInventoryProductDetail WHERE product_size_id = ?"
 		queried_var = productID
 	}else{
 		http.Error(w,"No Parameter Found",http.StatusBadRequest)
@@ -142,16 +142,16 @@ func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http
 	}
 	defer rows.Close()
 
-	var locations []InventoryProductDetail
+	var inventory_product_details []InventoryProductDetail
 	for rows.Next() {
-		var loc InventoryProductDetail
-		err := rows.Scan(&loc.InventoryID, &loc.Quantity,&loc.ProductID,&loc.LocationID,&loc.Description)
+		var invprddet InventoryProductDetail
+		err := rows.Scan(&invprddet.InventoryID, &invprddet.Quantity,&invprddet.SizeID,&invprddet.LocationID,&invprddet.Description)
 		if err != nil {
 			http.Error(w, "Failed to parse result", http.StatusInternalServerError)
 			log.Println("Row scan error:", err)
 			return
 		}
-		locations = append(locations, loc)
+		inventory_product_details = append(inventory_product_details, invprddet)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -160,7 +160,7 @@ func (routes *InventoryRoutesTray) GetInventoryProductDetailFromParameter(w http
 		return
 	}
 
-	helpers.WriteJSON(w,http.StatusAccepted,locations)
+	helpers.WriteJSON(w,http.StatusAccepted,inventory_product_details)
 }
 
 
