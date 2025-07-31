@@ -20,10 +20,10 @@ CREATE TABLE IF NOT EXISTS tblLocation (
 CREATE TABLE IF NOT EXISTS tblInventoryProductDetail (
     inventory_id INT AUTO_INCREMENT PRIMARY KEY,
     quantity_at_location INT NOT NULL,
-    product_id INT NOT NULL,
+    product_size_id INT NOT NULL,
     location_id INT NOT NULL,
     description TEXT,
-    FOREIGN KEY (product_id) REFERENCES tblProductVariation(Variation_ID),
+    FOREIGN KEY (product_size_id) REFERENCES tblProductSize(Size_ID),
     FOREIGN KEY (location_id) REFERENCES tblLocation(location_id)
 );
 
