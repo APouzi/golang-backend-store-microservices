@@ -84,7 +84,7 @@ func(route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 			Currency:   stripe.String("usd"),
 			ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-				Name: stripe.String(ProdJSON.VariationName),
+				Name: stripe.String((*ProdJSON)[0].Product.ProductName),
 			},
 			UnitAmount: stripe.Int64(int64(math.Round(*ProdSizeJSON.VariationPrice * 100))),
 			},
@@ -107,6 +107,7 @@ func(route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http
 func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.Request){
 	payload, _ := io.ReadAll(r.Body)
 	fmt.Println("hello in payment confirm!")
+  event, err := webhook.ConstructEventWithOptions(payload, r.Header.Get("Stripe-Signature"), "", webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true,})
   if err != nil {
 	fmt.Println(err)
     http.Error(w, err.Error(), http.StatusBadRequest)
@@ -118,7 +119,7 @@ fmt.Println("hello in payment confirm! 2")
     fmt.Println("Hello—received checkout.session.completed")
     var session stripe.CheckoutSession
     json.Unmarshal(event.Data.Raw, &session)
-    fmt.Println("This is completed!", session)
+    fmt.Println("This is completed!", &session)	
 //   case "checkout.session.async_payment_succeeded":
 //     // optional async case
 // 	var session stripe.CheckoutSession
