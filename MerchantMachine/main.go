@@ -109,6 +109,7 @@ func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Clie
 	
 	checkout_config := checkout.Config{
 		STRIPE_KEY: os.Getenv("STRIPE_KEY"),
+		STRIPE_WEBHOOK_KEY: os.Getenv("STRIPE_WEBHOOK_KEY"),
 	}
 
 	//Pass the mux to routes to use.

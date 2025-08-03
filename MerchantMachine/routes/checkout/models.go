@@ -4,6 +4,7 @@ import "time"
 
 type Config struct{
 	STRIPE_KEY string
+    STRIPE_WEBHOOK_KEY string
 }
 
 

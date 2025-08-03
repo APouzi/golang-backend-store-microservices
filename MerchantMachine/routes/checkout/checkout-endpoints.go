@@ -109,7 +109,7 @@ func(route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http
 func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.Request){
 	payload, _ := io.ReadAll(r.Body)
 	fmt.Println("hello in payment confirm!")
-  event, err := webhook.ConstructEventWithOptions(payload, r.Header.Get("Stripe-Signature"), "", webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true,})
+  event, err := webhook.ConstructEventWithOptions(payload, r.Header.Get("Stripe-Signature"), route.config.STRIPE_WEBHOOK_KEY, webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true,})
   if err != nil {
 	fmt.Println(err)
     http.Error(w, err.Error(), http.StatusBadRequest)
