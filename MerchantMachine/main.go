@@ -12,6 +12,7 @@ import (
 
 	firebase "firebase.google.com/go"
 	"github.com/APouzi/MerchantMachinee/routes"
+	"github.com/APouzi/MerchantMachinee/routes/checkout"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -20,7 +21,6 @@ import (
 	"google.golang.org/api/option"
 )
 type Config struct{
-
 }
 
 func init() {
@@ -63,8 +63,8 @@ func main() {
 	// if TestInitCreateThenDelete(app.DB) == false{
 	// 	log.Fatal("Connection Test had failed")
 	// }
-	app := Config{
-	}
+	app := Config{}
+
 	fmt.Printf("Starting Store Backend on port %d \n", webport)
 	fbDB, err :=fireBaseInit()
 
@@ -107,10 +107,12 @@ func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Clie
 	mux.Use(middleware.Heartbeat("/ping"))
 
 	
-
+	checkout_config := checkout.Config{
+		STRIPE_KEY: os.Getenv("STRIPE_KEY"),
+	}
 
 	//Pass the mux to routes to use.
-	routes.RouteDigest(mux,firebase, stripeclient)
+	routes.RouteDigest(mux,firebase, stripeclient, checkout_config)
 	return mux
 }
 

@@ -23,11 +23,13 @@ func NewStripeClient() *stripe.Client {
 
 type CheckoutRoutes struct{
 	stripe *stripe.Client
+	config Config
 }
 
-func InstanceCheckoutRoutes(stripe *stripe.Client) *CheckoutRoutes {
+func InstanceCheckoutRoutes(stripe *stripe.Client, config Config) *CheckoutRoutes {
 	r := &CheckoutRoutes{
 		stripe: stripe,
+		config: config,
 	}
 	return r
 }
@@ -45,7 +47,7 @@ func(route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http
 	helpers.ReadJSON(w,r,&req)
 
 
-	stripe.Key = ""
+	stripe.Key = route.config.STRIPE_KEY 
 
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice([]string{

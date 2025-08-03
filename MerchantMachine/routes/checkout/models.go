@@ -1,6 +1,12 @@
 package checkout
 
 import "time"
+
+type Config struct{
+	STRIPE_KEY string
+}
+
+
 type ProductJSONRetrieve struct {
 	Product_ID          int    `json:"Product_ID"`
 	Product_Name        string `json:"Product_Name"`

@@ -10,13 +10,12 @@ import (
 )
 
 
-
-func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stripe.Client) *chi.Mux{
+func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stripe.Client, config checkout.Config) *chi.Mux{
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
 	rProduct := productendpoints.InstanceProductsRoutes()
 
-	rCheckout := checkout.InstanceCheckoutRoutes(stripeClient)
+	rCheckout := checkout.InstanceCheckoutRoutes(stripeClient, config)
 
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
