@@ -25,6 +25,8 @@ services:
       - dblayer
     networks:
       - pouzikov
+    env_file:
+    - ./MerchantMachine/.env
 
   adminmerchant:
     build: Admin/
@@ -43,6 +45,8 @@ services:
     - pouzikov
     depends_on:
       - merchantmachine
+    env_file:
+    - ./Customer-Representative-Manager/.env
 
   inventory-system-management:
     build: Inventory/
@@ -67,6 +71,8 @@ services:
       - mysql
     networks:
     - pouzikov
+    env_file:
+    - ./DBLayer/.env
   # redis:
   #   image: redis:latest
   #   restart: always
