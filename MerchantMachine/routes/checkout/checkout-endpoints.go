@@ -124,20 +124,54 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 fmt.Println("hello in payment confirm! 2")
   switch event.Type {
   case "checkout.session.completed":
-    fmt.Println("Hello—received checkout.session.completed")
+    fmt.Println("checkout.session.completed")
     var session stripe.CheckoutSession
     json.Unmarshal(event.Data.Raw, &session)
-    fmt.Println("This is completed!", &session)	
-//   case "checkout.session.async_payment_succeeded":
-//     // optional async case
-// 	var session stripe.CheckoutSession
-// 	fmt.Println("This is failed!", session)
-//     err := json.Unmarshal(event.Data.Raw, &session)
-//     if err != nil {
-//         // handle err
-// 	}
-//     // session = event.Data.Object.(*stripe.CheckoutSession)
-//     // handleCheckout(sess)
+    fmt.Println("This is completed!", &session.Metadata)	
+  if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+			fmt.Println("Error unmarshalling session:", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// 👇 Extract item IDs and quantities
+		inventoryMap := make(map[int64]int64) // map[SizeID]Quantity
+
+		for key, value := range session.Metadata {
+			if strings.HasPrefix(key, "itemsizeqty_"){
+				// Extract the item ID from the key: item_<id>_qty
+				idPart := strings.TrimPrefix(key, "itemsizeqty_")
+				if id, err := strconv.ParseInt(idPart, 10, 64); err == nil {
+					if qty, err := strconv.ParseInt(value, 10, 64); err == nil {
+						inventoryMap[id] = qty
+					} else {
+						fmt.Printf("⚠️ Skipping invalid quantity for %s: %s\n", key, value)
+					}
+				} else {
+					fmt.Printf("⚠️ Skipping invalid item ID for %s\n", key)
+				}
+			}
+		}
+
+		// ✅ Log extracted data
+		fmt.Println("✅ Inventory to fulfill:")
+		for sizeID, quantity := range inventoryMap {
+			fmt.Printf("  Size ID: %d → Quantity: %d\n", sizeID, quantity)
+			http.Get("http:")
+			// var ProdSizeJSON *ProductSize = &ProductSize{}
+			var InvProdJSON []InventoryProductDetail = []InventoryProductDetail{}
+			strsizeID := strconv.FormatInt(sizeID, 10)
+			if err != nil{
+				fmt.Println("oh no!")
+				return
+			}
+			GetProductInventoryDetailByID(strsizeID,&InvProdJSON,w)
+			new_quantity := InvProdJSON[0].Quantity - quantity
+			fmt.Println("old quantity is:",InvProdJSON[0].Quantity,"new quantity of the of the is:", new_quantity)
+			// TODO: Lookup SizeID in DB, decrement quantity
+			// err := route.inventoryService.DecrementInventory(sizeID, quantity)
+			// if err != nil { handle accordingly }
+		}
   default:
     log.Printf("Unhandled event: %s", event.Type)
   }
