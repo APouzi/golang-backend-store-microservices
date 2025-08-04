@@ -7,13 +7,14 @@
 - [ ] Implement Stripe Confirmation for payment processing.
 - [ ] Add Redis to cache Cart items and cart sessions.? Do we even need to use Redis? Can we use in memory cache? Maybe Phase 2
 - [ ] Organize DB layer endpoint into different files to be more organized.
-- [ ] Clean up the dockerfiles to be two stage builds for better performance, security and size.
+- [*] Clean up the dockerfiles to be two stage builds for better performance, security and size. (Huge improvements! Whooo!!)
 - [ ] Make sure search is working properly with database. Figure out if I need to add a full text index, other performance improvements. Phase one, we may just need to do simple searches based on names, maybe tags and what not.
 - [ ] Checkout Process:
+    - [ ] Get appropriate names for everything, into metadata
     - [ ] Completion of checkout process:
-       - [ ] Get Product details (Product and Variation) from DB layer.
-       - [ ] Get Inventory check for the checkout process.
-       - [ ] If inventory is not available, notify the user and do not proceed to finish payments.
+       - [*] Get Product details (Product and Variation) from DB layer.
+       - [*] Get Inventory check for the checkout process.
+       - [*] If inventory is not available, notify the user and do not proceed to finish payments.
        - [ ] Implement Strip confirmation for payment processing. Including Removing inventory from the database, sending email, updating user account with an order record (user can login to see orders progress, history and later maybe tracking?). Setup up local webhook testing.
        - [ ] Figure out the order summary process and 
 - [ ] Process Email:
@@ -27,6 +28,8 @@
     - [ ] Implement a system to keep track of order progress
 - [ ] Admin
 - [ ] Envrinment Variables handling, better!
+    -[*] Stripe
+    -[ ] Hosts
 
 
 ## Frontend Improvements:
