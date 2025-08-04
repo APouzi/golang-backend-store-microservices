@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
 	"github.com/stripe/stripe-go/v82"
@@ -83,6 +84,7 @@ func(route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http
 		}
 		
 		params.LineItems = append(params.LineItems, &stripe.CheckoutSessionLineItemParams{
+			
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 			Currency:   stripe.String("usd"),
 			ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
@@ -92,7 +94,11 @@ func(route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http
 			},
 			Quantity: stripe.Int64(item.Quantity),
 		})
+		params.PaymentIntentData = &stripe.CheckoutSessionPaymentIntentDataParams{}
+		params.PaymentIntentData.Metadata[fmt.Sprintf("itemsizeqty_%d", item.Size_ID)] = strconv.FormatInt(item.Quantity, 10)
 		}
+
+		
 
 	s, err := session.New(params)
 	if err != nil {
