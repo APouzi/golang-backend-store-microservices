@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/APouzi/DBLayer/helpers"
 	"github.com/go-chi/chi/v5"
@@ -372,4 +374,79 @@ func (adminProdRoutes *InventoryRoutesTray) DeleteLocation(w http.ResponseWriter
 //     \/_____/\ \ \/  \/__,_ /\/__/\/_/\/__/\/____/
 //              \ \_\                               
 //               \/_/
+
+func (adminProdRoutes *InventoryRoutesTray) UpdateInventoryShelfDetail(w http.ResponseWriter, r *http.Request) {
+    // Use a consistent path param name, e.g. "inventory-shelf-id"
+    inventoryShelfID := chi.URLParam(r, "inventory-id")
+    if inventoryShelfID == "" {
+        helpers.ErrorJSON(w, errors.New("missing inventory-id parameter"), http.StatusBadRequest)
+        return
+    }
+
+    var payload InventoryShelfDetail
+
+    // Decode into a POINTER and return on error
+    if err := helpers.ReadJSON(w, r, &payload); err != nil {
+        helpers.ErrorJSON(w, errors.New("invalid JSON payload"), http.StatusBadRequest)
+        return
+    }
+
+    // Build SET dynamically; presence in JSON (non-nil) => update
+    setClauses := []string{}
+    args := []interface{}{}
+
+    if payload.QuantityAtShelf != nil {
+        setClauses = append(setClauses, "quantity_at_shelf = ?")
+        args = append(args, *payload.QuantityAtShelf)
+    }
+    if payload.ProductID != nil {
+        setClauses = append(setClauses, "product_id = ?")
+        args = append(args, *payload.ProductID)
+    }
+    if payload.Shelf != nil {
+        setClauses = append(setClauses, "shelf = ?")
+        args = append(args, *payload.Shelf)
+    }
+
+    if len(setClauses) == 0 {
+        helpers.ErrorJSON(w, errors.New("no fields provided to update"), http.StatusBadRequest)
+        return
+    }
+
+    idInt, err := strconv.ParseInt(inventoryShelfID, 10, 64)
+    if err != nil {
+        helpers.ErrorJSON(w, errors.New("invalid inventory-shelf-id format"), http.StatusBadRequest)
+        return
+    }
+
+    // WHERE param last
+    args = append(args, idInt)
+
+    query := fmt.Sprintf(
+        "UPDATE tblInventoryShelfDetail SET %s WHERE inventory_shelf_id = ?",
+        strings.Join(setClauses, ", "),
+    )
+    fmt.Println("Query to be executed:", query, "args:", args)
+
+    result, err := adminProdRoutes.DB.Exec(query, args...)
+    if err != nil {
+        log.Println("update failed:", err)
+        helpers.ErrorJSON(w, errors.New("update failed"), http.StatusInternalServerError)
+        return
+    }
+
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        log.Println("RowsAffected failed:", err)
+        helpers.ErrorJSON(w, errors.New("could not determine update result"), http.StatusInternalServerError)
+        return
+    }
+    if rowsAffected == 0 {
+        helpers.ErrorJSON(w, errors.New("no record found to update"), http.StatusNotFound)
+        return
+    }
+
+    helpers.WriteJSON(w, http.StatusOK, Confirmation{Createdid: idInt})
+}
+
 
