@@ -29,11 +29,11 @@ type InventoryProductDetail struct {
 
 
 type InventoryShelfDetail struct {
-    InventoryShelfID  int    `db:"inventory_shelf_id" json:"inventory_shelf_id"`
-    InventoryID       int    `db:"inventory_id" json:"inventory_id"`
-    QuantityAtShelf   int    `db:"quantity_at_shelf" json:"quantity_at_shelf"`
-    ProductID         int    `db:"product_id" json:"product_id"`
-    Shelf             string `db:"shelf" json:"shelf"`
+	InventoryShelfID  *int    `db:"inventory_shelf_id" json:"inventory_shelf_id,omitempty"`
+	InventoryID       *int    `db:"inventory_id" json:"inventory_id,omitempty"`
+	QuantityAtShelf   *int    `db:"quantity_at_shelf" json:"quantity_at_shelf,omitempty"`
+	ProductID         *int    `db:"product_id" json:"product_id,omitempty"`
+	Shelf             *string `db:"shelf" json:"shelf,omitempty"`
 }
 
 

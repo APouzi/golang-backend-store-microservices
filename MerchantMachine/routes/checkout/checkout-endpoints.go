@@ -36,6 +36,106 @@ func InstanceCheckoutRoutes(stripe *stripe.Client, config Config) *CheckoutRoute
 }
 
 
+
+
+func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Creating checkout session...")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req FrontendRequest
+	if err := helpers.ReadJSON(w, r, &req); err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("invalid request body: %w", err), http.StatusBadRequest)
+		return
+	}
+	if len(req.Items) == 0 {
+		helpers.ErrorJSON(w, errors.New("no items"), http.StatusBadRequest)
+		return
+	}
+
+	stripe.Key = route.config.STRIPE_KEY
+
+	params := &stripe.CheckoutSessionParams{
+		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:         stripe.String("http://localhost:4200/success"),
+		CancelURL:          stripe.String("http://localhost:4200/canceledorder"),
+		LineItems:          []*stripe.CheckoutSessionLineItemParams{},
+		// Initialize PaymentIntentData once, with a non-nil Metadata map
+		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
+			Metadata: map[string]string{},
+		},
+	}
+
+	fmt.Println("req!!!!", req)
+
+	// Reusable holders
+	ProdJSON := &[]ProductResponse{}
+	ProdSizeJSON := &ProductSize{}
+	var InvProdJSON []InventoryProductDetail
+
+	for _, item := range req.Items {
+		if item.Quantity <= 0 {
+			helpers.ErrorJSON(w, fmt.Errorf("invalid quantity for size_id %d", item.Size_ID), http.StatusBadRequest)
+			return
+		}
+
+		// fetch size, product, and inventory
+		GetProductSizeByID(strconv.FormatInt(item.Size_ID, 10), ProdSizeJSON, w)
+		if ProdSizeJSON.VariationID == nil {
+			helpers.ErrorJSON(w, fmt.Errorf("size %d has no variation", item.Size_ID), http.StatusBadRequest)
+			return
+		}
+
+		GetProductVariationByID(strconv.FormatInt(*ProdSizeJSON.VariationID, 10), ProdJSON, w)
+		if len(*ProdJSON) == 0 {
+			helpers.ErrorJSON(w, fmt.Errorf("variation %d not found", *ProdSizeJSON.VariationID), http.StatusBadRequest)
+			return
+		}
+
+		InvProdJSON = InvProdJSON[:0] // reuse slice
+		GetProductInventoryDetailByID(strconv.FormatInt(item.Size_ID, 10), &InvProdJSON, w)
+
+		var quantityCount int64
+		for _, v := range InvProdJSON {
+			quantityCount += v.Quantity
+		}
+		if quantityCount <= 0 || quantityCount < item.Quantity {
+			helpers.ErrorJSON(w, errors.New("insufficient inventory"), http.StatusBadRequest)
+			return
+		}
+
+		// Add line item
+		params.LineItems = append(params.LineItems, &stripe.CheckoutSessionLineItemParams{
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency: stripe.String("usd"),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String((*ProdJSON)[0].Product.ProductName),
+				},
+				UnitAmount: stripe.Int64(int64(math.Round(*ProdSizeJSON.VariationPrice * 100))), // in cents
+			},
+			Quantity: stripe.Int64(item.Quantity),
+		})
+
+		// Safe now: Metadata is initialized
+		key := fmt.Sprintf("itemsizeqty_%d", item.Size_ID)
+		params.PaymentIntentData.Metadata[key] = strconv.FormatInt(item.Quantity, 10)
+	}
+
+	s, err := session.New(params)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating checkout session: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	helpers.WriteJSON(w, http.StatusOK, map[string]string{"id": s.ID})
+}
+
+
+
 func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.Request){
 	payload, _ := io.ReadAll(r.Body)
 	fmt.Println("hello in payment confirm!")
@@ -100,78 +200,4 @@ fmt.Println("hello in payment confirm! 2")
   }
 
   w.WriteHeader(http.StatusOK)
-}
-
-
-func(route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	req := FrontendRequest{}
-	helpers.ReadJSON(w,r,&req)
-
-
-	stripe.Key = route.config.STRIPE_KEY 
-
-	params := &stripe.CheckoutSessionParams{
-		PaymentMethodTypes: stripe.StringSlice([]string{
-			"card",
-		}),
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String("http://localhost:4200/success"), // URL to redirect to on success
-		CancelURL:  stripe.String("http://localhost:4200/canceledorder"),  // URL to redirect to on cancellation
-		LineItems:          []*stripe.CheckoutSessionLineItemParams{},
-	}
-
-	var ProdJSON *[]ProductResponse = &[]ProductResponse{}
-	var ProdSizeJSON *ProductSize = &ProductSize{}
-	var InvProdJSON []InventoryProductDetail = []InventoryProductDetail{}
-
-
-
-	// Dynamically create line items from the request
-	fmt.Println("req!!!!",req)
-	for _, item := range req.Items {
-		GetProductSizeByID(strconv.FormatInt(item.Size_ID,10), ProdSizeJSON, w)
-		GetProductVariationByID(strconv.FormatInt(*ProdSizeJSON.VariationID,10), ProdJSON, w)
-		GetProductInventoryDetailByID(strconv.FormatInt(item.Size_ID,10), &InvProdJSON, w)
-		var quantityCount int64 = 0
-		for _, val := range InvProdJSON {
-			quantityCount += val.Quantity
-		} 
-		
-		if quantityCount < item.Quantity || quantityCount == 0{
-			// errorMsg := fmt.Sprintf("Not enough stock for %s. Only %d left.", *InvProdJSON.Produc, quantityCount)
-			helpers.ErrorJSON(w, errors.New("insufficient inventory"), http.StatusBadRequest)
-			return
-		}
-		
-		params.LineItems = append(params.LineItems, &stripe.CheckoutSessionLineItemParams{
-			
-			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-			Currency:   stripe.String("usd"),
-			ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-				Name: stripe.String((*ProdJSON)[0].Product.ProductName),
-			},
-			UnitAmount: stripe.Int64(int64(math.Round(*ProdSizeJSON.VariationPrice * 100))),
-			},
-			Quantity: stripe.Int64(item.Quantity),
-		})
-		params.PaymentIntentData = &stripe.CheckoutSessionPaymentIntentDataParams{}
-		params.PaymentIntentData.Metadata[fmt.Sprintf("itemsizeqty_%d", item.Size_ID)] = strconv.FormatInt(item.Quantity, 10)
-		}
-
-		
-
-	s, err := session.New(params)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating checkout session: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Return the session ID to the frontend
-	w.Header().Set("Content-Type", "application/json")
-	helpers.WriteJSON(w,200,map[string]string{"id": s.ID})
 }
