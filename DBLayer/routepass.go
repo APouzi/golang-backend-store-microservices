@@ -140,6 +140,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	digest.Get("/inventory/inventory-location-transfers/",rInventory.GetLocationTransfersByParam)
 	digest.Get("/inventory/inventory-location-transfers/{transfers-id}",rInventory.GetInventoryLocationTransfersById)
 	digest.Post("/inventory/inventory-product-details",rInventory.CreateInventoryProductDetail)
-	digest.Patch("/inventory/inventory-product-details/{inventory-id}",rInventory.UpdateInventoryShelfDetail)
+	digest.Patch("/inventory/inventory-product-details/{inventory-id}",rInventory.UpdateInventoryProductDetail)
+	digest.Patch("/inventory/inventory-shelf-details/{inventory-shelf-id}",rInventory.UpdateInventoryShelfDetail)
 	return digest
 }
