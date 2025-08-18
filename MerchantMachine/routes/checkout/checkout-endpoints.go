@@ -188,9 +188,14 @@ fmt.Println("hello in payment confirm! 2")
 				fmt.Println("oh no!")
 				return
 			}
-			GetProductInventoryDetailByID(strsizeID,&InvProdJSON,w)
+			GetProductInventoryDetailByID(strsizeID, &InvProdJSON, w)
+			if len(InvProdJSON) == 0 {
+				fmt.Printf("No inventory found for SizeID %s\n", strsizeID)
+				continue
+			}
 			new_quantity := InvProdJSON[0].Quantity - quantity
-			fmt.Println("old quantity is:",InvProdJSON[0].Quantity,"new quantity of the of the is:", new_quantity)
+			fmt.Println("old quantity is:", InvProdJSON[0].Quantity, "new quantity of the of the is:", new_quantity)
+			UpdateInventoryShelfDetailQuantity(InvProdJSON[0].InventoryID, new_quantity, w)
 			// TODO: Lookup SizeID in DB, decrement quantity
 			// err := route.inventoryService.DecrementInventory(sizeID, quantity)
 			// if err != nil { handle accordingly }

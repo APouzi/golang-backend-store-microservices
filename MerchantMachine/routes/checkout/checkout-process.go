@@ -1,6 +1,7 @@
 package checkout
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -84,3 +85,37 @@ func GetProductInventoryDetailByID(prodID string, InvProdJSON *[]InventoryProduc
 		fmt.Println("failed to pull product:", err)
 	}
 }
+
+
+func UpdateInventoryShelfDetailQuantity(shelfID int64, newQuantity int64, w http.ResponseWriter) {
+	url := fmt.Sprintf("http://dblayer:8080/inventory/inventory-product-details/%d", shelfID)
+	fmt.Println("Updating inventory shelf detail at URL:", url)
+	qur := QuantityUpdateResponse{
+		Quantity: newQuantity,
+	}
+	jsonData, err := json.Marshal(qur)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 500)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to update inventory shelf detail: %s", resp.Status), resp.StatusCode)
+		return
+	}
+}	
