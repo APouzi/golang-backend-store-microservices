@@ -65,6 +65,10 @@ type InventoryProductDetail struct {
     Description string `json:"description,omitempty" db:"description"` // TEXT (nullable)
 }
 
+type QuantityUpdateResponse struct {
+    Quantity    int64 `json:"quantity"`
+}
+
 
 type FrontendRequest struct {
 	Items []struct {
@@ -82,7 +86,6 @@ type ProductSize struct {
     VariationPrice *float64    `db:"Variation_Price" json:"variation_price"`
     SKU            *string    `db:"SKU,omitempty" json:"sku,omitempty"`
     UPC            *string    `db:"UPC,omitempty" json:"upc,omitempty"`
-         *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
     DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
     ModifiedDate   *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
 }
