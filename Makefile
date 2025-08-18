@@ -25,13 +25,11 @@ trigger-meta:
 
 trigger-meta-2:
 	stripe trigger checkout.session.completed \
-		--add checkout_session:metadata.itemsizeqty_101=2 \
-		--add checkout_session:metadata.itemsizeqty_102=1 \
-		--add checkout_session:metadata.itemsizeqty_103=5 \
-		--add checkout_session:metadata.itemsizeqty_104=3 \
-		--add checkout_session:metadata.itemsizeqty_105=4 \
-		--add checkout_session:metadata.itemsizeqty_106=2 \
-		--add checkout_session:metadata.itemsizeqty_107=1 \
-		--add checkout_session:metadata.itemsizeqty_108=6 \
-		--add checkout_session:metadata.itemsizeqty_109=2 \
-		--add checkout_session:metadata.itemsizeqty_110=8
+		--add checkout_session:metadata.itemsizeqty_1=2 \
+		--add checkout_session:metadata.itemsizeqty_2=1 \
+		--add checkout_session:metadata.itemsizeqty_3=5 \
+		--add checkout_session:metadata.itemsizeqty_4=3 \
+		--add checkout_session:metadata.itemsizeqty_5=4 \
+		--add checkout_session:metadata.itemsizeqty_6=2 \
+		--add checkout_session:metadata.itemsizeqty_7=1 \
+		--add checkout_session:metadata.itemsizeqty_8=6 \
