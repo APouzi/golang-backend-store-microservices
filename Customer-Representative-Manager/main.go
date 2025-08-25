@@ -72,8 +72,9 @@ func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Conf
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   app.GetAllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Link"},
+		AllowedHeaders:   []string{"Link","Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
+		ExposedHeaders:   []string{"Link"},
 		MaxAge:           301,
 	}))
 	// Test if this is working, maybe for microservice
