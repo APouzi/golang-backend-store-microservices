@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
 	"github.com/stripe/stripe-go/v82"
@@ -123,6 +124,8 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 		key := fmt.Sprintf("itemsizeqty_%d", item.Size_ID)
 		params.PaymentIntentData.Metadata[key] = strconv.FormatInt(item.Quantity, 10)
 	}
+	fmt.Printf("Stripe Checkout Session Params: %+v\n", params)
+	
 
 	s, err := session.New(params)
 	if err != nil {
@@ -138,27 +141,21 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 
 func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.Request){
 	payload, _ := io.ReadAll(r.Body)
-	fmt.Println("hello in payment confirm!")
   event, err := webhook.ConstructEventWithOptions(payload, r.Header.Get("Stripe-Signature"), route.config.STRIPE_WEBHOOK_KEY, webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true,})
   if err != nil {
 	fmt.Println(err)
     http.Error(w, err.Error(), http.StatusBadRequest)
     return
   }
-fmt.Println("hello in payment confirm! 2")
   switch event.Type {
   case "checkout.session.completed":
-    fmt.Println("checkout.session.completed")
     var session stripe.CheckoutSession
     json.Unmarshal(event.Data.Raw, &session)
-    fmt.Println("This is completed!", &session.Metadata)	
   if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
-			fmt.Println("Error unmarshalling session:", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// 👇 Extract item IDs and quantities
 		inventoryMap := make(map[int64]int64) // map[SizeID]Quantity
 
 		for key, value := range session.Metadata {
@@ -176,12 +173,10 @@ fmt.Println("hello in payment confirm! 2")
 				}
 			}
 		}
-
- 		fmt.Println("✅ Inventory to fulfill:")
+		// productsOrdered := []OrderLineItem{}
 		for sizeID, quantity := range inventoryMap {
 			fmt.Printf("  Size ID: %d → Quantity: %d\n", sizeID, quantity)
 			http.Get("http:")
-			// var ProdSizeJSON *ProductSize = &ProductSize{}
 			var InvProdJSON []InventoryProductDetail = []InventoryProductDetail{}
 			strsizeID := strconv.FormatInt(sizeID, 10)
 			if err != nil{
@@ -196,10 +191,53 @@ fmt.Println("hello in payment confirm! 2")
 			new_quantity := InvProdJSON[0].Quantity - quantity
 			fmt.Println("old quantity is:", InvProdJSON[0].Quantity, "new quantity of the of the is:", new_quantity)
 			UpdateInventoryShelfDetailQuantity(InvProdJSON[0].InventoryID, new_quantity, w)
-			// TODO: Lookup SizeID in DB, decrement quantity
-			// err := route.inventoryService.DecrementInventory(sizeID, quantity)
-			// if err != nil { handle accordingly }
+			// Send to the order service
+		
+		
+			// productsOrdered = append(productsOrdered, OrderLineItem{
+			// 	Size_ID:  sizeID,
+			// 	Quantity: quantity,
+			// 	UnitPrice: InvProdJSON[0].ProductID,
+			// })
+
 		}
+		var cust CustomerInfo
+		if session.CustomerDetails != nil {
+			cust.Email = session.CustomerDetails.Email
+			cust.Name = session.CustomerDetails.Name
+
+			if session.CustomerDetails.Address != nil {
+				cust.BillingAddress = &Address{
+					Line1:      session.CustomerDetails.Address.Line1,
+					Line2:      session.CustomerDetails.Address.Line2,
+					City:       session.CustomerDetails.Address.City,
+					State:      session.CustomerDetails.Address.State,
+					PostalCode: session.CustomerDetails.Address.PostalCode,
+					Country:    session.CustomerDetails.Address.Country,
+				}
+			}
+		}
+
+		// ---- Extract Order fields ----
+		paymentIntentID := ""
+		if session.PaymentIntent != nil {
+			// If not expanded, Stripe still fills the ID field.
+			paymentIntentID = session.PaymentIntent.ID
+		}
+
+		order := Order{
+			StripeSessionID:       session.ID,
+			PaymentIntentID: paymentIntentID,
+			Status:   string(session.PaymentStatus),
+			Currency:        string(session.Currency), // Currency is a stripe.Currency type (alias of string)
+			TotalAmount:     session.AmountTotal,
+			CreatedAt:       time.Unix(session.Created, 0),
+			// CustomerName:        cust,
+			LineItems:       []OrderLineItem{},
+		}
+
+
+		fmt.Println("order for:",order)
   default:
     log.Printf("Unhandled event: %s", event.Type)
   }

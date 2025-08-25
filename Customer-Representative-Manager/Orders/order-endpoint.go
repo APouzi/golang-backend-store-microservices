@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
 	"github.com/jung-kurt/gofpdf"
 )
 
@@ -50,10 +51,12 @@ func OrderHandler(w http.ResponseWriter, r *http.Request){
 	addOrderSummary(pdf)
 	addFooter(pdf)
 
-	err := pdf.OutputFileAndClose("order_summary.pdf")
-	if err != nil {
-		panic(err)
-	}
+	w.Header().Set("Content-Type", "application/pdf")
+    w.Header().Set("Content-Disposition", `inline; filename="order_summary.pdf"`)
+    if err := pdf.Output(w); err != nil {
+        http.Error(w, "failed to create pdf", http.StatusInternalServerError)
+        return
+    }
 }
 
 func addHeader(pdf *gofpdf.Fpdf) {
