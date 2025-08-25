@@ -52,8 +52,6 @@ func fireBaseInit() (*firebase.App, error){
 
 func main() {
 	const webport = 8000
-
-	// flags to initailize this
 	var initializeDB, initailizeView string
 
 	flag.StringVar(&initializeDB, "initdb", "", "Initalize Database")
@@ -99,7 +97,7 @@ func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Clie
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   app.GetAllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Link","Content-Type","Accept"},
+		AllowedHeaders:   []string{"Link","Content-Type","Accept","Accept", "Authorization", "X-CSRF-Token"},
 		AllowCredentials: true,
 		MaxAge:           301,
 	}))
