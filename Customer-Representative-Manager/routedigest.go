@@ -8,6 +8,7 @@ import (
 func RouteDigest(digest *chi.Mux) *chi.Mux {
 
 	digest.Post("/pdf",orders.OrderHandler)
+	digest.Post("/create-summary-order",orders.CreateOrderSummaryRecord)
 
 	return digest
 }
