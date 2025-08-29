@@ -5,6 +5,7 @@ import (
 
 	admin "github.com/APouzi/DBLayer/admin"
 	inventory "github.com/APouzi/DBLayer/inventory"
+	"github.com/APouzi/DBLayer/orders"
 	products "github.com/APouzi/DBLayer/products"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -22,6 +23,8 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
 	rAdmin := admin.GetProductRouteInstance(dbInstance)
+
+	rOrders := orders.GetOrderRoutesTrayInstance(dbInstance)
 
 	// AuthMiddleWare := authorization.InjectDBRef()
 
@@ -120,13 +123,10 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 	// digest.Get("/tables",rAdmin.GetAllTables)
 
-//  __  .__   __. ____    ____  _______ .__   __. .___________.  ______   .______     ____    ____    .______        ______    __    __  .___________. _______     _______.
-// |  | |  \ |  | \   \  /   / |   ____||  \ |  | |           | /  __  \  |   _  \    \   \  /   /    |   _  \      /  __  \  |  |  |  | |           ||   ____|   /       |
-// |  | |   \|  |  \   \/   /  |  |__   |   \|  | `---|  |----`|  |  |  | |  |_)  |    \   \/   /     |  |_)  |    |  |  |  | |  |  |  | `---|  |----`|  |__     |   (----`
-// |  | |  . `  |   \      /   |   __|  |  . `  |     |  |     |  |  |  | |      /      \_    _/      |      /     |  |  |  | |  |  |  |     |  |     |   __|     \   \    
-// |  | |  |\   |    \    /    |  |____ |  |\   |     |  |     |  `--'  | |  |\  \----.   |  |        |  |\  \----.|  `--'  | |  `--'  |     |  |     |  |____.----)   |   
-// |__| |__| \__|     \__/     |_______||__| \__|     |__|      \______/  | _| `._____|   |__|        | _| `._____| \______/   \______/      |__|     |_______|_______/    
-//                                                                                                                                                                                                         
+
+	//=====================
+	//Inventory Routes
+	//=====================
 	digest.Get("/inventory/locations",rInventory.GetAllLocations)
 	digest.Get("/inventory/locations/",rInventory.GetLocationByParam)
 	digest.Get("/inventory/locations/{location-id}",rInventory.GetLocationByID)
@@ -142,5 +142,17 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	digest.Post("/inventory/inventory-product-details",rInventory.CreateInventoryProductDetail)
 	digest.Patch("/inventory/inventory-product-details/{inventory-id}",rInventory.UpdateInventoryProductDetail)
 	digest.Patch("/inventory/inventory-shelf-details/{inventory-shelf-id}",rInventory.UpdateInventoryShelfDetail)
+
+
+
+
+	//=====================
+	//Order Routes
+	//=====================
+
+	digest.Post("/summary-order",rOrders.CreateOrderRecord)
+	digest.Post("/order-item-details",rOrders.CreateOrderItemRecord)
+	digest.Post("/payment",rOrders.CreatePayment)
+	digest.Post("/refund",rOrders.CreateRefund)
 	return digest
 }
