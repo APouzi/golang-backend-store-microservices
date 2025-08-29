@@ -265,3 +265,33 @@ func (h *OrderRoutesTray) GetPayment(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(p)
 }
 
+
+func (h *OrderRoutesTray) CreateRefund(w http.ResponseWriter, r *http.Request) {
+	var ref Refund
+	if err := json.NewDecoder(r.Body).Decode(&ref); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	const q = `
+	INSERT INTO refunds
+	  (payment_id, amount_cents, reason, provider_refund_id)
+	VALUES (?,?,?,?)`
+
+	res, err := h.DB.Exec(
+		q,
+		ref.PaymentID, ref.AmountCents, ref.Reason, ref.ProviderRefundID,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id, _ := res.LastInsertId()
+	ref.RefundID = uint64(id)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(ref)
+}
+
