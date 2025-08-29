@@ -234,3 +234,34 @@ func (h *OrderRoutesTray) CreatePayment(w http.ResponseWriter, r *http.Request) 
 	_ = json.NewEncoder(w).Encode(p)
 }
 
+func (h *OrderRoutesTray) GetPayment(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "paymentID")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	const q = `
+	SELECT payment_id, order_id, provider, provider_payment_id, method_brand, last4,
+	       status, amount_cents, currency, raw_response, created_at
+	FROM payments WHERE payment_id = ?`
+
+	var p Payment
+	if err := h.DB.QueryRow(q, id).Scan(
+		&p.PaymentID, &p.OrderID, &p.Provider, &p.ProviderPaymentID,
+		&p.MethodBrand, &p.Last4, &p.Status, &p.AmountCents,
+		&p.Currency, &p.RawResponse, &p.CreatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(p)
+}
+
