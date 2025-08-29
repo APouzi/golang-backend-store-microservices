@@ -1,6 +1,10 @@
 package checkout
 
-import "time"
+import (
+	"time"
+
+	"github.com/stripe/stripe-go/v82"
+)
 
 type Config struct{
 	STRIPE_KEY string
@@ -88,4 +92,74 @@ type ProductSize struct {
     UPC            *string    `db:"UPC,omitempty" json:"upc,omitempty"`
     DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
     ModifiedDate   *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
+}
+
+
+type Address struct {
+	Line1      string `json:"line1"`
+	Line2      string `json:"line2,omitempty"`
+	City       string `json:"city"`
+	State      string `json:"state"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
+}
+
+type CustomerInfo struct {
+	Email          string   `json:"email"`
+	Name           string   `json:"name"`
+	BillingAddress *Address `json:"billing_address,omitempty"`
+}
+
+type OrderInfo struct {
+	SessionID       string                                 `json:"session_id"`
+	PaymentIntentID string                                 `json:"payment_intent_id"`
+	PaymentStatus   stripe.CheckoutSessionPaymentStatus     `json:"payment_status"`
+	Currency        string                                 `json:"currency"`
+	AmountTotal     int64                                  `json:"amount_total"`
+	CreatedAt       time.Time                              `json:"created_at"`
+	Customer        CustomerInfo                           `json:"customer"`
+}
+
+type Order struct {
+    ID              string    // internal order ID
+    StripeSessionID string
+    PaymentIntentID string
+    CustomerEmail   string
+    CustomerName    string
+    BillingAddress  string
+    ShippingAddress string
+    TotalAmount     int64
+    Currency        string
+    Status          string
+    CreatedAt       time.Time
+    LineItems       []OrderLineItem
+}
+
+type OrderLineItem struct {
+    ProductID  int64
+    ProductSizeID int64
+    VariationID int64
+    Quantity   int64
+    UnitPrice  int64
+}
+
+type AddressInput struct {
+	FullName   *string `json:"full_name,omitempty"`
+	Line1      string  `json:"line1"`
+	Line2      *string `json:"line2,omitempty"`
+	City       string  `json:"city"`
+	State      string  `json:"state"` // maps to DB column "region"
+	PostalCode string  `json:"postal_code"`
+	Country    string  `json:"country"` // ISO-3166-1 alpha-2
+	Phone      *string `json:"phone,omitempty"`
+}
+
+type OrderItemInput struct {
+	ProductID       *uint64               `json:"product_id,omitempty"`
+	SKU             *string               `json:"sku,omitempty"`
+	Title           string                `json:"title"`
+	Variation       map[string]any        `json:"variation,omitempty"`
+	Qty             int                   `json:"qty"`
+	UnitPriceCents  int64                 `json:"unit_price_cents"`
+	// Currency is taken from the order; include here only if you truly need per-line currency.
 }
