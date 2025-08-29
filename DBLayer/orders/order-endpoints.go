@@ -201,3 +201,36 @@ func (h *OrderRoutesTray) CreateOrderItemRecord(w http.ResponseWriter, r *http.R
 	_ = json.NewEncoder(w).Encode(in)
 }
 
+
+
+func (h *OrderRoutesTray) CreatePayment(w http.ResponseWriter, r *http.Request) {
+	var p Payment
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	const q = `
+	INSERT INTO payments
+	  (order_id, provider, provider_payment_id, method_brand, last4,
+	   status, amount_cents, currency, raw_response)
+	VALUES (?,?,?,?,?,?,?,?,?)`
+
+	res, err := h.DB.Exec(
+		q,
+		p.OrderID, p.Provider, p.ProviderPaymentID, p.MethodBrand, p.Last4,
+		p.Status, p.AmountCents, p.Currency, p.RawResponse,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id, _ := res.LastInsertId()
+	p.PaymentID = uint64(id)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(p)
+}
+
