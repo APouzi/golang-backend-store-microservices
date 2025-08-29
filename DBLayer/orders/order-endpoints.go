@@ -295,3 +295,33 @@ func (h *OrderRoutesTray) CreateRefund(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(ref)
 }
 
+func (h *OrderRoutesTray) GetRefund(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "refundID")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	const q = `
+	SELECT refund_id, payment_id, amount_cents, reason, provider_refund_id, created_at
+	FROM refunds WHERE refund_id = ?`
+
+	var ref Refund
+	if err := h.DB.QueryRow(q, id).Scan(
+		&ref.RefundID, &ref.PaymentID, &ref.AmountCents,
+		&ref.Reason, &ref.ProviderRefundID, &ref.CreatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(ref)
+}
+
+
