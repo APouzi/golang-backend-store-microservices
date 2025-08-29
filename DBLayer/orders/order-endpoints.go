@@ -139,3 +139,65 @@ func nullableString(p *string) any {
 	return *p
 }
 
+func (h *OrderRoutesTray) CreateOrderItemRecord(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var in OrderItem
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Minimal guards (kept simple; DB has FK + CHECK)
+	if in.OrderID == 0 || in.Title == "" || in.Qty <= 0 || len(in.Currency) != 3 {
+		http.Error(w, "missing/invalid required fields", http.StatusBadRequest)
+		return
+	}
+	if len(in.Variation) == 0 {
+		// allow empty object if caller omitted
+		in.Variation = json.RawMessage(`{}`)
+	}
+
+	const q = `
+	INSERT INTO order_items
+	  (order_id, product_id, sku, title, variation,
+	   qty, currency, unit_price_cents, line_subtotal_cents,
+	   line_discount_cents, line_tax_cents, line_total_cents)
+	VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+
+	res, err := h.DB.Exec(
+		q,
+		in.OrderID,
+		in.ProductID,
+		in.SKU,
+		in.Title,
+		string(in.Variation), // pass JSON as string
+		in.Qty,
+		in.Currency,
+		in.UnitPriceCents,
+		in.LineSubtotalCents,
+		in.LineDiscountCents,
+		in.LineTaxCents,
+		in.LineTotalCents,
+	)
+	if err != nil {
+		// Surface FK/constraint issues plainly for now
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		http.Error(w, "failed to fetch insert id", http.StatusInternalServerError)
+		return
+	}
+	in.OrderItemID = uint64(id)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(in)
+}
+
