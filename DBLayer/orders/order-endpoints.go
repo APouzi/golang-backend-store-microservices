@@ -140,13 +140,17 @@ func nullableString(p *string) any {
 }
 
 func (h *OrderRoutesTray) CreateOrderItemRecord(w http.ResponseWriter, r *http.Request) {
+
+
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var in OrderItem
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+	err := helpers.ReadJSON(w, r, &in)
+	if err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -199,6 +203,82 @@ func (h *OrderRoutesTray) CreateOrderItemRecord(w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(in)
+}
+
+
+func (h *OrderRoutesTray) CreateOrderItemRecordsBulk(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var orderItems []OrderItem
+	err := helpers.ReadJSON(w, r, &orderItems)
+	if err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	
+	OrderItemsBulkReturn := OrderItemsBulkReturn{
+		CreatedIds: []uint64{},
+	}
+	
+
+	// Minimal guards (kept simple; DB has FK + CHECK)
+	for _, orderItem := range orderItems {
+		if orderItem.OrderID == 0 || orderItem.Title == "" || orderItem.Qty <= 0 || len(orderItem.Currency) != 3 {
+			http.Error(w, "missing/invalid required fields", http.StatusBadRequest)
+			return
+		}
+		if len(orderItem.Variation) == 0 {
+			// allow empty object if caller omitted
+			orderItem.Variation = json.RawMessage(`{}`)
+		}
+
+		const q = `
+		INSERT INTO order_items
+		(order_id, product_id, sku, title, variation,
+		qty, currency, unit_price_cents, line_subtotal_cents,
+		line_discount_cents, line_tax_cents, line_total_cents)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+
+		res, err := h.DB.Exec(
+			q,
+			orderItem.OrderID,
+			orderItem.ProductID,
+			orderItem.SKU,
+			orderItem.Title,
+			string(orderItem.Variation), // pass JSON as string
+			orderItem.Qty,
+			orderItem.Currency,
+			orderItem.UnitPriceCents,
+			orderItem.LineSubtotalCents,
+			orderItem.LineDiscountCents,
+			orderItem.LineTaxCents,
+			orderItem.LineTotalCents,
+		)
+		if err != nil {
+			// Surface FK/constraint issues plainly for now
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		id, err := res.LastInsertId()
+		if err != nil {
+			http.Error(w, "failed to fetch insert id", http.StatusInternalServerError)
+			return
+		}
+		orderItem.OrderItemID = uint64(id)
+
+		OrderItemsBulkReturn.CreatedIds = append(OrderItemsBulkReturn.CreatedIds, orderItem.OrderItemID)
+		OrderItemsBulkReturn.OrderItems = append(OrderItemsBulkReturn.OrderItems, orderItem)
+		
+	}
+	
+
+
+	helpers.WriteJSON(w, http.StatusCreated, OrderItemsBulkReturn)
 }
 
 
