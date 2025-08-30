@@ -224,6 +224,10 @@ type InventoryMovement struct {
 	CreatedAt    time.Time        `db:"created_at"    json:"created_at"`
 }
 
+type OrderItemsBulkReturn struct {
+	CreatedIds []uint64    `json:"created_ids"`
+	OrderItems []OrderItem `json:"order_items"`
+}
 // =============================
 // Order Events (audit log)
 // =============================
@@ -235,4 +239,3 @@ type OrderEvent struct {
 	Details      JSON      `db:"details"        json:"details"` // arbitrary JSON (e.g., stripe_event_id)
 	CreatedAt    time.Time `db:"created_at"     json:"created_at"`
 }
-

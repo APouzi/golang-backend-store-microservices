@@ -152,6 +152,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 	digest.Post("/summary-order",rOrders.CreateOrderRecord)
 	digest.Post("/order-item-details",rOrders.CreateOrderItemRecord)
+	digest.Post("/order-item-details/bulk",rOrders.CreateOrderItemRecordsBulk)
 	digest.Post("/payment",rOrders.CreatePayment)
 	digest.Post("/refund",rOrders.CreateRefund)
 	return digest

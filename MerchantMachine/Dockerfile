@@ -1,5 +1,5 @@
 # ---------- STAGE 1: Build ----------
-FROM golang:1.21 AS builder
+FROM golang:1.25 AS builder
 
 WORKDIR /app
 
@@ -7,12 +7,11 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
 COPY . .
-
 # Build static binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o golang-shop .
+RUN CGO_ENABLED=0 GOEXPERIMENT=jsonv2 GOOS=linux GOARCH=amd64 go build -o golang-shop .
 
 # ---------- STAGE 2: Runtime ----------
-FROM alpine:latest
+FROM alpine:3.20
 
 # Install optional CA certs or debugging tools if needed
 RUN apk --no-cache add ca-certificates
@@ -25,8 +24,9 @@ COPY --from=builder /app/golang-shop .
 # Copy your .env file (optional, if we rely on it in production)
 COPY .env .
 
-# Use non-root user if needed (Alpine has `nobody`)
-USER nobody
+
+RUN adduser -D -u 10001 appuser
+USER appuser
 
 # App runs with env file assumed in /app
 CMD ["./golang-shop", "-initdb", "t", "-initView", "t"]

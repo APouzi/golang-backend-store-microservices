@@ -1,6 +1,7 @@
 package checkout
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/stripe/stripe-go/v82"
@@ -69,6 +70,14 @@ type InventoryProductDetail struct {
     Description string `json:"description,omitempty" db:"description"` // TEXT (nullable)
 }
 
+type OrderLineItem struct {
+    ProductID  int64
+    ProductSizeID int64
+    VariationID int64
+    Quantity   int64
+    UnitPrice  int64
+}
+
 type QuantityUpdateResponse struct {
     Quantity    int64 `json:"quantity"`
 }
@@ -93,6 +102,8 @@ type ProductSize struct {
     DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
     ModifiedDate   *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
 }
+
+
 
 
 type Address struct {
@@ -135,13 +146,7 @@ type Order struct {
     LineItems       []OrderLineItem
 }
 
-type OrderLineItem struct {
-    ProductID  int64
-    ProductSizeID int64
-    VariationID int64
-    Quantity   int64
-    UnitPrice  int64
-}
+
 
 type AddressInput struct {
 	FullName   *string `json:"full_name,omitempty"`
@@ -162,4 +167,42 @@ type OrderItemInput struct {
 	Qty             int                   `json:"qty"`
 	UnitPriceCents  int64                 `json:"unit_price_cents"`
 	// Currency is taken from the order; include here only if you truly need per-line currency.
+}
+
+type JSON = json.RawMessage
+type OrderStatus string
+
+const (
+	OrderStatusCreated         OrderStatus = "created"
+	OrderStatusAwaitingPayment OrderStatus = "awaiting_payment"
+	OrderStatusPaid            OrderStatus = "paid"
+	OrderStatusFulfilled       OrderStatus = "fulfilled"
+	OrderStatusCancelled       OrderStatus = "cancelled"
+	OrderStatusClosed          OrderStatus = "closed"
+)
+
+type OrderRecordCreation struct {
+	OrderID           uint64       `db:"order_id"            json:"order_id"`
+	OrderNumber       string       `db:"order_number"        json:"order_number"`
+	CustomerID        *uint64      `db:"customer_id"         json:"customer_id,omitempty"`
+	Email             string       `db:"email"               json:"email"`
+	BillingAddressID  *uint64      `db:"billing_address_id"  json:"billing_address_id,omitempty"`
+	ShippingAddressID *uint64      `db:"shipping_address_id" json:"shipping_address_id,omitempty"`
+
+	Currency       string      `db:"currency"         json:"currency"`          // ISO-4217, e.g. "USD"
+	SubtotalCents  int64       `db:"subtotal_cents"   json:"subtotal_cents"`    // minor units
+	DiscountCents  int64       `db:"discount_cents"   json:"discount_cents"`
+	ShippingCents  int64       `db:"shipping_cents"   json:"shipping_cents"`
+	TaxCents       int64       `db:"tax_cents"        json:"tax_cents"`
+	TotalCents     int64       `db:"total_cents"      json:"total_cents"`
+
+	Status    OrderStatus `db:"status"     json:"status"`
+	PlacedAt  time.Time   `db:"placed_at"  json:"placed_at"`
+
+	Provider        *string `db:"provider"          json:"provider,omitempty"`           // "stripe", "paypal", etc.
+	ProviderOrderID *string `db:"provider_order_id" json:"provider_order_id,omitempty"` // e.g., Stripe cs_...
+	Metadata        JSON    `db:"metadata"          json:"metadata"`                    // arbitrary JSON
+
+	CreatedAt time.Time `db:"created_at"  json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"  json:"updated_at"`
 }
