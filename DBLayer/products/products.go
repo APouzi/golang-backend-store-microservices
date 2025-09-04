@@ -726,3 +726,30 @@ func (prdRoutes *ProductRoutesTray) GetOneProductSizeEndPoint(w http.ResponseWri
 // 	var query string = chi.URLParam(r, "category")
 // }
 
+
+func (prdRoutes *ProductRoutesTray) GetAllProductTaxCodeEndPointFromProductSizeIntermediary(w http.ResponseWriter, r *http.Request) {
+	productSizeID, err := strconv.Atoi(chi.URLParam(r, "SizeID"))
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("invalid product size ID: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	rows, err := prdRoutes.DB.Query("SELECT t.TaxCode_ID, t.TaxCode_Name, t.TaxCode_Description, t.TaxCode FROM tblProductTaxCode t JOIN tblProductSizeTaxCode pstc ON t.TaxCode_ID = pstc.TaxCode_ID WHERE pstc.Size_ID = ?", productSizeID)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var taxCodes []ProductTaxCode
+	for rows.Next() {
+		var taxCode ProductTaxCode
+		if err := rows.Scan(&taxCode.TaxCodeID, &taxCode.TaxCodeName, &taxCode.TaxCodeDescription, &taxCode.TaxCode); err != nil {
+			fmt.Println("Error scanning row:", err)
+			continue
+		}
+		taxCodes = append(taxCodes, taxCode)
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, taxCodes)
+}
