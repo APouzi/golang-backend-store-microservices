@@ -92,7 +92,7 @@ type FrontendRequest struct {
 }
 
 type ProductSize struct {
-    SizeID         *int64       `db:"Size_ID" json:"size_id"`
+    SizeID         *uint64       `db:"Size_ID" json:"size_id"`
     SizeName       *string     `db:"Size_Name" json:"size_name"`
     SizeDescription *string    `db:"Size_Description,omitempty" json:"size_description,omitempty"`
     VariationID    *int64        `db:"Variation_ID" json:"variation_id"`
@@ -187,8 +187,9 @@ type OrderRecordCreation struct {
 	CustomerID        *uint64      `db:"customer_id"         json:"customer_id,omitempty"`
 	Email             string       `db:"email"               json:"email"`
 	BillingAddressID  *uint64      `db:"billing_address_id"  json:"billing_address_id,omitempty"`
+	BillingAddress    *AddressInput `db:"-"                   json:"billing_address,omitempty"`
 	ShippingAddressID *uint64      `db:"shipping_address_id" json:"shipping_address_id,omitempty"`
-
+	ShippingAddress   *AddressInput `db:"-"                   json:"shipping_address,omitempty"`
 	Currency       string      `db:"currency"         json:"currency"`          // ISO-4217, e.g. "USD"
 	SubtotalCents  int64       `db:"subtotal_cents"   json:"subtotal_cents"`    // minor units
 	DiscountCents  int64       `db:"discount_cents"   json:"discount_cents"`
@@ -205,4 +206,47 @@ type OrderRecordCreation struct {
 
 	CreatedAt time.Time `db:"created_at"  json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"  json:"updated_at"`
+}
+
+type PaymentStatus string
+
+const (
+	PaymentAuthorized       PaymentStatus = "authorized"
+	PaymentCaptured         PaymentStatus = "captured"
+	PaymentFailed           PaymentStatus = "failed"
+	PaymentRefunded         PaymentStatus = "refunded"
+	PaymentPartiallyRefunded PaymentStatus = "partially_refunded"
+)
+
+type PaymentCreation struct {
+	PaymentID          uint64         `db:"payment_id"           json:"payment_id"`
+	OrderID            uint64         `db:"order_id"             json:"order_id"`
+	Provider           string         `db:"provider"             json:"provider"`               // "stripe"
+	ProviderPaymentID  string         `db:"provider_payment_id"  json:"provider_payment_id"`    // Stripe pi_...
+	MethodBrand        *string        `db:"method_brand"         json:"method_brand,omitempty"` // "visa"
+	PaymentMethodID  *string        `db:"payment_method_id"    json:"payment_method_id,omitempty"`
+
+	Last4              *string        `db:"last4"                json:"last4,omitempty"`
+	Status             PaymentStatus  `db:"status"               json:"status"`
+	AmountCents        int64          `db:"amount_cents"         json:"amount_cents"`
+	Currency           string         `db:"currency"             json:"currency"`
+	RawResponse        JSON           `db:"raw_response"         json:"raw_response"`           // provider payload snapshot
+	CreatedAt          time.Time      `db:"created_at"           json:"created_at"`
+}
+
+
+type OrderItem struct {
+	OrderItemID       uint64           `db:"order_item_id"       json:"order_item_id"`
+	OrderID           uint64           `db:"order_id"            json:"order_id"`
+	ProductID         *uint64          `db:"product_id"          json:"product_id,omitempty"`
+	SKU               *string          `db:"sku"                 json:"sku,omitempty"`
+	Title             string           `db:"title"               json:"title"`
+	Qty               int              `db:"qty"                 json:"qty"`
+	Currency          string           `db:"currency"            json:"currency"` // ISO-4217
+
+	UnitPriceCents    int64            `db:"unit_price_cents"    json:"unit_price_cents"`
+	LineSubtotalCents int64            `db:"line_subtotal_cents" json:"line_subtotal_cents"` //from db
+	LineDiscountCents int64            `db:"line_discount_cents" json:"line_discount_cents"`
+	LineTaxCents      int64            `db:"line_tax_cents"      json:"line_tax_cents"`
+	LineTotalCents    int64            `db:"line_total_cents"    json:"line_total_cents"` //subtotal - discount + tax
 }

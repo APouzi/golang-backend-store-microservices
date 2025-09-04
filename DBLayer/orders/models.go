@@ -111,8 +111,8 @@ const (
 )
 
 type Payment struct {
-	PaymentID          uint64         `db:"payment_id"           json:"payment_id"`
-	OrderID            uint64         `db:"order_id"             json:"order_id"`
+	PaymentID          uint64         `db:"payment_id"           json:"payment_id,omitempty"`
+	OrderID            uint64         `db:"order_id"             json:"order_id, omitempty"`
 	Provider           string         `db:"provider"             json:"provider"`               // "stripe"
 	ProviderPaymentID  string         `db:"provider_payment_id"  json:"provider_payment_id"`    // Stripe pi_...
 	MethodBrand        *string        `db:"method_brand"         json:"method_brand,omitempty"` // "visa"
