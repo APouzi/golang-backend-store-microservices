@@ -15,6 +15,7 @@ import (
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/checkout/session"
+	"github.com/stripe/stripe-go/v82/paymentintent"
 	"github.com/stripe/stripe-go/v82/webhook"
 )
 
@@ -67,6 +68,9 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 		// Initialize PaymentIntentData once, with a non-nil Metadata map
 		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
 			Metadata: map[string]string{},
+		},
+		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
+			Enabled: stripe.Bool(true),
 		},
 	}
 
