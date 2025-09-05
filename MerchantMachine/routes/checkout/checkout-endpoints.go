@@ -93,23 +93,19 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 			helpers.ErrorJSON(w, fmt.Errorf("invalid quantity for size_id %d", item.Size_ID), http.StatusBadRequest)
 			return
 		}
-
 		// fetch size, product, and inventory
 		GetProductSizeByID(strconv.FormatInt(item.Size_ID, 10), ProdSizeJSON, w)
 		if ProdSizeJSON.VariationID == nil {
 			helpers.ErrorJSON(w, fmt.Errorf("size %d has no variation", item.Size_ID), http.StatusBadRequest)
 			return
 		}
-
 		GetProductVariationByID(strconv.FormatInt(*ProdSizeJSON.VariationID, 10), ProdJSON, w)
 		if len(*ProdJSON) == 0 {
 			helpers.ErrorJSON(w, fmt.Errorf("variation %d not found", *ProdSizeJSON.VariationID), http.StatusBadRequest)
 			return
 		}
-
 		InvProdJSON = InvProdJSON[:0] // reuse slice
 		GetProductInventoryDetailByID(strconv.FormatInt(item.Size_ID, 10), &InvProdJSON, w)
-
 		var quantityCount int64
 		for _, v := range InvProdJSON {
 			quantityCount += v.Quantity
@@ -119,13 +115,30 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 			return
 		}
 
+		taxCodes := &[]ProductTaxCode{}
+		taxCode := ""
+		GetProductTaxCodeByID(strconv.FormatInt(item.Size_ID, 10), taxCodes, r)
+		for _, v := range *taxCodes {
+			if v.Provider != "stripe" {
+				taxCode = "txcd_32050025"
+			}else{
+				taxCode = v.Provider
+			}
+		}
+
 		// Add line item
 		params.LineItems = append(params.LineItems, &stripe.CheckoutSessionLineItemParams{
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 				Currency: stripe.String("usd"),
 				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 					Name: stripe.String((*ProdJSON)[0].Product.ProductName),
+					TaxCode: stripe.String(taxCode), // Cosmetics Beautifying
+					Metadata: map[string]string{
+						"product_id": strconv.FormatInt(int64((*ProdJSON)[0].Product.ProductID), 10),
+						"size_id":    strconv.FormatInt(int64(item.Size_ID), 10),
+					},
 				},
+				TaxBehavior: stripe.String("exclusive"),
 				UnitAmount: stripe.Int64(int64(math.Round(*ProdSizeJSON.VariationPrice * 100))), // in cents
 			},
 			Quantity: stripe.Int64(item.Quantity),
@@ -145,9 +158,8 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	helpers.WriteJSON(w, http.StatusOK, map[string]string{"id": s.ID})
+	helpers.WriteJSON(w, http.StatusOK, map[string]string{"id": s.ID}, )
 }
-
 
 
 func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.Request){
