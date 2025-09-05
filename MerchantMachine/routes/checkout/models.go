@@ -250,3 +250,17 @@ type OrderItem struct {
 	LineTaxCents      int64            `db:"line_tax_cents"      json:"line_tax_cents"`
 	LineTotalCents    int64            `db:"line_total_cents"    json:"line_total_cents"` //subtotal - discount + tax
 }
+
+type ProductTaxCode struct {
+	TaxCodeID          int    `json:"tax_code_id"`
+	TaxCodeName        string `json:"tax_code_name"`
+	TaxCodeDescription string `json:"tax_code_description"`
+	TaxCode            string `json:"tax_code"`
+    Provider           string `json:"provider"`
+}
+
+
+type ProductSizeTaxCode struct {
+	SizeID    int `json:"size_id"`
+	TaxCodeID int `json:"tax_code_id"`
+}
