@@ -253,4 +253,123 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 		if session.Customer != nil {
 			customerID = session.Customer.ID
 		}
+		pi, err := route.fetchPIBits(paymentIntentID)
+		if err != nil {
+			log.Printf("Error fetching PaymentIntent details: %v", err)
+			break
+		}
+		if pi.LatestCharge != nil {
+			chargeID = pi.LatestCharge.ID
+		}
+
+		// Payment method details via PaymentMethod
+		if pi.PaymentMethod != nil {
+			paymentMethodID = pi.PaymentMethod.ID
+			if pi.PaymentMethod.Card != nil {
+				paymentMethodBrand = string(pi.PaymentMethod.Card.Brand)
+				paymentMethodLast4 = pi.PaymentMethod.Card.Last4
+			}
+		}
+
+		// (Alternative) read last4/brand from the Charge’s payment_method_details:
+		if paymentMethodLast4 == "" && pi.LatestCharge != nil &&
+		pi.LatestCharge.PaymentMethodDetails != nil &&
+		pi.LatestCharge.PaymentMethodDetails.Card != nil {
+			paymentMethodLast4 = pi.LatestCharge.PaymentMethodDetails.Card.Last4
+			paymentMethodBrand = string(pi.LatestCharge.PaymentMethodDetails.Card.Brand)
+		}
+
+		var billingAddress *Address
+		if pi.PaymentMethod.BillingDetails != nil && pi.PaymentMethod.BillingDetails.Address != nil {
+			billingAddress = &Address{
+				Line1:      pi.PaymentMethod.BillingDetails.Address.Line1,
+				Line2:      pi.PaymentMethod.BillingDetails.Address.Line2,
+				City:       pi.PaymentMethod.BillingDetails.Address.City,
+				State:      pi.PaymentMethod.BillingDetails.Address.State,
+				PostalCode: pi.PaymentMethod.BillingDetails.Address.PostalCode,
+				Country:    pi.PaymentMethod.BillingDetails.Address.Country,
+			}
+		}
+
+		var shippingAddress *Address
+		if pi.Shipping != nil && pi.Shipping.Address != nil {
+			shippingAddress = &Address{
+				Line1:      pi.Shipping.Address.Line1,
+				Line2:      pi.Shipping.Address.Line2,
+				City:       pi.Shipping.Address.City,
+				State:      pi.Shipping.Address.State,
+				PostalCode: pi.Shipping.Address.PostalCode,
+				Country:    pi.Shipping.Address.Country,
+			}
+		}
+
+		
+		orderSendOff := OrderRecordCreation{
+			OrderID: 	   0, // to be filled by order service
+			OrderNumber:   "", // to be filled by order service
+			CustomerID:    nil, // to be filled by order service if applicable
+			Email: 	   cust.Email,
+			BillingAddressID: nil, // to be filled by order service if applicable
+			ShippingAddressID: nil, // to be filled by order service if applicable,
+			Currency:       string(session.Currency),
+			SubtotalCents:  session.AmountTotal, // Assuming no tax/shipping for simplicity
+			DiscountCents:  0,
+			ShippingCents:  0,
+			TaxCents:       session.TotalDetails.AmountTax,
+			TotalCents:     session.AmountTotal,
+			Status:         "TEST",
+			PlacedAt: 	   time.Unix(session.Created, 0),
+			Provider:       stripe.String("stripe"),
+			ProviderOrderID: &checkoutSessionID,
+		}
+
+		payment_payload := PaymentCreation{
+			Provider:          "stripe",
+			ProviderPaymentID: paymentIntentID,
+			MethodBrand:       &paymentMethodBrand,
+			PaymentMethodID:   &paymentMethodID,
+			Last4:             &paymentMethodLast4,
+			Status:            PaymentCaptured,
+			AmountCents:       session.AmountTotal,
+			Currency:          string(session.Currency),
+			RawResponse:       JSON([]byte{}), // Optionally store raw JSON response from Stripe
+			CreatedAt:         time.Now(),
+		}
+
+		// Combine order, line items, and payment into a single payload
+		type OrderPayload struct {
+			Order      OrderRecordCreation `json:"order"`
+			LineItems  []OrderItem         `json:"line_items"`
+			Payment    PaymentCreation     `json:"payment"`
+		}
+
+		payload := OrderPayload{
+			Order:     orderSendOff,
+			LineItems: OrderLineItems,
+			Payment:   payment_payload,
+		}
+		
+		helpers.WriteJSON(w, http.StatusOK, payload)
+		fmt.Println("customer id is:", customerID, "shipping address:", shippingAddress, "billing address:", billingAddress)
+		fmt.Printf("Stripe Charge ID: %s\n", chargeID)
+		fmt.Println("order send off:", orderSendOff, listOfProductDetails, payment_payload)
+	default:
+		log.Printf("Unhandled event: %s", event.Type)
+  }
+
+  helpers.WriteJSON(w, http.StatusOK, map[string]string{"status": "success"})
+}
+
+
+func(route *CheckoutRoutes) fetchPIBits(piID string) (*stripe.PaymentIntent, error) {
+	stripe.Key = route.config.STRIPE_KEY
+    params := &stripe.PaymentIntentParams{
+        Expand: []*string{
+            stripe.String("payment_method"),              // pm_..., includes card.brand/last4
+            stripe.String("latest_charge"),               // ch_...
+            // Optionally dig into charge’s PM details instead:
+            stripe.String("latest_charge.payment_method_details"),
+        },
+    }
+    return paymentintent.Get(piID, params)
 }
