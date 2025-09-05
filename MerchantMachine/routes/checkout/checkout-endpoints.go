@@ -41,7 +41,6 @@ func InstanceCheckoutRoutes(stripe *stripe.Client, config Config) *CheckoutRoute
 
 
 func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Creating checkout session...")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -81,9 +80,7 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 		},
 	}
 
-	fmt.Println("req!!!!", req)
 
-	// Reusable holders
 	ProdJSON := &[]ProductResponse{}
 	ProdSizeJSON := &ProductSize{}
 	var InvProdJSON []InventoryProductDetail
@@ -93,7 +90,6 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 			helpers.ErrorJSON(w, fmt.Errorf("invalid quantity for size_id %d", item.Size_ID), http.StatusBadRequest)
 			return
 		}
-		// fetch size, product, and inventory
 		GetProductSizeByID(strconv.FormatInt(item.Size_ID, 10), ProdSizeJSON, w)
 		if ProdSizeJSON.VariationID == nil {
 			helpers.ErrorJSON(w, fmt.Errorf("size %d has no variation", item.Size_ID), http.StatusBadRequest)
@@ -126,7 +122,6 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 			}
 		}
 
-		// Add line item
 		params.LineItems = append(params.LineItems, &stripe.CheckoutSessionLineItemParams{
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 				Currency: stripe.String("usd"),
@@ -144,11 +139,9 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 			Quantity: stripe.Int64(item.Quantity),
 		})
 
-		// Safe now: Metadata is initialized
 		key := fmt.Sprintf("itemsizeqty_%d", item.Size_ID)
 		params.PaymentIntentData.Metadata[key] = strconv.FormatInt(item.Quantity, 10)
 	}
-	fmt.Printf("Stripe Checkout Session Params: %+v\n", params)
 	
 
 	s, err := session.New(params)
@@ -198,17 +191,12 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 			}
 		}
 		listOfProductDetails := []InventoryProductDetail{}
-		// productsOrdered := []OrderLineItem{}
 		OrderLineItems := []OrderItem{}
 		for sizeID, quantity := range inventoryMap {
 			fmt.Printf("  Size ID: %d → Quantity: %d\n", sizeID, quantity)
 			http.Get("http:")
 			var InvProdJSON []InventoryProductDetail = []InventoryProductDetail{}
 			strsizeID := strconv.FormatInt(sizeID, 10)
-			if err != nil{
-				fmt.Println("oh no!")
-				return
-			}
 			GetProductInventoryDetailByID(strsizeID, &InvProdJSON, w)
 			if len(InvProdJSON) == 0 {
 				fmt.Printf("No inventory found for SizeID %s\n", strsizeID)
