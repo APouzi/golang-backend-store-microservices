@@ -65,12 +65,19 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 		SuccessURL:         stripe.String("http://localhost:4200/success"),
 		CancelURL:          stripe.String("http://localhost:4200/canceledorder"),
 		LineItems:          []*stripe.CheckoutSessionLineItemParams{},
-		// Initialize PaymentIntentData once, with a non-nil Metadata map
 		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
 			Metadata: map[string]string{},
 		},
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
 			Enabled: stripe.Bool(true),
+		},
+		ShippingAddressCollection: &stripe.CheckoutSessionShippingAddressCollectionParams{
+			AllowedCountries: stripe.StringSlice([]string{"US", "CA"}),
+		},
+		ShippingOptions: []*stripe.CheckoutSessionShippingOptionParams{
+			{
+				ShippingRate: stripe.String("shr_1S3t2jBAREvrwjtYED1pr2Zh"), 
+			},
 		},
 	}
 
