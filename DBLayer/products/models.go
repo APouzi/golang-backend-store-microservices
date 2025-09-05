@@ -115,3 +115,14 @@ type PaginatedResponse struct {
 }
 
 
+type ProductTaxCode struct {
+	TaxCodeID          int    `json:"tax_code_id"`
+	TaxCodeName        string `json:"tax_code_name"`
+	TaxCodeDescription string `json:"tax_code_description"`
+	TaxCode            string `json:"tax_code"`
+}
+
+type ProductSizeTaxCode struct {
+	SizeID    int `json:"size_id"`
+	TaxCodeID int `json:"tax_code_id"`
+}

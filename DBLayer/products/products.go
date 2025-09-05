@@ -727,6 +727,51 @@ func (prdRoutes *ProductRoutesTray) GetOneProductSizeEndPoint(w http.ResponseWri
 // }
 
 
+
+func (prdRoutes *ProductRoutesTray) GetAllProductTaxCodeEndPoint(w http.ResponseWriter, r *http.Request) {
+	var taxCodes []ProductTaxCode
+	rows, err := prdRoutes.DB.Query("SELECT TaxCode_ID, TaxCode_Name, TaxCode_Description, TaxCode FROM tblProductTaxCode")
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var taxCode ProductTaxCode
+		if err := rows.Scan(&taxCode.TaxCodeID, &taxCode.TaxCodeName, &taxCode.TaxCodeDescription, &taxCode.TaxCode); err != nil {
+			fmt.Println("Error scanning row:", err)
+			continue
+		}
+		taxCodes = append(taxCodes, taxCode)
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, taxCodes)
+}
+
+func(prdRoutes *ProductRoutesTray) GetOneProductTaxCodeEndpoint(w http.ResponseWriter, r *http.Request) {
+	taxCodeID, err := strconv.Atoi(chi.URLParam(r, "TaxCodeID"))
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("invalid tax code ID: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	row := prdRoutes.DB.QueryRow("SELECT TaxCode_ID, TaxCode_Name, TaxCode_Description, TaxCode FROM tblProductTaxCode WHERE TaxCode_ID = ?", taxCodeID)
+
+	var taxCode ProductTaxCode
+	err = row.Scan(&taxCode.TaxCodeID, &taxCode.TaxCodeName, &taxCode.TaxCodeDescription, &taxCode.TaxCode)
+	if err == sql.ErrNoRows {
+		helpers.ErrorJSON(w, errors.New("tax code not found"), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, taxCode)  
+}
+
 func (prdRoutes *ProductRoutesTray) GetAllProductTaxCodeEndPointFromProductSizeIntermediary(w http.ResponseWriter, r *http.Request) {
 	productSizeID, err := strconv.Atoi(chi.URLParam(r, "SizeID"))
 	if err != nil {
