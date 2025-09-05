@@ -35,12 +35,20 @@ CREATE TABLE IF NOT EXISTS tblProductSize(
 
 CREATE TABLE IF NOT EXISTS tblProductTaxCode(
   TaxCode_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  Product_ID INT,
   TaxCode_Name VARCHAR(50) NOT NULL,
   TaxCode_Description TEXT,
   TaxCode VARCHAR(50) NOT NULL,
-  FOREIGN KEY (Product_ID) REFERENCES tblProductSize (Size_ID) ON DELETE CASCADE
-)
+  Provider ENUM('stripe','other') NOT NULL -- Payment provider for the tax code, for now only stripe is supported. 
+);
+
+
+CREATE TABLE IF NOT EXISTS tblProductSizeTaxCode (
+  Size_ID INT NOT NULL,
+  TaxCode_ID INT NOT NULL,
+  PRIMARY KEY (Size_ID, TaxCode_ID),
+  FOREIGN KEY (Size_ID) REFERENCES tblProductSize (Size_ID) ON DELETE CASCADE,
+  FOREIGN KEY (TaxCode_ID) REFERENCES tblProductTaxCode (TaxCode_ID) ON DELETE CASCADE
+);
 
 
 CREATE TABLE IF NOT EXISTS tblProductInventoryLocation (
