@@ -160,17 +160,14 @@ func (h *OrderRoutesTray) CreateOrderItemRecord(w http.ResponseWriter, r *http.R
 		http.Error(w, "missing/invalid required fields", http.StatusBadRequest)
 		return
 	}
-	if len(in.Variation) == 0 {
-		// allow empty object if caller omitted
-		in.Variation = json.RawMessage(`{}`)
-	}
+
 
 	const q = `
 	INSERT INTO order_items
-	  (order_id, product_id, sku, title, variation,
+	  (order_id, product_id, sku, title,
 	   qty, currency, unit_price_cents, line_subtotal_cents,
 	   line_discount_cents, line_tax_cents, line_total_cents)
-	VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+	VALUES (?,?,?,?,?,?,?,?,?,?,?)`
 
 	res, err := h.DB.Exec(
 		q,
@@ -178,7 +175,6 @@ func (h *OrderRoutesTray) CreateOrderItemRecord(w http.ResponseWriter, r *http.R
 		in.ProductID,
 		in.SKU,
 		in.Title,
-		string(in.Variation), // pass JSON as string
 		in.Qty,
 		in.Currency,
 		in.UnitPriceCents,
@@ -231,17 +227,13 @@ func (h *OrderRoutesTray) CreateOrderItemRecordsBulk(w http.ResponseWriter, r *h
 			http.Error(w, "missing/invalid required fields", http.StatusBadRequest)
 			return
 		}
-		if len(orderItem.Variation) == 0 {
-			// allow empty object if caller omitted
-			orderItem.Variation = json.RawMessage(`{}`)
-		}
 
 		const q = `
 		INSERT INTO order_items
-		(order_id, product_id, sku, title, variation,
+		(order_id, product_id, sku, title,
 		qty, currency, unit_price_cents, line_subtotal_cents,
 		line_discount_cents, line_tax_cents, line_total_cents)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+		VALUES (?,?,?,?,?,?,?,?,?,?,?)`
 
 		res, err := h.DB.Exec(
 			q,
@@ -249,7 +241,6 @@ func (h *OrderRoutesTray) CreateOrderItemRecordsBulk(w http.ResponseWriter, r *h
 			orderItem.ProductID,
 			orderItem.SKU,
 			orderItem.Title,
-			string(orderItem.Variation), // pass JSON as string
 			orderItem.Qty,
 			orderItem.Currency,
 			orderItem.UnitPriceCents,
@@ -306,7 +297,7 @@ func (h *OrderRoutesTray) CreatePayment(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	id, _ := res.LastInsertId()
+	id, _ := res.LastInsertId()   
 	p.PaymentID = uint64(id)
 
 	w.Header().Set("Content-Type", "application/json")
