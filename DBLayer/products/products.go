@@ -722,11 +722,6 @@ func (prdRoutes *ProductRoutesTray) GetOneProductSizeEndPoint(w http.ResponseWri
 
 }
 
-// func GetAllProductByCategoryID(w http.ResponseWriter, r *http.Request){
-// 	var query string = chi.URLParam(r, "category")
-// }
-
-
 
 func (prdRoutes *ProductRoutesTray) GetAllProductTaxCodeEndPoint(w http.ResponseWriter, r *http.Request) {
 	var taxCodes []ProductTaxCode

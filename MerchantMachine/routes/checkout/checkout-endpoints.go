@@ -153,12 +153,13 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
   }
   switch event.Type {
   case "checkout.session.completed":
-    var session stripe.CheckoutSession
-    json.Unmarshal(event.Data.Raw, &session)
-  if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		var session stripe.CheckoutSession
+		json.Unmarshal(event.Data.Raw, &session)
+		checkoutSessionID := session.ID
+		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 
 		inventoryMap := make(map[int64]int64) // map[SizeID]Quantity
 
@@ -177,7 +178,9 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 				}
 			}
 		}
+		listOfProductDetails := []InventoryProductDetail{}
 		// productsOrdered := []OrderLineItem{}
+		OrderLineItems := []OrderItem{}
 		for sizeID, quantity := range inventoryMap {
 			fmt.Printf("  Size ID: %d → Quantity: %d\n", sizeID, quantity)
 			http.Get("http:")
@@ -192,19 +195,30 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 				fmt.Printf("No inventory found for SizeID %s\n", strsizeID)
 				continue
 			}
-			new_quantity := InvProdJSON[0].Quantity - quantity
-			fmt.Println("old quantity is:", InvProdJSON[0].Quantity, "new quantity of the of the is:", new_quantity)
-			UpdateInventoryShelfDetailQuantity(InvProdJSON[0].InventoryID, new_quantity, w)
+			prdSize := &ProductSize{}
+			GetProductSizeByID(strsizeID, prdSize, w)
+			invProdJsonPull := InvProdJSON[0]
+			new_quantity := invProdJsonPull.Quantity - quantity
+			UpdateInventoryShelfDetailQuantity(invProdJsonPull.InventoryID, new_quantity, w)
 			// Send to the order service
-		
-		
-			// productsOrdered = append(productsOrdered, OrderLineItem{
-			// 	Size_ID:  sizeID,
-			// 	Quantity: quantity,
-			// 	UnitPrice: InvProdJSON[0].ProductID,
-			// })
+			listOfProductDetails = append(listOfProductDetails, invProdJsonPull)
 
+			unitPrice := *prdSize.VariationPrice * 100
+			OrderLineItems = append(OrderLineItems, OrderItem{
+				ProductID:   prdSize.SizeID,
+				SKU:         prdSize.SKU,
+				Title:       *prdSize.SizeName,
+				Qty:         int(quantity),
+				Currency:    "usd",
+				UnitPriceCents: int64(unitPrice),
+				LineSubtotalCents: int64(unitPrice * float64(quantity)),
+				LineDiscountCents: 0,
+				LineTaxCents:      0,
+				LineTotalCents:    int64(unitPrice * float64(quantity)),
+			})
 		}
+
+		
 		var cust CustomerInfo
 		if session.CustomerDetails != nil {
 			cust.Email = session.CustomerDetails.Email
@@ -229,22 +243,14 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 			paymentIntentID = session.PaymentIntent.ID
 		}
 
-		order := Order{
-			StripeSessionID:       session.ID,
-			PaymentIntentID: paymentIntentID,
-			Status:   string(session.PaymentStatus),
-			Currency:        string(session.Currency), // Currency is a stripe.Currency type (alias of string)
-			TotalAmount:     session.AmountTotal,
-			CreatedAt:       time.Unix(session.Created, 0),
-			// CustomerName:        cust,
-			LineItems:       []OrderLineItem{},
+		var paymentIntent *stripe.PaymentIntent = session.PaymentIntent
+		if paymentIntent != nil {
+			fmt.Printf("Stripe Payment Intent ID: %s\n", paymentIntent.ID)
+			// You can now use paymentIntent.ID for further processing, e.g., storing in your DB
 		}
+		var paymentMethodBrand, paymentMethodID, paymentMethodLast4, customerID, chargeID string 
 
-
-		fmt.Println("order for:",order)
-  default:
-    log.Printf("Unhandled event: %s", event.Type)
-  }
-
-  w.WriteHeader(http.StatusOK)
+		if session.Customer != nil {
+			customerID = session.Customer.ID
+		}
 }
