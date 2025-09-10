@@ -40,15 +40,14 @@ CREATE TABLE IF NOT EXISTS orders (
   billing_address_id BIGINT UNSIGNED,
   shipping_address_id BIGINT UNSIGNED,
 
-  currency           CHAR(3) NOT NULL,
-  subtotal_cents     BIGINT NOT NULL DEFAULT 0,
+  currency           CHAR(3) NOT NULL,--- USD, HKD, EUR, MAD
+  subtotal_cents     BIGINT NOT NULL DEFAULT 0, --- $19.99 = 1999 cents
   discount_cents     BIGINT NOT NULL DEFAULT 0,
   shipping_cents     BIGINT NOT NULL DEFAULT 0,
   tax_cents          BIGINT NOT NULL DEFAULT 0,
-  total_cents        BIGINT NOT NULL,
+  total_cents        BIGINT NOT NULL, --- subtotal - discount + tax + shipping
 
-  status             ENUM('created','awaiting_payment','paid','fulfilled','cancelled','closed')
-                        NOT NULL DEFAULT 'created',
+  status             ENUM('created','awaiting_payment','paid','fulfilled','cancelled','closed') NOT NULL DEFAULT 'created',
 
   placed_at          DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
