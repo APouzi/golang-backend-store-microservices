@@ -37,6 +37,17 @@ type Customer struct {
 	CreatedAt  time.Time `db:"created_at"  json:"created_at"`
 }
 
+type AddressInput struct {
+	FullName   *string `json:"full_name,omitempty"`
+	Line1      string  `json:"line1"`
+	Line2      *string `json:"line2,omitempty"`
+	City       string  `json:"city"`
+	State      string  `json:"state"` // maps to DB column "region"
+	PostalCode string  `json:"postal_code"`
+	Country    string  `json:"country"` // ISO-3166-1 alpha-2
+	Phone      *string `json:"phone,omitempty"`
+}
+
 // =============================
 // Orders & Order Items
 // =============================
@@ -58,8 +69,9 @@ type Order struct {
 	CustomerID        *uint64      `db:"customer_id"         json:"customer_id,omitempty"`
 	Email             string       `db:"email"               json:"email"`
 	BillingAddressID  *uint64      `db:"billing_address_id"  json:"billing_address_id,omitempty"`
+	BillingAddress    *AddressInput `db:"-"                   json:"billing_address,omitempty"`
 	ShippingAddressID *uint64      `db:"shipping_address_id" json:"shipping_address_id,omitempty"`
-
+	ShippingAddress   *AddressInput `db:"-"                   json:"shipping_address,omitempty"`
 	Currency       string      `db:"currency"         json:"currency"`          // ISO-4217, e.g. "USD"
 	SubtotalCents  int64       `db:"subtotal_cents"   json:"subtotal_cents"`    // minor units
 	DiscountCents  int64       `db:"discount_cents"   json:"discount_cents"`
@@ -84,7 +96,7 @@ type OrderItem struct {
 	ProductID         *uint64          `db:"product_id"          json:"product_id,omitempty"`
 	SKU               *string          `db:"sku"                 json:"sku,omitempty"`
 	Title             string           `db:"title"               json:"title"`
-	Variation         json.RawMessage  `db:"variation"           json:"variation"` // e.g., {"size":"L","color":"Blue"}
+
 
 	Qty               int              `db:"qty"                 json:"qty"`
 	Currency          string           `db:"currency"            json:"currency"` // ISO-4217
@@ -120,7 +132,7 @@ type Payment struct {
 	Status             PaymentStatus  `db:"status"               json:"status"`
 	AmountCents        int64          `db:"amount_cents"         json:"amount_cents"`
 	Currency           string         `db:"currency"             json:"currency"`
-	RawResponse        JSON           `db:"raw_response"         json:"raw_response"`           // provider payload snapshot
+	RawResponse        JSON           `db:"raw_response"         json:"raw_response,omitempty"`           // provider payload snapshot
 	CreatedAt          time.Time      `db:"created_at"           json:"created_at"`
 }
 
