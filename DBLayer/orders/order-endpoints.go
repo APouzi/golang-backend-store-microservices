@@ -47,15 +47,15 @@ func (rt *OrderRoutesTray) CreateOrderRecord(w http.ResponseWriter, r *http.Requ
 
 	// Basic validation
 	if ord.OrderNumber == "" {
-		http.Error(w, "order_number is required", http.StatusBadRequest)
+		helpers.ErrorJSON(w, errors.New("order_number is required"), http.StatusBadRequest)
 		return
 	}
 	if ord.Email == "" {
-		http.Error(w, "email is required", http.StatusBadRequest)
+		helpers.ErrorJSON(w, errors.New("email is required"), http.StatusBadRequest)
 		return
 	}
 	if ord.SubtotalCents < 0 || ord.DiscountCents < 0 || ord.ShippingCents < 0 || ord.TaxCents < 0 || ord.TotalCents < 0 {
-		http.Error(w, "amounts must be >= 0", http.StatusBadRequest)
+		helpers.ErrorJSON(w, errors.New("amounts must be >= 0"), http.StatusBadRequest)
 		return
 	}
 

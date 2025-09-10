@@ -1,6 +1,7 @@
 package checkout
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
+	"github.com/rs/xid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/checkout/session"
 	"github.com/stripe/stripe-go/v82/paymentintent"
@@ -172,7 +174,7 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-
+		checkoutSessionID := session.ID
 		inventoryMap := make(map[int64]int64) // map[SizeID]Quantity
 
 		for key, value := range session.Metadata {
@@ -311,20 +313,34 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 		}
 
 		
+		// Safely extract shipping and tax cents (guard against nil pointers)
+		shippingCents := int64(0)
+		if session.ShippingCost != nil {
+			shippingCents = session.ShippingCost.AmountSubtotal
+		}
+		taxCents := int64(0)
+		if session.TotalDetails != nil {
+			taxCents = session.TotalDetails.AmountTax
+			fmt.Println("taxCents:", taxCents)
+		}
+
+		// Generate a unique order number: <RANDOM>-<DDMMYYYY>
+		orderNumber := GenerateOrderNumber()
+
 		orderSendOff := OrderRecordCreation{
 			OrderID: 	   0, // to be filled by order service
-			OrderNumber:   "", // to be filled by order service
+			OrderNumber:   orderNumber,
 			CustomerID:    nil, // to be filled by order service if applicable
 			Email: 	   cust.Email,
 			BillingAddressID: nil, // to be filled by order service if applicable
 			ShippingAddressID: nil, // to be filled by order service if applicable,
 			Currency:       string(session.Currency),
-			SubtotalCents:  session.AmountTotal, // Assuming no tax/shipping for simplicity
+			SubtotalCents:  session.AmountSubtotal, // Assuming no tax/shipping for simplicity
 			DiscountCents:  0,
-			ShippingCents:  0,
-			TaxCents:       session.TotalDetails.AmountTax,
+			ShippingCents:  shippingCents,
+			TaxCents:       taxCents,
 			TotalCents:     session.AmountTotal,
-			Status:         "TEST",
+			Status:         "created",
 			PlacedAt: 	   time.Unix(session.Created, 0),
 			Provider:       stripe.String("stripe"),
 			ProviderOrderID: &checkoutSessionID,
@@ -350,13 +366,22 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 			Payment    PaymentCreation     `json:"payment"`
 		}
 
-		payload := OrderPayload{
-			Order:     orderSendOff,
-			LineItems: OrderLineItems,
-			Payment:   payment_payload,
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(orderSendOff); err != nil {
+			log.Printf("Failed to encode payload: %v", err)
+			http.Error(w, "Failed to encode order payload", http.StatusInternalServerError)
+			return
 		}
-		
-		helpers.WriteJSON(w, http.StatusOK, payload)
+
+		resp, err := http.Post("http://dblayer:8080/summary-order", "application/json", &buf)
+		if err != nil {
+			log.Printf("Failed to POST order: %v", err)
+			http.Error(w, "Failed to send order to service", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
 		fmt.Println("customer id is:", customerID, "shipping address:", shippingAddress, "billing address:", billingAddress)
 		fmt.Printf("Stripe Charge ID: %s\n", chargeID)
 		fmt.Println("order send off:", orderSendOff, listOfProductDetails, payment_payload)
@@ -379,4 +404,9 @@ func(route *CheckoutRoutes) fetchPIBits(piID string) (*stripe.PaymentIntent, err
         },
     }
     return paymentintent.Get(piID, params)
+}
+
+func GenerateOrderNumber() string {
+	id := xid.New().String()[:6] // short unique id (first 6 chars)
+	return fmt.Sprintf("%s-%s", id, time.Now().Format("020106")) // ddmmyy
 }

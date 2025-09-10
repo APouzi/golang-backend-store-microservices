@@ -119,3 +119,23 @@ func UpdateInventoryShelfDetailQuantity(shelfID int64, newQuantity int64, w http
 		return
 	}
 }	
+
+func GetProductTaxCodeByID(sizeID string, TaxCodeJSON *[]ProductTaxCode, r *http.Request ) {
+	url := "http://dblayer:8080/tax-codes-intermediary/" + sizeID
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("failed to fetch tax code:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+
+	if err := json.NewDecoder(resp.Body).Decode(TaxCodeJSON); err != nil {
+		fmt.Println("failed to decode tax code response:", err)
+		return
+	}
+}
