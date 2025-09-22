@@ -11,7 +11,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOEXPERIMENT=jsonv2 GOOS=linux GOARCH=amd64 go build -o golang-shop .
 
 # ---------- STAGE 2: Runtime ----------
-FROM alpine:3.20
+FROM alpine:3.22.1
 
 # Install optional CA certs or debugging tools if needed
 RUN apk --no-cache add ca-certificates

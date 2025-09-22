@@ -1,5 +1,5 @@
 # -------- Stage 1: Build --------
-FROM golang:1.22 AS builder
+FROM golang:1.25 AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o golang-shop . && chmod +x golang-shop
 
 # -------- Stage 2: Runtime --------
-FROM alpine:latest
+FROM alpine:3.22.1
 
 # Install CA certs (needed for HTTPS, SQL TLS, etc.)
 RUN apk --no-cache add ca-certificates
