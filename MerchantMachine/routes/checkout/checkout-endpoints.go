@@ -10,7 +10,6 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
@@ -168,82 +167,20 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
   switch event.Type {
   case "checkout.session.completed":
 		var session stripe.CheckoutSession
-		json.Unmarshal(event.Data.Raw, &session)
-		checkoutSessionID := session.ID
+		
 		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		checkoutSessionID := session.ID
-		inventoryMap := make(map[int64]int64) // map[SizeID]Quantity
 
-		for key, value := range session.Metadata {
-			if strings.HasPrefix(key, "itemsizeqty_"){
-				// Extract the item ID from the key: item_<id>_qty
-				idPart := strings.TrimPrefix(key, "itemsizeqty_")
-				if id, err := strconv.ParseInt(idPart, 10, 64); err == nil {
-					if qty, err := strconv.ParseInt(value, 10, 64); err == nil {
-						inventoryMap[id] = qty
-					} else {
-						fmt.Printf("⚠️ Skipping invalid quantity for %s: %s\n", key, value)
-					}
-				} else {
-					fmt.Printf("⚠️ Skipping invalid item ID for %s\n", key)
-				}
-			}
-		}
-		listOfProductDetails := []InventoryProductDetail{}
-		OrderLineItems := []OrderItem{}
-		for sizeID, quantity := range inventoryMap {
-			fmt.Printf("  Size ID: %d → Quantity: %d\n", sizeID, quantity)
-			http.Get("http:")
-			var InvProdJSON []InventoryProductDetail = []InventoryProductDetail{}
-			strsizeID := strconv.FormatInt(sizeID, 10)
-			GetProductInventoryDetailByID(strsizeID, &InvProdJSON, w)
-			if len(InvProdJSON) == 0 {
-				fmt.Printf("No inventory found for SizeID %s\n", strsizeID)
-				continue
-			}
-			prdSize := &ProductSize{}
-			GetProductSizeByID(strsizeID, prdSize, w)
-			invProdJsonPull := InvProdJSON[0]
-			new_quantity := invProdJsonPull.Quantity - quantity
-			UpdateInventoryShelfDetailQuantity(invProdJsonPull.InventoryID, new_quantity, w)
-			// Send to the order service
-			listOfProductDetails = append(listOfProductDetails, invProdJsonPull)
+		var inventoryMap map[int64]int64 = ExtractInventoryMapFromSessionMetadata(session.Metadata)
 
-			unitPrice := *prdSize.VariationPrice * 100
-			OrderLineItems = append(OrderLineItems, OrderItem{
-				ProductID:   prdSize.SizeID,
-				SKU:         prdSize.SKU,
-				Title:       *prdSize.SizeName,
-				Qty:         int(quantity),
-				Currency:    "usd",
-				UnitPriceCents: int64(unitPrice),
-				LineSubtotalCents: int64(unitPrice * float64(quantity)),
-				LineDiscountCents: 0,
-				LineTaxCents:      0,
-				LineTotalCents:    int64(unitPrice * float64(quantity)),
-			})
-		}
+		OrderLineItems, listOfProductDetails := ProcessInventoryAndOrderItems( inventoryMap, w, GetProductInventoryDetailByID, GetProductSizeByID, UpdateInventoryShelfDetailQuantity )
 
 		
-		var cust CustomerInfo
-		if session.CustomerDetails != nil {
-			cust.Email = session.CustomerDetails.Email
-			cust.Name = session.CustomerDetails.Name
 
-			if session.CustomerDetails.Address != nil {
-				cust.BillingAddress = &Address{
-					Line1:      session.CustomerDetails.Address.Line1,
-					Line2:      session.CustomerDetails.Address.Line2,
-					City:       session.CustomerDetails.Address.City,
-					State:      session.CustomerDetails.Address.State,
-					PostalCode: session.CustomerDetails.Address.PostalCode,
-					Country:    session.CustomerDetails.Address.Country,
-				}
-			}
-		}
+		cust := ExtractCustomerInfoFromSession(&session)
 
 		// ---- Extract Order fields ----
 		paymentIntentID := ""
@@ -262,7 +199,7 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 		if session.Customer != nil {
 			customerID = session.Customer.ID
 		}
-		pi, err := route.fetchPIBits(paymentIntentID)
+		pi, err := route.fetchPaymentIntentBits(paymentIntentID)
 		if err != nil {
 			log.Printf("Error fetching PaymentIntent details: %v", err)
 			break
@@ -281,12 +218,11 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 		}
 
 		// (Alternative) read last4/brand from the Charge’s payment_method_details:
-		if paymentMethodLast4 == "" && pi.LatestCharge != nil &&
-		pi.LatestCharge.PaymentMethodDetails != nil &&
-		pi.LatestCharge.PaymentMethodDetails.Card != nil {
+		if paymentMethodLast4 == "" && pi.LatestCharge != nil && pi.LatestCharge.PaymentMethodDetails != nil && pi.LatestCharge.PaymentMethodDetails.Card != nil {
 			paymentMethodLast4 = pi.LatestCharge.PaymentMethodDetails.Card.Last4
 			paymentMethodBrand = string(pi.LatestCharge.PaymentMethodDetails.Card.Brand)
 		}
+		ExtractPaymentMethodDetails(pi, paymentMethodLast4, paymentMethodBrand)
 
 		var billingAddress *Address
 		if pi.PaymentMethod.BillingDetails != nil && pi.PaymentMethod.BillingDetails.Address != nil {
@@ -393,7 +329,7 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 }
 
 
-func(route *CheckoutRoutes) fetchPIBits(piID string) (*stripe.PaymentIntent, error) {
+func(route *CheckoutRoutes) fetchPaymentIntentBits(piID string) (*stripe.PaymentIntent, error) {
 	stripe.Key = route.config.STRIPE_KEY
     params := &stripe.PaymentIntentParams{
         Expand: []*string{
