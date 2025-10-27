@@ -93,7 +93,8 @@ CREATE TABLE IF NOT EXISTS order_items (
   KEY ix_order_items_order (order_id),
   KEY ix_order_items_sku (sku),
 
-  FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+  FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES tblProductSize (Size_ID) ON DELETE CASCADE
 );
 
 -- ============================================================================

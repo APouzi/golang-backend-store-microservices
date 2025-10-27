@@ -3,8 +3,8 @@
 ## TODO Backend
 *It's important to realize that we are phase 1 and MVP so we are not focusing on features such as membership loyalty, email campaigns, etc.*. We are launching an MVP that will allow us to sell products online, email users of orders, etc.
 
-- [ ] Finish all gets for Products, Product variation and Inventory check for the checkout process.
-- [ ] Implement Stripe Confirmation for payment processing.
+- [*] Finish all gets for Products, Product variation and Inventory check for the checkout process.
+- [*] Implement Stripe Confirmation for payment processing.
 - [ ] Add Redis to cache Cart items and cart sessions.? Do we even need to use Redis? Can we use in memory cache? Maybe Phase 2
 - [ ] Organize DB layer endpoint into different files to be more organized.
 - [*] Clean up the dockerfiles to be two stage builds for better performance, security and size. (Huge improvements! Whooo!!)
@@ -15,8 +15,8 @@
        - [*] Get Product details (Product and Variation) from DB layer.
        - [*] Get Inventory check for the checkout process.
        - [*] If inventory is not available, notify the user and do not proceed to finish payments.
-       - [ ] Implement Strip confirmation for payment processing. Including Removing inventory from the database, sending email, updating user account with an order record (user can login to see orders progress, history and later maybe tracking?). Setup up local webhook testing.
-       - [ ] Figure out the order summary process and 
+       - [++] Implement Strip confirmation for payment processing. Including Removing inventory from the database, sending email, updating user account with an order record (user can login to see orders progress, history and later maybe tracking?). Setup up local webhook testing.
+       - [ ] Checkout-endpoint  is now going to be in the  c
 - [ ] Process Email:
     - [ ] Research how to send emails with Go. Use SMTP or a third party service like Mailgun, SendGrid, Amazon SES.
     - [ ] Send email when order is placed
@@ -24,12 +24,13 @@
     - [ ] Send email when order is delivered
 - [ ] User Account Features
     - [ ] User orders endpoints
-- [ ] Orders System
+- [-] Orders System
     - [ ] Implement a system to keep track of order progress
 - [ ] Admin
 - [ ] Envrinment Variables handling, better!
     -[*] Stripe
     -[ ] Hosts
+
 
 
 ## Frontend Improvements:
