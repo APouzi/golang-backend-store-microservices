@@ -24,6 +24,7 @@ type ProductRoutesTray struct{
 	getAllProductByCategoryPrimeStmt *sql.Stmt
 	getAllProductByCategorySubStmt *sql.Stmt
 	getAllProductByCategoryFinalStmt *sql.Stmt
+	getProductAndVariationsPaginatedStmt *sql.Stmt
 }
 
 func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
@@ -38,6 +39,7 @@ func GetProductRouteInstance(dbInst *sql.DB) *ProductRoutesTray{
 		getAllProductByCategoryPrimeStmt: routeMap["GetAllProductByCategoryPrimeStmt"],
 		getAllProductByCategorySubStmt: routeMap["GetAllProductByCategorySubStmt"],
 		getAllProductByCategoryFinalStmt: routeMap["GetAllProductByCategoryFinalStmt"],
+		getProductAndVariationsPaginatedStmt: routeMap["GetProductAndVariationsPaginatedStmt"],
 		DB: dbInst,
 	}
 	return prd_tray
@@ -76,6 +78,22 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 		log.Fatal(err)
 	}
 
+	getProductAndVariationsPaginatedStmt, err := dbInst.Prepare(`
+	SELECT p.Product_ID, p.Product_Name, p.Product_Description,
+		   pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, ps.Size_ID,
+		   ps.Size_Name, ps.Size_Description, ps.Variation_ID, ps.Variation_Price, ps.SKU, ps.UPC, ps.PRIMARY_IMAGE
+	FROM (
+		SELECT * FROM tblProducts
+		ORDER BY Product_ID
+		LIMIT ? OFFSET ?
+	) p
+	LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+	LEFT JOIN tblProductSize ps ON ps.Variation_ID = pv.Variation_ID
+`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 
 	// GetAllProductsPrimeCategoryByID, err := dbInst.Prepare("SELECT tblProducts.Product_ID, tblProducts.Product_Name FROM tblProducts JOIN tblCatFinalProd ON tblCatFinalProd.Product_ID = tblProducts.Product_ID JOIN tblCategoriesFinal ON tblCategoriesFinal.Category_ID = tblCatFinalProd.CatFinalID JOIN tblCatSubFinal ON tblCatSubFinal.CatFinalID = tblCategoriesFinal.Category_ID JOIN tblCategoriesSub ON tblCategoriesSub.Category_ID = tblCatSubFinal.CatSubID JOIN tblCatPrimeSub ON tblCatPrimeSub.CatSubID = tblCategoriesSub.Category_ID JOIN tblCategoriesPrime ON tblCategoriesPrime.Category_ID = tblCatPrimeSub.CatPrimeID WHERE tblCategoriesPrime.Category_ID = ?")
 	// if err != nil {
@@ -88,6 +106,7 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 	sqlStmentsMap["GetAllProductByCategoryFinalStmt"] = getAllFinalStment
 	sqlStmentsMap["GetAllProductByCategorySubStmt"] = getAllSubStment
 	sqlStmentsMap["GetAllProductByCategoryPrimeStmt"] = getAllPrimeStment
+	sqlStmentsMap["GetProductAndVariationsPaginatedStmt"] = getProductAndVariationsPaginatedStmt
 	// sqlStmentsMap["getProductPrimeCategoryByID"] = GetAllProductsPrimeCategoryByID
 	
 	return sqlStmentsMap
@@ -432,9 +451,7 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsPaginated(w http.Resp
 
     // Count total records
     var totalCount int
-    countQuery := `SELECT COUNT(*) FROM tblProducts p
-                   LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
-                	`
+    countQuery := `SELECT COUNT(DISTINCT p.Product_ID) FROM tblProducts p`
     err = prdRoutes.DB.QueryRow(countQuery).Scan(&totalCount)
     if err != nil {
         helpers.ErrorJSON(w, fmt.Errorf("failed to get count: %v", err), http.StatusInternalServerError)
@@ -442,19 +459,9 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsPaginated(w http.Resp
     }
 
     totalPages := (totalCount + pageSize - 1) / pageSize
-	fmt.Println("total pages",totalPages)
+    fmt.Println("total pages",totalPages)
     // Main query with LIMIT/OFFSET
-    sqlQuery := `
-        SELECT p.Product_ID, p.Product_Name, p.Product_Description,
-               pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, ps.Size_ID,
-               ps.Size_Name, ps.Size_Description, ps.Variation_ID, ps.Variation_Price, ps.SKU, ps.UPC, ps.PRIMARY_IMAGE
-        FROM tblProducts p
-        LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
-		LEFT JOIN tblProductSize ps ON ps.Variation_ID = pv.Variation_ID 
-        LIMIT ? OFFSET ?
-    `
-
-    rows, err := prdRoutes.DB.Query(sqlQuery, pageSize, offset)
+    rows, err := prdRoutes.getProductAndVariationsPaginatedStmt.Query(pageSize, offset)
     if err != nil {
         helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
         return

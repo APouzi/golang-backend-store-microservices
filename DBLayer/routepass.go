@@ -77,13 +77,13 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	
 	// digest.Post("/superusercreation",rUser.AdminSuperUserCreation)
 	
-	digest.Get("/products/{ProductID}",rProduct.GetOneProductEndPoint)
-	digest.Get("/products",rProduct.GetAllProductsEndPoint)
 	digest.Get("/variations/{VariationID}", rProduct.GetOneVariationEndPoint) //This needs to change to just 
 	digest.Get("/products/variations/",rProduct.GetOneProductVariationByParamEndPoint)
-	digest.Get("/products/search/", rProduct.SearchProductsEndPoint)
+	digest.Get("/products/search", rProduct.SearchProductsEndPoint)
 	digest.Get("/products/variations/{productID}",rProduct.GetProductAndVariationsByProductID)
 	digest.Get("/products/variations/pagination/",rProduct.GetProductAndVariationsPaginated)
+	digest.Get("/products",rProduct.GetAllProductsEndPoint)
+	digest.Get("/products/{ProductID}",rProduct.GetOneProductEndPoint)
 	digest.Get("/product-size/{SizeID}",rProduct.GetOneProductSizeEndPoint)
 	// digest.Get("/products/{CategoryName}",r.GetProductCategoryEndPointFinal)
 

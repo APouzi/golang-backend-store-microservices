@@ -113,22 +113,19 @@ func (route *ProductRoutes) SearchProductsEndPoint(w http.ResponseWriter, r *htt
 	}
 
 	fmt.Println("searchQuery", searchQuery)
-	url := fmt.Sprintf("http://dblayer:8080/search/?q=%s", searchQuery)
+	url := fmt.Sprintf("http://dblayer:8080/products/search?q=%s", searchQuery)
 
 	resp, err := http.Get(url)
-
-	if resp.StatusCode != http.StatusOK {
-		helpers.ErrorJSON(w, fmt.Errorf("DBLayer service returned status: %d", err), http.StatusInternalServerError)
-		return
-	}
-
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("failed to search products: %v", err), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	
+	if resp.StatusCode != http.StatusOK {
+		helpers.ErrorJSON(w, fmt.Errorf("DBLayer service returned status: %d", resp.StatusCode), http.StatusInternalServerError)
+		return
+	}
 
 	var searchResults []ProductWrapper
 	err = json.NewDecoder(resp.Body).Decode(&searchResults)
