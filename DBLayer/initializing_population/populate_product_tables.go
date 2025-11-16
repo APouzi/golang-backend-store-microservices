@@ -9,22 +9,52 @@ import (
 
 func PopulateProductTables(db *sql.DB) {
 	fmt.Println("start of initialiazing tables")
-	query, err := os.ReadFile("./sql/products.sql")
+	
+	// Disable foreign key checks during schema creation
+	_, err := db.Exec("SET FOREIGN_KEY_CHECKS = 0;")
 	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
+		log.Printf("Warning: Could not disable foreign key checks: %v", err)
 	}
+	
+	// Execute SQL files in the correct order to handle dependencies
+	// Order: Core tables first, then junction tables, then views
+	sqlFiles := []string{
+		"./sql/admin.sql",       // No dependencies
+		"./sql/inventory.sql",   // Contains tblLocation (needed by products)
+		"./sql/products.sql",    // References tblLocation 
+		"./sql/categories.sql",  // References tblProducts
+		"./sql/user.sql",        // References tblProducts  
+		"./sql/orders.sql",      // References multiple tables
+		"./sql/views.sql",       // References all above tables
+	}
+	
+	for _, sqlFile := range sqlFiles {
+		fmt.Printf("Reading and executing: %s\n", sqlFile)
+		query, err := os.ReadFile(sqlFile)
+		if err != nil {
+			log.Printf("Warning: Error reading file %s: %v (skipping)", sqlFile, err)
+			continue // Skip missing files but don't crash
+		}
 
-	fmt.Println("read sql file")
-
-	_, err = db.Exec(string(query))
-
+		_, err = db.Exec(string(query))
+		if err != nil {
+			log.Printf("Warning: Error executing file %s: %v (continuing)", sqlFile, err)
+			// Continue instead of fatal to avoid crashing on non-critical errors
+		} else {
+			fmt.Printf("Successfully executed: %s\n", sqlFile)
+		}
+	}
+	
+	// Re-enable foreign key checks after schema creation
+	_, err = db.Exec("SET FOREIGN_KEY_CHECKS = 1;")
 	if err != nil {
-		log.Fatal("Couldn't complete the execution of the file", err)
+		log.Printf("Warning: Could not re-enable foreign key checks: %v", err)
 	}
-	fmt.Println("executed sql file")
+	
+	fmt.Println("executed all sql files")
 
 	for i := 0.00; i <= 10; i++ {
-		_, err = db.Exec("INSERT INTO tblProducts (Product_Name, Product_Description) VALUES(?,?)", "testProductPopulate", "This is a description!")
+		_, err := db.Exec("INSERT INTO tblProducts (Product_Name, Product_Description) VALUES(?,?)", "testProductPopulate", "This is a description!")
 		if err != nil {
 			log.Fatal("Error with tblProducts")
 		}

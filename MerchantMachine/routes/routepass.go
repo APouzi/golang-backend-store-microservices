@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"os"
 
 	firebase "firebase.google.com/go"
 	"github.com/APouzi/MerchantMachinee/routes/checkout"
@@ -14,7 +15,11 @@ import (
 func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stripe.Client, config checkout.Config) *chi.Mux{
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
-	rProduct := productendpoints.InstanceProductsRoutes()
+	dbURL := os.Getenv("DBLAYER_URL")
+	if dbURL == "" {
+		dbURL = "http://dblayer:8080"
+	}
+	rProduct := productendpoints.InstanceProductsRoutes(dbURL)
 
 	rCheckout := checkout.InstanceCheckoutRoutes(stripeClient, config)
 
@@ -79,6 +84,8 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductsEndPoint)
 	digest.Get("/products",rProduct.GetAllProductsAndVariationsEndPoint)
+	digest.Get("/products/variations/pagination/", rProduct.GetProductAndVariationsPaginated)
+	digest.Get("/products/variations/{productID}", rProduct.GetProductAndVariationsByProductID)
 	digest.Get("/search/",rProduct.SearchProductsEndPoint)
 	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
 	digest.Post("/stripe/webhook/payment-confirmation", rCheckout.PaymentConfirmation)

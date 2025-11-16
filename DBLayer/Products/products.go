@@ -65,17 +65,20 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 
 	getAllFinalStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInFinalView LIMIT 10 OFFSET ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Warning: Could not prepare AllProductsInFinalView statement: %v", err)
+		getAllFinalStment = nil // Set to nil so we can check later
 	}
 
 	getAllSubStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInSubView LIMIT 10 OFFSET ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Warning: Could not prepare AllProductsInSubView statement: %v", err)
+		getAllSubStment = nil
 	}
 
 	getAllPrimeStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInPrimeView LIMIT 10 OFFSET ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Warning: Could not prepare AllProductsInPrimeView statement: %v", err)
+		getAllPrimeStment = nil
 	}
 
 	getProductAndVariationsPaginatedStmt, err := dbInst.Prepare(`
@@ -296,17 +299,19 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 	}
 	fmt.Println(r.URL.Query().Get("q"))
 	fmt.Println("query from product end point", query)
+	
+	// Updated SQL query to match the paginated endpoint structure
 	sqlQuery := `
 		SELECT p.Product_ID, p.Product_Name, p.Product_Description,
-			   pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, pv.Variation_Price,
-			   pil.Inv_ID, pil.Quantity, pil.Location_At
+			   pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, ps.Size_ID,
+			   ps.Size_Name, ps.Size_Description, ps.Variation_ID, ps.Variation_Price, ps.SKU, ps.UPC, ps.PRIMARY_IMAGE
 		FROM tblProducts p
 		LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
-		LEFT JOIN tblProductInventoryLocation pil ON pv.Variation_ID = pil.Variation_ID
+		LEFT JOIN tblProductSize ps ON ps.Variation_ID = pv.Variation_ID
 		WHERE p.Product_Name LIKE ? OR pv.Variation_Name LIKE ?
+		ORDER BY p.Product_ID
 	`
 
-	//the question marks in the sql statement are replaced by the values of the query string, specifically the two parameters after the query string.
 	rows, err := prdRoutes.DB.Query(sqlQuery, "%"+query+"%", "%"+query+"%")
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
@@ -314,40 +319,60 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 	}
 	defer rows.Close()
 
-	var product_list []map[string]interface{}
+	// Use the same data structure as the paginated endpoint
+	var productsMapForJoins map[int64]ProductPaginated = map[int64]ProductPaginated{}
+	dataSendBack := []ProductPaginated{}
+	
 	for rows.Next() {
-		var product Product
-		var variation VariationRet
-		var inventory struct {
-			Inv_ID     *int64  `json:"inv_id,omitempty"`
-			Quantity  *int64  `json:"quantity,omitempty"`
-			LocationAt  *string `json:"location,omitempty"`
-		}
-
-		
+		var product rowData
 
 		err := rows.Scan(
-			&product.Product_ID, &product.Product_Name, &product.Product_Description,
-			&variation.Variation_ID, &variation.Name, &variation.Description, &variation.Price,
-			&inventory.Inv_ID, &inventory.Quantity, &inventory.LocationAt,
+			&product.ProductID, &product.ProductName, &product.ProductDescription,
+			&product.VariationID, &product.VariationName, &product.VariationDesc,
+			&product.SizeID, &product.SizeName, &product.SizeDesc, &product.VariationID, 
+			&product.SizeVariationPrice, &product.SKU, &product.UPC, &product.PrimaryImage,
 		)
 		if err != nil {
 			helpers.ErrorJSON(w, fmt.Errorf("error scanning row: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		
-
-		result := map[string]interface{}{
-			"product": product,
+		// Build the nested structure - same logic as paginated endpoint
+		if _, ok := productsMapForJoins[product.ProductID]; !ok {
+			productsMapForJoins[product.ProductID] = ProductPaginated{
+				ProductID:          product.ProductID,
+				ProductName:        product.ProductName,
+				ProductDescription: product.ProductDescription,
+				Variations:         map[int64]Variation{},
+			}
 		}
 
-		result["variation"] = variation
+		if product.VariationID == nil || *product.VariationID == 0 {
+			continue
+		}
 
+		if _, ok := productsMapForJoins[product.ProductID].Variations[*product.VariationID]; !ok {
+			productsMapForJoins[product.ProductID].Variations[*product.VariationID] = Variation{
+				Name:        product.VariationName,
+				Description: product.VariationDesc,
+				ProductSize: map[int64]ProductSize{},
+			}
+		}
 
-		result["inventory"] = inventory
+		if product.SizeID == nil || *product.SizeID == 0 {
+			continue
+		}
 
-		product_list = append(product_list, result)
+		if _, ok := productsMapForJoins[product.ProductID].Variations[*product.VariationID].ProductSize[*product.SizeID]; !ok {
+			productsMapForJoins[product.ProductID].Variations[*product.VariationID].ProductSize[*product.SizeID] = ProductSize{
+				SizeID:          product.SizeID,
+				SizeName:        product.SizeName,
+				SizeDescription: product.SizeDesc,
+				VariationPrice:  &product.SizeVariationPrice.Float64,
+				SKU:             product.SKU,
+				UPC:             product.UPC,
+			}
+		}
 	}
 
 	if err = rows.Err(); err != nil {
@@ -355,7 +380,23 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 		return
 	}
 
-	helpers.WriteJSON(w, http.StatusOK, product_list)
+	// Convert map to array and sort by ProductID
+	for _, v := range productsMapForJoins {
+		dataSendBack = append(dataSendBack, v)
+	}
+	sort.Slice(dataSendBack, func(i, j int) bool {
+		return dataSendBack[i].ProductID < dataSendBack[j].ProductID
+	})
+
+	fmt.Println("=== DBLAYER SEARCH RESPONSE ===")
+	fmt.Printf("Number of products: %d\n", len(dataSendBack))
+	for i, prod := range dataSendBack {
+		fmt.Printf("Product %d: ID=%d, Name=%s, Variations=%d\n", 
+			i, prod.ProductID, prod.ProductName, len(prod.Variations))
+	}
+	fmt.Println("================================")
+
+	helpers.WriteJSON(w, http.StatusOK, dataSendBack)
 }
 
 
@@ -571,6 +612,11 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInFinalCategoryViewEndPoint(w 
 
 	page = 10 * (page - 1)
 
+	if prdRoutes.getAllProductByCategoryFinalStmt == nil {
+		helpers.ErrorJSON(w, fmt.Errorf("AllProductsInFinalView not available - database views not initialized"), http.StatusServiceUnavailable)
+		return
+	}
+
 	res, err := prdRoutes.getAllProductByCategoryFinalStmt.Query(page)
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
@@ -615,6 +661,11 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInSubCategoryViewEndPoint(w ht
 
 	page = 10 * (page - 1)
 
+	if prdRoutes.getAllProductByCategorySubStmt == nil {
+		helpers.ErrorJSON(w, fmt.Errorf("AllProductsInSubView not available - database views not initialized"), http.StatusServiceUnavailable)
+		return
+	}
+
 	res, err := prdRoutes.getAllProductByCategorySubStmt.Query(page)
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
@@ -658,6 +709,11 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInPrimeCategoryViewEndPoint(w 
 	}
 
 	page = 10 * (page - 1)
+
+	if prdRoutes.getAllProductByCategoryPrimeStmt == nil {
+		helpers.ErrorJSON(w, fmt.Errorf("AllProductsInPrimeView not available - database views not initialized"), http.StatusServiceUnavailable)
+		return
+	}
 
 	res, err := prdRoutes.getAllProductByCategoryPrimeStmt.Query(page)
 	if err != nil {

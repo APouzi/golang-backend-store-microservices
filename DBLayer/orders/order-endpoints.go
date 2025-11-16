@@ -47,22 +47,23 @@ func (rt *OrderRoutesTray) CreateOrderRecord(w http.ResponseWriter, r *http.Requ
 
 	// Basic validation
 	if ord.OrderNumber == "" {
+		fmt.Println("Validation failed: order_number is required")
 		helpers.ErrorJSON(w, errors.New("order_number is required"), http.StatusBadRequest)
 		return
 	}
 	if ord.Email == "" {
+		fmt.Println("Validation failed: email is required")
 		helpers.ErrorJSON(w, errors.New("email is required"), http.StatusBadRequest)
 		return
 	}
 	if ord.SubtotalCents < 0 || ord.DiscountCents < 0 || ord.ShippingCents < 0 || ord.TaxCents < 0 || ord.TotalCents < 0 {
+		fmt.Println("Validation failed: amounts must be >= 0")
 		helpers.ErrorJSON(w, errors.New("amounts must be >= 0"), http.StatusBadRequest)
 		return
 	}
 
-	// Hand off to DB layer
 	id, err := InsertOrder(r.Context(), rt.DB, &ord)
 	if err != nil {
-		// Handle duplicate order_number nicely
 		var me *mysql.MySQLError
 		if errors.As(err, &me) && me.Number == 1062 {
 			http.Error(w, "order_number already exists", http.StatusConflict)
@@ -117,6 +118,7 @@ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	if err != nil {
 		return 0, err
 	}
+	fmt.Println("inside of Insert Order after db insert!")
 	lastID, err := res.LastInsertId()
 	if err != nil {
 		return 0, err

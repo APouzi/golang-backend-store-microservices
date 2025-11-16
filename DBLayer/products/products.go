@@ -65,17 +65,20 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 
 	getAllFinalStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInFinalView LIMIT 10 OFFSET ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Warning: Could not prepare AllProductsInFinalView statement: %v", err)
+		getAllFinalStment = nil // Set to nil so we can check later
 	}
 
 	getAllSubStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInSubView LIMIT 10 OFFSET ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Warning: Could not prepare AllProductsInSubView statement: %v", err)
+		getAllSubStment = nil
 	}
 
 	getAllPrimeStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInPrimeView LIMIT 10 OFFSET ?")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Warning: Could not prepare AllProductsInPrimeView statement: %v", err)
+		getAllPrimeStment = nil
 	}
 
 	getProductAndVariationsPaginatedStmt, err := dbInst.Prepare(`
@@ -384,6 +387,15 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 	sort.Slice(dataSendBack, func(i, j int) bool {
 		return dataSendBack[i].ProductID < dataSendBack[j].ProductID
 	})
+
+	fmt.Println("=== DBLAYER SEARCH RESPONSE ===")
+	fmt.Printf("Number of products: %d\n", len(dataSendBack))
+	for i, prod := range dataSendBack {
+		fmt.Printf("Product %d: ID=%d, Name=%s, Variations=%d\n", 
+			i, prod.ProductID, prod.ProductName, len(prod.Variations))
+	}
+	fmt.Println("================================")
+
 	helpers.WriteJSON(w, http.StatusOK, dataSendBack)
 }
 
@@ -600,6 +612,11 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInFinalCategoryViewEndPoint(w 
 
 	page = 10 * (page - 1)
 
+	if prdRoutes.getAllProductByCategoryFinalStmt == nil {
+		helpers.ErrorJSON(w, fmt.Errorf("AllProductsInFinalView not available - database views not initialized"), http.StatusServiceUnavailable)
+		return
+	}
+
 	res, err := prdRoutes.getAllProductByCategoryFinalStmt.Query(page)
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
@@ -644,6 +661,11 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInSubCategoryViewEndPoint(w ht
 
 	page = 10 * (page - 1)
 
+	if prdRoutes.getAllProductByCategorySubStmt == nil {
+		helpers.ErrorJSON(w, fmt.Errorf("AllProductsInSubView not available - database views not initialized"), http.StatusServiceUnavailable)
+		return
+	}
+
 	res, err := prdRoutes.getAllProductByCategorySubStmt.Query(page)
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
@@ -687,6 +709,11 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInPrimeCategoryViewEndPoint(w 
 	}
 
 	page = 10 * (page - 1)
+
+	if prdRoutes.getAllProductByCategoryPrimeStmt == nil {
+		helpers.ErrorJSON(w, fmt.Errorf("AllProductsInPrimeView not available - database views not initialized"), http.StatusServiceUnavailable)
+		return
+	}
 
 	res, err := prdRoutes.getAllProductByCategoryPrimeStmt.Query(page)
 	if err != nil {
