@@ -19,16 +19,29 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 	// rProduct := productendpoints.InstanceProductsRoutes()
 
 	// rUser := userendpoints.InstanceUserRoutes(db)
-	fmt.Println("fireAuth before call", firebaseAuth)
+	fmt.Println("Firebase App before Auth call:", firebaseAuth)
 	rAdmin := adminendpoints.InstanceAdminRoutes()
 	rAdminCategories := adminendpoints.InstanceAdminCategoriesRoutes()
+	
 	fireAuth, err := firebaseAuth.Auth(context.Background())
 	if err != nil{
-		fmt.Println("There was an erroe trying to get auth",err)
+		fmt.Println("Error trying to get Firebase Auth client:", err)
+		panic(fmt.Sprintf("Failed to initialize Firebase Auth: %v", err))
 	}
-	fmt.Println("fireAuth after call", fireAuth)
-	AuthMiddleWare := middleware.AuthMiddleWare{}
-	AuthMiddleWare.Client = fireAuth
+	
+	if fireAuth == nil {
+		fmt.Println("Firebase Auth client is nil after initialization")
+		panic("Firebase Auth client is nil")
+	}
+	
+	fmt.Println("Firebase Auth client after call:", fireAuth)
+	
+	// Create and initialize the middleware
+	AuthMiddleWare := &middleware.AuthMiddleWare{
+		Client: fireAuth,
+	}
+	
+	fmt.Println("AuthMiddleWare initialized:", AuthMiddleWare, "Client:", AuthMiddleWare.Client)
 
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
 

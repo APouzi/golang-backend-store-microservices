@@ -63,12 +63,34 @@ func(route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request){
 	}
 	createdProductResult, err := http.Post("http://dblayer:8080/db/products/","application/json",bytes.NewReader(sendOff))
 	if err != nil{
-		fmt.Println(err)
+		fmt.Println("Error connecting to DBLayer:", err)
+		helpers.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "Database service unavailable", 
+			"details": err.Error(),
+		})
+		return
 	}
+	
+	if createdProductResult == nil {
+		fmt.Println("Received nil response from DBLayer")
+		helpers.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "Database service returned no response",
+		})
+		return
+	}
+	
 	prodcreate:= &ProductCreateRetrieve{}
 	
 	decode := json.NewDecoder(createdProductResult.Body)
-	decode.Decode(prodcreate)
+	err = decode.Decode(prodcreate)
+	if err != nil {
+		fmt.Println("Error decoding response from DBLayer:", err)
+		helpers.WriteJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": "Failed to parse database response",
+			"details": err.Error(),
+		})
+		return
+	}
 	fmt.Println("attempted result is",prodcreate)
 	helpers.WriteJSON(w,http.StatusAccepted,prodcreate)
 

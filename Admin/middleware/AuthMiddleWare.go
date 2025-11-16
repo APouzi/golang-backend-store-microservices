@@ -17,6 +17,19 @@ type AuthMiddleWare struct {
 func(midwareinstance *AuthMiddleWare) ValidateToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		
+		// Check if the middleware instance or client is nil
+		if midwareinstance == nil {
+			fmt.Println("AuthMiddleWare instance is nil")
+			http.Error(w, "Internal server error: middleware not initialized", http.StatusInternalServerError)
+			return
+		}
+		
+		if midwareinstance.Client == nil {
+			fmt.Println("Firebase Auth Client is nil")
+			http.Error(w, "Internal server error: auth client not initialized", http.StatusInternalServerError)
+			return
+		}
+		
 		tokenString := r.Header.Get("Authorization")
 		if tokenString == "" {
             http.Error(w, "Authorization token is required", http.StatusUnauthorized)
@@ -29,7 +42,7 @@ func(midwareinstance *AuthMiddleWare) ValidateToken(next http.Handler) http.Hand
 			return
 		}
 		tokenString = parts[1]
-		fmt.Println(tokenString,"and the client!", midwareinstance.Client)
+		fmt.Println("Token:", tokenString, "Client:", midwareinstance.Client)
 		token, err := midwareinstance.Client.VerifyIDToken(context.Background(), tokenString)
         if err != nil {
             http.Error(w, err.Error(), http.StatusUnauthorized)

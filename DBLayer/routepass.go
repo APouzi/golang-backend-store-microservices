@@ -7,6 +7,7 @@ import (
 	inventory "github.com/APouzi/DBLayer/inventory"
 	"github.com/APouzi/DBLayer/orders"
 	products "github.com/APouzi/DBLayer/products"
+	"github.com/APouzi/DBLayer/users"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
@@ -25,6 +26,8 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	rAdmin := admin.GetProductRouteInstance(dbInstance)
 
 	rOrders := orders.GetOrderRoutesTrayInstance(dbInstance)
+
+	rWishlist := users.WishlistRoutesTrayInstance(dbInstance)
 
 	// AuthMiddleWare := authorization.InjectDBRef()
 
@@ -158,5 +161,12 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	digest.Get("/tax-codes-intermediary/{SizeID}", rProduct.GetAllProductTaxCodeEndPointFromProductSizeIntermediary)
 	digest.Get("/tax-codes/{TaxCodeID}",rProduct.GetOneProductTaxCodeEndpoint)
 	digest.Get("/tax-codes",rProduct.GetAllProductTaxCodeEndPoint)
+
+
+	// =====================
+	// Wishlist Routes
+	// =====================
+	digest.Get("/users/{userProfileID:[0-9]+}/wishlists", rWishlist.GetAllWishListsEndPoint)
+	digest.Get("/users/{userProfileID:[0-9]+}/wishlists/{wishlistID:[0-9]+}", rWishlist.GetWishListByIDEndpoint)
 	return digest
 }
