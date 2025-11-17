@@ -18,7 +18,7 @@ type AdminRoutes struct{
 	DB *sql.DB
 }
 
-func InstanceAdminRoutes(  ) *AdminRoutes {
+func InstanceAdminRoutes() *AdminRoutes {
 	r := &AdminRoutes{
 	}
 	return r
@@ -472,3 +472,34 @@ func(route *AdminRoutes) UserToAdmin(w http.ResponseWriter, r *http.Request){
 // 	var cat Category
 // 	helpers.ReadJSON(w,r,&cat)
 
+func(route *AdminRoutes) CreateProductSize(w http.ResponseWriter, r *http.Request){
+	variationID := chi.URLParam(r, "VariationID")
+	productID := chi.URLParam(r, "ProductID")
+
+	// Ensure DateCreated and ModifiedDate are initialized to now
+	resp, err := http.Post("http://dblayer:8080/products/"+productID+"/variation/"+variationID+"/size","application/json", r.Body)
+	if err != nil {
+		fmt.Println("There was an error posting product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error posting product size"), 500)
+		return
+	}
+	defer resp.Body.Close()
+
+	var respData struct {
+		SizeID int64 `json:"size_id"`
+	}
+	decoder := json.NewDecoder(resp.Body)
+	if err := decoder.Decode(&respData); err != nil {
+		fmt.Println("Error decoding response from DBLayer:", err)
+		helpers.ErrorJSON(w, errors.New("failed to parse database response"), 500)
+		return
+	}
+	sizeID := respData.SizeID
+	if sizeID == 0 {
+		fmt.Println("There was an error getting last insert id for product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error getting last insert id for product size"), 500)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusCreated, sizeID)
+}

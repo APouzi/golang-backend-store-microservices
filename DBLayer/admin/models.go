@@ -1,5 +1,7 @@
 package admin
 
+import "time"
+
 // Product automatically creates Variation
 type ProductCreate struct{
 	Name string `json:"Product_Name"`
@@ -130,4 +132,17 @@ type Attribute struct {
 
 type CategoriesList struct{
 	collection []CategoryReturn
+}
+
+type ProductSize struct {
+    SizeID         *int64       `db:"Size_ID" json:"size_id"`
+    SizeName       *string     `db:"Size_Name" json:"size_name"`
+    SizeDescription *string    `db:"Size_Description,omitempty" json:"size_description,omitempty"`
+    VariationID    *int64        `db:"Variation_ID" json:"variation_id"`
+    VariationPrice *float64    `db:"Variation_Price" json:"variation_price"`
+    SKU            *string    `db:"SKU,omitempty" json:"sku,omitempty"`
+    UPC            *string    `db:"UPC,omitempty" json:"upc,omitempty"`
+    PrimaryImage   *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
+    DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
+    ModifiedDate   *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
 }

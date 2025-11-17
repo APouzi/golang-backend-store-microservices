@@ -672,3 +672,34 @@ func(route *ProductRoutesTray) UserToAdmin(w http.ResponseWriter, r *http.Reques
 	rAID := returnAdminID{UserID:adminID}
 	helpers.WriteJSON(w,200,rAID)
 }
+
+func(route *ProductRoutesTray) CreateProductSize(w http.ResponseWriter, r *http.Request){
+	var prdSize ProductSize
+
+	helpers.ReadJSON(w,r,&prdSize)
+	fmt.Println("product size payload:",prdSize)
+	// Ensure DateCreated and ModifiedDate are initialized to now
+	now := time.Now().UTC()
+	prdSize.DateCreated = &now
+	prdSize.ModifiedDate = &now
+
+	// Use SQL column names consistent with DB schema - singular table name and Date_Created/Modified_Date
+	sql, err := route.DB.Exec("INSERT INTO tblProductSize (Size_Name, Size_Description, Variation_ID, Variation_Price, SKU, UPC, PRIMARY_IMAGE, Date_Created, Modified_Date) VALUES(?,?,?,?,?,?,?,?,?)",
+		prdSize.SizeName, prdSize.SizeDescription, prdSize.VariationID, prdSize.VariationPrice, prdSize.SKU, prdSize.UPC, prdSize.PrimaryImage, prdSize.DateCreated, prdSize.ModifiedDate)
+	if err != nil{
+		fmt.Println("There was an error inserting product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error inserting product size"), 500)
+		return
+	}
+
+	sizeID, err := sql.LastInsertId()
+	if err != nil{
+		fmt.Println("There was an error getting last insert id for product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error getting last insert id for product size"), 500)
+		return
+	}
+
+	prdSize.SizeID = &sizeID
+
+	helpers.WriteJSON(w, http.StatusCreated, prdSize)
+}

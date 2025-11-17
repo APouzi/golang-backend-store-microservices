@@ -86,6 +86,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 		digest.Use(AuthMiddleWare.ValidateToken)
 		digest.Post("/products/", rAdmin.CreateProduct)
 		digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
+		digest.Post("/products/{ProductID}/variation/{VariationID}/size", rAdmin.CreateProductSize)
 		digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
 		digest.Post("/category/prime", rAdminCategories.CreatePrimeCategory)
 		digest.Post("/category/sub", rAdminCategories.CreateSubCategory)
