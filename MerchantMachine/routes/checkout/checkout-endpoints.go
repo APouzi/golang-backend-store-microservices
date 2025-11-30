@@ -108,6 +108,7 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 			quantityCount += v.Quantity
 		}
 		if quantityCount <= 0 || quantityCount < item.Quantity {
+			fmt.Println("Insufficient inventory for item:", item.Size_ID)
 			helpers.ErrorJSON(w, errors.New("insufficient inventory"), http.StatusBadRequest)
 			return
 		}

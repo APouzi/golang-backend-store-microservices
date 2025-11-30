@@ -85,9 +85,9 @@ func PopulateProductTables(db *sql.DB) {
 
 	// listPrint := []database.Product{}
 	// rows, err := db.Query("SELECT tblProducts.Product_ID, tblProducts.Product_Name, tblProducts.Product_Description, tblProducts.Product_Price FROM tblProducts JOIN tblProductsCategoriesPrime ON tblProducts.Product_ID = tblProductsCategoriesPrime.Product_ID JOIN tblCategoriesPrime ON tblProductsCategoriesPrime.Category_ID = tblCategoriesPrime.Category_ID WHERE tblCategoriesPrime.CategoryName = ?", "Test Category" )
-	if err != nil {
-		log.Fatal("Error with category", err)
-	}
+	// if err != nil {
+	// 	log.Fatal("Error with category", err)
+	// }
 	// defer rows.Close()
 	// for rows.Next(){
 	// 	resultProd2 := database.Product{}
