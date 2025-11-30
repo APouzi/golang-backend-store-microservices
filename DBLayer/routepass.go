@@ -9,7 +9,6 @@ import (
 	products "github.com/APouzi/DBLayer/products"
 	"github.com/APouzi/DBLayer/users"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/cors"
 )
 
 
@@ -18,6 +17,8 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
 	rProduct := products.GetProductRouteInstance(dbInstance)
+
+	rCatagories := admin.GetCategoriesRouteInstance(dbInstance)
 
 	rInventory := inventory.GetInventoryRoutesTrayInstance(dbInstance)
 
@@ -33,32 +34,6 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
 
-	c := cors.New(cors.Options{
-        // AllowedOrigins is a list of origins a cross-domain request can be executed from
-        // All origins are allowed by default, you don't need to set this.
-        AllowedOrigins: []string{"http://localhost:4200"}, //CHANGE LATER
-        // AllowOriginFunc is a custom function to validate the origin. It takes the origin
-        // as an argument and returns true if allowed or false otherwise. 
-        // If AllowOriginFunc is set, AllowedOrigins is ignored.
-        // AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-
-        // AllowedMethods is a list of methods the client is allowed to use with
-        // cross-domain requests. Default is all methods.
-        AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-
-        // AllowedHeaders is a list of non simple headers the client is allowed to use with
-        // cross-domain requests.
-        AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-
-        // ExposedHeaders indicates which headers are safe to expose to the API of a CORS
-        // API specification
-        ExposedHeaders:   []string{"Link"},
-        AllowCredentials: true,
-        // MaxAge indicates how long (in seconds) the results of a preflight request
-        // can be cached
-        MaxAge: 300,
-    })
-	digest.Use(c.Handler)
 
 	//Index
 	// digest.Get("/", rIndex.Index)
@@ -103,18 +78,25 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	digest.Post("/products/{ProductID}/variation", rAdmin.CreateProductVariation)
 	digest.Post("/products/inventory-location", rAdmin.CreateInventoryLocation)
 	digest.Post("/products/{ProductID}/variation/{VariationID}/size", rAdmin.CreateProductSize)
-	digest.Post("/category/prime", rAdmin.CreatePrimeCategory)
-	digest.Post("/category/sub", rAdmin.CreateSubCategory)
-	digest.Post("/category/final", rAdmin.CreateFinalCategory)
-	digest.Delete("/category/prime/{CatPrimeName}",rAdmin.DeletePrimeCategory)
-	digest.Delete("/category/sub/{CatSubName}",rAdmin.DeleteSubCategory)
-	digest.Delete("/category/final/{CatFinalName}",rAdmin.DeleteFinalCategory)
+	digest.Delete("/category/prime/{CatPrimeName}",rCatagories.DeletePrimeCategory)
+	digest.Delete("/category/sub/{CatSubName}",rCatagories.DeleteSubCategory)
+	digest.Delete("/category/final/{CatFinalName}",rCatagories.DeleteFinalCategory)
 	digest.Get("/category/final/",rProduct.GetAllProductsInFinalCategoryViewEndPoint)
 	digest.Get("/category/prime/",rProduct.GetAllProductsInPrimeCategoryViewEndPoint)
 	digest.Get("/category/sub/",rProduct.GetAllProductsInSubCategoryViewEndPoint)
-	digest.Post("/category/primetosub",rAdmin.ConnectPrimeToSubCategory)
-	digest.Post("/category/subtofinal",rAdmin.ConnectSubToFinalCategory)
-	digest.Post("/category/finaltoprod",rAdmin.ConnectFinalToProdCategory)
+	digest.Post("/category/prime", rCatagories.CreatePrimeCategory)
+	digest.Patch("/category/prime",rCatagories.EditPrimeCategory)
+	digest.Patch("/category/sub",rCatagories.EditSubCategory)
+	digest.Patch("/category/final",rCatagories.EditFinalCategory)
+	digest.Post("/category/sub", rCatagories.CreateSubCategory)
+	digest.Post("/category/final", rCatagories.CreateFinalCategory)
+	digest.Post("/category/primetosub",rCatagories.ConnectPrimeToSubCategory)
+	digest.Post("/category/subtofinal",rCatagories.ConnectSubToFinalCategory)
+	digest.Post("/category/finaltoprod",rCatagories.ConnectFinalToProdCategory)
+	digest.Get("/category/tree", rProduct.ReturnCategoryTree)
+	digest.Get("/category/prime", rProduct.ReturnAllPrimeCategories)
+	digest.Get("/category/sub", rProduct.ReturnAllSubCategories)
+	digest.Get("/category/final", rProduct.ReturnAllFinalCategories)
 	// digest.Get("/category/primes", rAdmin.ReturnAllPrimeCategories)
 	// digest.Get("/category/subs", rAdmin.ReturnAllSubCategories)
 	// digest.Get("/category/finals", rAdmin.ReturnAllFinalCategories)

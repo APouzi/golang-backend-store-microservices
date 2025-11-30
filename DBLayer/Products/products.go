@@ -329,7 +329,7 @@ func (prdRoutes *ProductRoutesTray) SearchProductsEndPoint(w http.ResponseWriter
 		err := rows.Scan(
 			&product.ProductID, &product.ProductName, &product.ProductDescription,
 			&product.VariationID, &product.VariationName, &product.VariationDesc,
-			&product.SizeID, &product.SizeName, &product.SizeDesc, &product.VariationID, 
+			&product.SizeID, &product.SizeName, &product.SizeDesc, &product.SizeVariationID,
 			&product.SizeVariationPrice, &product.SKU, &product.UPC, &product.PrimaryImage,
 		)
 		if err != nil {
@@ -411,10 +411,12 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.Re
 	fmt.Println("query from product end point", productID)
 	sqlQuery := `
 		SELECT p.Product_ID, p.Product_Name, p.Product_Description,
-			    pv.Variation_ID,pv.Variation_Name, pv.Variation_Description, pv.Variation_Price,
+			   pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, pv.Variation_Price,
+			   ps.Size_ID, ps.Size_Name, ps.Size_Description, ps.Variation_Price as Size_Variation_Price, ps.SKU, ps.UPC, ps.PRIMARY_IMAGE,
 			   pil.Inv_ID, pil.Quantity, pil.Location_At
 		FROM tblProducts p
 		LEFT JOIN tblProductVariation pv ON p.Product_ID = pv.Product_ID
+		LEFT JOIN tblProductSize ps ON ps.Variation_ID = pv.Variation_ID
 		LEFT JOIN tblProductInventoryLocation pil ON pv.Variation_ID = pil.Variation_ID
 		WHERE p.Product_ID = ?
 	`
@@ -427,21 +429,20 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.Re
 	}
 	defer rows.Close()
 
-	var product_list []map[string]interface{}
+	// We'll build a nested structure like the paginated endpoint
+	productsMap := map[int64]ProductPaginated{}
 	for rows.Next() {
-		var product Product
-		var variation VariationRet
+		var r rowData
 		var inventory struct {
 			Inv_ID     *int64
-			Quantity  *int64
+			Quantity   *int64
 			LocationAt *string
 		}
 
-		
-
 		err := rows.Scan(
-			&product.Product_ID, &product.Product_Name, &product.Product_Description,
-			&variation.Variation_ID, &variation.Name, &variation.Description, &variation.Price,
+			&r.ProductID, &r.ProductName, &r.ProductDescription,
+			&r.VariationID, &r.VariationName, &r.VariationDesc, &r.VariationPrice,
+			&r.SizeID, &r.SizeName, &r.SizeDesc, &r.SizeVariationPrice, &r.SKU, &r.UPC, &r.PrimaryImage,
 			&inventory.Inv_ID, &inventory.Quantity, &inventory.LocationAt,
 		)
 		if err != nil {
@@ -451,15 +452,56 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.Re
 
 		
 
-		result := map[string]interface{}{
-			"product": product,
+		if r.ProductID == 0 {
+			continue
 		}
-			result["variation"] = variation
 
+		pid := r.ProductID
+		if _, ok := productsMap[pid]; !ok {
+			productsMap[pid] = ProductPaginated{
+				ProductID: pid,
+				ProductName: r.ProductName,
+				ProductDescription: r.ProductDescription,
+				Variations: map[int64]Variation{},
+			}
+		}
 
-			result["inventory"] = inventory
+		// Skip if no variation
+		if r.VariationID == nil || *r.VariationID == 0 {
+			continue
+		}
+		vid := *r.VariationID
+		pEntry := productsMap[pid]
+		if _, ok := pEntry.Variations[vid]; !ok {
+			pEntry.Variations[vid] = Variation{
+				VariationID: r.VariationID,
+				Name: r.VariationName,
+				Description: r.VariationDesc,
+				ProductSize: map[int64]ProductSize{},
+			}
+		}
 
-		product_list = append(product_list, result)
+		// Add size if present
+		if r.SizeID != nil && *r.SizeID != 0 {
+			sid := *r.SizeID
+			vEntry := pEntry.Variations[vid]
+			size := ProductSize{
+				SizeID: r.SizeID,
+				SizeName: r.SizeName,
+				SizeDescription: r.SizeDesc,
+				VariationID: r.SizeVariationID,
+				SKU: r.SKU,
+				UPC: r.UPC,
+				PrimaryImage: r.PrimaryImage,
+			}
+			if r.SizeVariationPrice.Valid {
+				fv := r.SizeVariationPrice.Float64
+				size.VariationPrice = &fv
+			}
+			vEntry.ProductSize[sid] = size
+			pEntry.Variations[vid] = vEntry
+		}
+		productsMap[pid] = pEntry
 	}
 
 	if err = rows.Err(); err != nil {
@@ -467,7 +509,13 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.Re
 		return
 	}
 
-	helpers.WriteJSON(w, http.StatusOK, product_list)
+	// Convert productsMap to a slice for response
+	respList := []ProductPaginated{}
+	for _, v := range productsMap {
+		respList = append(respList, v)
+	}
+	// If it should be one product, still return as list to match existing proxy expectations
+	helpers.WriteJSON(w, http.StatusOK, respList)
 }
 
 
@@ -514,10 +562,10 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsPaginated(w http.Resp
     for rows.Next() {
         var product rowData
 
-        err := rows.Scan(
+		err := rows.Scan(
             &product.ProductID, &product.ProductName, &product.ProductDescription,
             &product.VariationID, &product.VariationName, &product.VariationDesc,
-            &product.SizeID,&product.SizeName, &product.SizeDesc, &product.VariationID, &product.SizeVariationPrice,&product.SKU, &product.UPC,&product.PrimaryImage,
+			&product.SizeID,&product.SizeName, &product.SizeDesc, &product.SizeVariationID, &product.SizeVariationPrice,&product.SKU, &product.UPC,&product.PrimaryImage,
         )
 		if _,ok := productsMapForJoins[product.ProductID]; !ok{
 			productsMapForJoins[product.ProductID] =  ProductPaginated{

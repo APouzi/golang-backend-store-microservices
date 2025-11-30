@@ -87,6 +87,11 @@ type CategoryReturn struct{
 	CategoryDescription string `json:"CategoryDescription"`
 }
 
+type CategoryEdit struct{
+	CategoryId int64 `json:"category_id"`
+	CategoryName *string `json:"category_name"`
+	CategoryDescription *string `json:"category_description"`
+}
 
 type CatToCat struct {
 	CatStart int `json:"CategoryStart"`

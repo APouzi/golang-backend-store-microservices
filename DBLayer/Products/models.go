@@ -75,7 +75,7 @@ type ProductSize struct {
     VariationPrice *float64    `db:"Variation_Price" json:"variation_price"`
     SKU            *string    `db:"SKU,omitempty" json:"sku,omitempty"`
     UPC            *string    `db:"UPC,omitempty" json:"upc,omitempty"`
-         *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
+    PrimaryImage   *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
     DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
     ModifiedDate   *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
 }
@@ -126,4 +126,45 @@ type ProductTaxCode struct {
 type ProductSizeTaxCode struct {
 	SizeID    int `json:"size_id"`
 	TaxCodeID int `json:"tax_code_id"`
+}
+
+
+type CategoriesList struct{
+	collection []CategorySingleReturn
+}
+
+//========================
+
+type CategoryTree struct{
+  	Categories map[string]PrimeCategoryTree `json:"categories"`
+}
+
+type PrimeCategoryTree struct{
+    PrimeCategoryID int `json:"prime_category_id"`
+    PrimeCategoryName string `json:"prime_category_name"` 
+    Categories map[string]SubCategoryTree `json:"categories"`
+}
+
+type SubCategoryTree struct{
+    SubCategoryID int `json:"sub_category_id"`
+    SubCategoryName string `json:"sub_category_name"`
+    Categories map[string]FinalCategoryTree `json:"categories"`
+}
+
+type FinalCategoryTree struct{
+    FinalCategoryID int `json:"final_category_id"`
+    FinalCategoryName string `json:"final_name"`
+}
+
+//========================
+
+type CategorySingleReturn struct{
+    CategoryId int64 `json:"Category_ID"`
+    CategoryName string `json:"CategoryName"`
+    CategoryDescription string `json:"CategoryDescription"`
+}
+
+type CategoryInsert struct{
+	CategoryName string `json:"CategoryName"`
+	CategoryDescription string `json:"CategoryDescription"`
 }

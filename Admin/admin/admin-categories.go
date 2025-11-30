@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -115,18 +116,24 @@ func (route *AdminCategoriesRoutes) ConnectPrimeToSubCategory(w http.ResponseWri
 	err := helpers.ReadJSON(w,r, &FinalSub)
 	if err != nil{
 		fmt.Println(err)
+		helpers.ErrorJSON(w, errors.New("failed reading json"), 500)
+		return
 	}
-
+	fmt.Println("final sub:",FinalSub)
 
 	url := "http://dblayer:8080/category/primetosub"
 	catBytes, err := json.Marshal(FinalSub)
 	if err != nil{
 		fmt.Println(err)
+		helpers.ErrorJSON(w, errors.New("failed marshalling json"), 500)
+		return
 	}
 	catDecode:= bytes.NewReader(catBytes)
 	resp, err := http.Post(url,"application/json",catDecode)
 	if err != nil{
 		fmt.Println("error trying to post to create prime category",err)
+		helpers.ErrorJSON(w, errors.New("failed posting json"), 500)
+		return
 	}
 
 	catret := &CatToCat{}
@@ -134,6 +141,8 @@ func (route *AdminCategoriesRoutes) ConnectPrimeToSubCategory(w http.ResponseWri
 	err = responseDecode.Decode(catret)
 	if err != nil{
 		fmt.Println("error trying to decode",err)
+		helpers.ErrorJSON(w, errors.New("failed decoding json"), 500)
+		return	
 	}
 	
 	helpers.WriteJSON(w, http.StatusCreated, catret)
