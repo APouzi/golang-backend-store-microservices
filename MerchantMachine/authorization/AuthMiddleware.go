@@ -1,16 +1,20 @@
 package authorization
 
 import (
+	"bytes"
 	"context"
-	"database/sql"
-	"errors"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	firebase "firebase.google.com/go"
+	"firebase.google.com/go/auth"
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 //You can also authenticate with Firebase using a Google Account by handling the sign-in flow with the Sign In With Google library:
@@ -21,13 +25,24 @@ type JWTtest struct{
 }
 
 type AuthMiddleWareStruct struct{
-	db *sql.DB
+	// db *sql.DB
 	firebaseApp *firebase.App
+	validationclient *auth.Client
+	redisClient      *redis.Client
 }
 
-func InjectSystemRefrences(dbRef *sql.DB, firebaseApp *firebase.App) *AuthMiddleWareStruct{
-	authMiddleWareInstance := AuthMiddleWareStruct{db:dbRef, firebaseApp: firebaseApp}
-	// AMWS.db = db
+func InjectSystemRefrences(firebaseApp *firebase.App, redisClient *redis.Client) *AuthMiddleWareStruct{
+	client, err := firebaseApp.Auth(context.Background())
+	if err != nil {
+		fmt.Println("Failed to initialize Firebase Auth client:", err)
+		return nil // or handle error appropriately
+	}
+
+	authMiddleWareInstance := AuthMiddleWareStruct{
+		firebaseApp:      firebaseApp,
+		validationclient: client,
+		redisClient:      redisClient,
+	}
 	return &authMiddleWareInstance
 }
 
@@ -52,84 +67,210 @@ func(db *AuthMiddleWareStruct) ValidateToken(next http.Handler) http.Handler{
 	})
 }
 
+type ctxKey string
 
-// Start of checking if given user is a SuperUser
-func(db *AuthMiddleWareStruct) HasSuperUserScope(next http.Handler) http.Handler{
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
-		jwttoken := r.Header.Get("Authorization")
-		if jwttoken == ""{
-			fmt.Println("No Authorization")
-			return
-		}
-		jwttoken = strings.Split(jwttoken, "Bearer ")[1]
-		token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (interface{}, error) {
-			return []byte("Testing key"), nil
-		})
-		if err != nil{
-			fmt.Println("HasSuperUserScope failed")
-			fmt.Println(err)
-			helpers.ErrorJSON(w,err, 400)
-			return
-		}
-		claims := token.Claims.(jwt.MapClaims)
-		if claims["admin"] != "True"{
-			err := errors.New("failed superUser check")
-			helpers.ErrorJSON(w,err,400)
-			return
-		}
+const ctxUserEmail ctxKey = "userEmail"
 
-		ctx := context.WithValue(r.Context(), "userid", claims["userId"])
-		var exists bool
-		db.db.QueryRow("SELECT UserID FROM tblAdminUsers WHERE UserID = ? AND SuperUser = 1", claims["userId"]).Scan(&exists)
-		if exists == false{
-			fmt.Println("User not in Admin, HasAdminScope has failed")
-			err := errors.New("failed admin check")
-			helpers.ErrorJSON(w,err, 400)
-			return
-		}
-		next.ServeHTTP(w,r.WithContext(ctx))
-
-	})
-}
-
-
-
-
-func(db *AuthMiddleWareStruct) HasAdminScope(next http.Handler) http.Handler{
+// CheckUserRegistration is an HTTP middleware that validates a Firebase OAuth (ID) token and injects the
+// authenticated user's email into the request context.
+//
+// The returned http.Handler performs the following steps:
+// - Verifies the middleware instance and its validation client are initialized; if not, responds with 500.
+// - Reads the Authorization header and requires the "Bearer {token}" format; missing or malformed headers
+//   result in a 401 Unauthorized response.
+// - Emits concise debug output about the token (length and prefix/suffix) without logging the full token.
+// - Performs a basic syntactic check that the token looks like a JWT (expects exactly two '.' separators);
+//   if the format is invalid, responds 401.
+// - Calls midwareinstance.validationclient.VerifyIDToken(ctx, tokenString) to validate the Firebase ID token;
+//   any verification error is returned as a 401 Unauthorized response.
+// - Extracts the user's email from the verified token's claims (first trying "email", then "user_email").
+// - Stores the extracted email in the request context under the key "userEmail" and forwards the request to the
+//   next handler. If authentication fails at any point, the middleware writes an appropriate HTTP error and
+//   does not call the next handler.
+func(midwareinstance *AuthMiddleWareStruct) CheckUserRegistration(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		jwttoken := r.Header.Get("Authorization")
-		if jwttoken == ""{
-			fmt.Println("No Authorization")
+		// Allow OPTIONS requests to pass through (for CORS preflight)
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
 			return
 		}
-		jwttoken = strings.Split(jwttoken, "Bearer ")[1]
-		token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (interface{}, error) {
-			return []byte("Testing key"), nil
-		})
-		if err != nil{
-			fmt.Println("HasSuperUserScope failed")
-			fmt.Println(err)
-			helpers.ErrorJSON(w,err, 400)
+
+		fmt.Println("We have entere  check")
+
+		if midwareinstance == nil || midwareinstance.validationclient == nil {
+			helpers.ErrorJSON(w, fmt.Errorf("auth client not initialized"), http.StatusInternalServerError)
 			return
 		}
-		claims := token.Claims.(jwt.MapClaims)
-		if claims["admin"] != "True"{
-			err := errors.New("Failed Admin Check")
-			helpers.ErrorJSON(w,err,400)
+
+		authz := strings.TrimSpace(r.Header.Get("Authorization"))
+
+		// If Authorization header is missing, check the body for "token" field
+		if authz == "" {
+			bodyBytes, err := io.ReadAll(r.Body)
+			if err == nil {
+				// Restore the body for downstream handlers
+				r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+				var bodyToken struct {
+					Token string `json:"token"`
+				}
+				if json.Unmarshal(bodyBytes, &bodyToken) == nil && bodyToken.Token != "" {
+					authz = "Bearer " + bodyToken.Token
+					// Inject into header so downstream handlers (like RegisterCustomer) can find it
+					r.Header.Set("Authorization", authz)
+				}
+			}
+		}
+		if authz == "" {
+			helpers.ErrorJSON(w, fmt.Errorf("authorization token is required"), http.StatusUnauthorized)
 			return
 		}
-		ctx := context.WithValue(r.Context(), "userid", claims["userId"])
-		var exists bool
-		db.db.QueryRow("SELECT UserID FROM tblAdminUsers WHERE UserID = ?", claims["userId"]).Scan(&exists)
-		if exists == false{
-			fmt.Println("User not in Admin, HasAdminScope has failed")
-			err := errors.New("failed admin check")
-			helpers.ErrorJSON(w,err, 400)
+		if !strings.HasPrefix(strings.ToLower(authz), "bearer ") {
+			helpers.ErrorJSON(w, fmt.Errorf("authorization header format must be Bearer {token}"), http.StatusUnauthorized)
 			return
 		}
-		next.ServeHTTP(w,r.WithContext(ctx))
+		tokenString := strings.TrimSpace(authz[len("Bearer "):])
+		if strings.Count(tokenString, ".") != 2 {
+			helpers.ErrorJSON(w, fmt.Errorf("invalid token format (expected JWT)"), http.StatusUnauthorized)
+			return
+		}
+
+		token, err := midwareinstance.validationclient.VerifyIDToken(r.Context(), tokenString)
+		if err != nil {
+			fmt.Printf("Error verifying token: %v\n", err)
+			helpers.ErrorJSON(w, fmt.Errorf("invalid token: %v", err), http.StatusUnauthorized)
+			return
+		} 
+
+		email, _ := token.Claims["email"].(string)
+		if email == "" {
+			email, _ = token.Claims["user_email"].(string)
+		}
+		if email == "" {
+			helpers.ErrorJSON(w, fmt.Errorf("email claim missing"), http.StatusUnauthorized)
+			return
+		}
+
+		exists, err := midwareinstance.redisClient.Get(r.Context(), email).Result()
+		if err != nil && err != redis.Nil {
+			helpers.ErrorJSON(w, fmt.Errorf("redis error: %v", err), http.StatusInternalServerError)
+			return
+		}
+		if exists == "" {
+			// Use environment variable for service URL, defaulting to the docker service name
+			dbURL := os.Getenv("DBLAYER_URL")
+			if dbURL == "" {
+				dbURL = "http://dblayer:8080"
+			}
+			
+			// Safe JSON creation
+			payload := map[string]string{"email": email}
+			jsonData, _ := json.Marshal(payload)
+
+			// Create request with context to propagate timeouts/cancellations
+			req, err := http.NewRequestWithContext(r.Context(), "POST", dbURL+"/users/profile", bytes.NewBuffer(jsonData))
+			if err != nil {
+				fmt.Printf("Error creating profile sync request: %v\n", err)
+			} else {
+				req.Header.Set("Content-Type", "application/json")
+				
+				// Execute request
+				client := &http.Client{}
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Printf("Error syncing user profile: %v\n", err)
+				} else {
+					// Important: Close the body to prevent resource leaks
+					resp.Body.Close()
+				}
+			}
+		}
+
+
+
+		ctx := context.WithValue(r.Context(), ctxUserEmail, email)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+
+// // Start of checking if given user is a SuperUser
+// func(db *AuthMiddleWareStruct) HasSuperUserScope(next http.Handler) http.Handler{
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+// 		jwttoken := r.Header.Get("Authorization")
+// 		if jwttoken == ""{
+// 			fmt.Println("No Authorization")
+// 			return
+// 		}
+// 		jwttoken = strings.Split(jwttoken, "Bearer ")[1]
+// 		token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (interface{}, error) {
+// 			return []byte("Testing key"), nil
+// 		})
+// 		if err != nil{
+// 			fmt.Println("HasSuperUserScope failed")
+// 			fmt.Println(err)
+// 			helpers.ErrorJSON(w,err, 400)
+// 			return
+// 		}
+// 		claims := token.Claims.(jwt.MapClaims)
+// 		if claims["admin"] != "True"{
+// 			err := errors.New("failed superUser check")
+// 			helpers.ErrorJSON(w,err,400)
+// 			return
+// 		}
+
+// 		ctx := context.WithValue(r.Context(), "userid", claims["userId"])
+// 		var exists bool
+// 		db.db.QueryRow("SELECT UserID FROM tblAdminUsers WHERE UserID = ? AND SuperUser = 1", claims["userId"]).Scan(&exists)
+// 		if exists == false{
+// 			fmt.Println("User not in Admin, HasAdminScope has failed")
+// 			err := errors.New("failed admin check")
+// 			helpers.ErrorJSON(w,err, 400)
+// 			return
+// 		}
+// 		next.ServeHTTP(w,r.WithContext(ctx))
+
+// 	})
+// }
+
+
+
+
+// func(db *AuthMiddleWareStruct) HasAdminScope(next http.Handler) http.Handler{
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		jwttoken := r.Header.Get("Authorization")
+// 		if jwttoken == ""{
+// 			fmt.Println("No Authorization")
+// 			return
+// 		}
+// 		jwttoken = strings.Split(jwttoken, "Bearer ")[1]
+// 		token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (interface{}, error) {
+// 			return []byte("Testing key"), nil
+// 		})
+// 		if err != nil{
+// 			fmt.Println("HasSuperUserScope failed")
+// 			fmt.Println(err)
+// 			helpers.ErrorJSON(w,err, 400)
+// 			return
+// 		}
+// 		claims := token.Claims.(jwt.MapClaims)
+// 		if claims["admin"] != "True"{
+// 			err := errors.New("Failed Admin Check")
+// 			helpers.ErrorJSON(w,err,400)
+// 			return
+// 		}
+// 		ctx := context.WithValue(r.Context(), "userid", claims["userId"])
+// 		var exists bool
+// 		db.db.QueryRow("SELECT UserID FROM tblAdminUsers WHERE UserID = ?", claims["userId"]).Scan(&exists)
+// 		if exists == false{
+// 			fmt.Println("User not in Admin, HasAdminScope has failed")
+// 			err := errors.New("failed admin check")
+// 			helpers.ErrorJSON(w,err, 400)
+// 			return
+// 		}
+// 		next.ServeHTTP(w,r.WithContext(ctx))
+// 	})
+// }
 
 
 

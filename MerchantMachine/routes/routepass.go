@@ -6,13 +6,15 @@ import (
 
 	firebase "firebase.google.com/go"
 	"github.com/APouzi/MerchantMachinee/routes/checkout"
+	"github.com/APouzi/MerchantMachinee/routes/customer"
 	productendpoints "github.com/APouzi/MerchantMachinee/routes/product"
 	"github.com/go-chi/chi/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/stripe/stripe-go/v82"
 )
 
 
-func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stripe.Client, config checkout.Config) *chi.Mux{
+func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stripe.Client, config checkout.Config, redisClient *redis.Client) *chi.Mux{
 	// rIndex := indexendpoints.InstanceIndexRoutes(db)
 
 	dbURL := os.Getenv("DBLAYER_URL")
@@ -22,7 +24,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	rProduct := productendpoints.InstanceProductsRoutes(dbURL)
 
 	rCheckout := checkout.InstanceCheckoutRoutes(stripeClient, config)
-
+	rCustomer := customer.InstanceCustomerRoutes(firebaseAuth)
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
 	// rAdmin := adminendpoints.InstanceAdminRoutes()
@@ -87,7 +89,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	digest.Get("/products/variations/pagination/", rProduct.GetProductAndVariationsPaginated)
 	digest.Get("/products/variations/{productID}", rProduct.GetProductAndVariationsByProductID)
 	digest.Get("/search/",rProduct.SearchProductsEndPoint)
-	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
+	
 	digest.Post("/stripe/webhook/payment-confirmation", rCheckout.PaymentConfirmation)
 	// digest.Get("/products/{CategoryName}",rProduct.GetProductCategoryEndPointFinal)
 
@@ -96,11 +98,8 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// digest.Post("/products/test-categories/InsertTest", rAdmin.InsertIntoFinalProd)
 
 	// Admin need to lockdown based on jwt payload and scope
-	digest.Group(func(digest chi.Router){
-		// digest.Use(AuthMiddleWare.ValidateToken)
-		// digest.Use(AuthMiddleWare.HasAdminScope)
-		// digest.Post("/products/", rAdmin.CreateProduct)
-	})
+	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
+	digest.Post("/register-login-oauth",rCustomer.RegisterCustomer)
 	// digest.Post("/products/", rAdmin.CreateProduct)
 	// digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
 	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
