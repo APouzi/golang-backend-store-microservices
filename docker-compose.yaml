@@ -16,6 +16,22 @@ services:
       MYSQL_DATABASE: 'database'
     networks:
       - pouzikov
+  
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - pouzikov
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "example"]
+    environment:
+      REDIS_PASSWORD: "example"
+      REDIS_HOST: "redis"
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_USERNAME: "user"
+
 
   merchantmachine:
     build: MerchantMachine/
@@ -32,7 +48,7 @@ services:
     build: Admin/
     ports:
       - "8001:8001"
-    networks:
+    networks:  
       - pouzikov
     depends_on:
     - merchantmachine
