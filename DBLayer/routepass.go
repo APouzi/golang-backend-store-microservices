@@ -30,6 +30,8 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 
 	rWishlist := users.WishlistRoutesTrayInstance(dbInstance)
 
+	rUser := users.UserRoutesTrayInstance(dbInstance)
+
 	// AuthMiddleWare := authorization.InjectDBRef()
 
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
@@ -151,5 +153,12 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// =====================
 	digest.Get("/users/{userProfileID:[0-9]+}/wishlists", rWishlist.GetAllWishListsEndPoint)
 	digest.Get("/users/{userProfileID:[0-9]+}/wishlists/{wishlistID:[0-9]+}", rWishlist.GetWishListByIDEndpoint)
+	// =====================
+	// User Routes
+	// =====================
+	
+	digest.Post("/users/profile",rUser.CreateUserWithProfileEndpoint)
 	return digest
+
+
 }
