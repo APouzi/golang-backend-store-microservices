@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	firebase "firebase.google.com/go"
 	"github.com/APouzi/MerchantMachinee/routes"
@@ -17,6 +18,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"github.com/stripe/stripe-go/v82"
 	"google.golang.org/api/option"
 )
@@ -71,27 +73,24 @@ func main() {
 	}
 
 	sc := NewStripeClient()
-
+	redis_connection, err := ConnectToRedis()
+	if err != nil {
+		log.Panic(err)
+	}
 	serve := &http.Server{
 		Addr:    fmt.Sprintf(":%d", webport),
-		Handler: app.StartRouter(fbDB,sc),
+		Handler: app.StartRouter(fbDB, sc, redis_connection),
 	}
 
-	
-
-	fmt.Println("\nFirebase App:",fbDB,"\n")
 
 	err = serve.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
 	}
 
-	
-	// fmt.Println("test", reflect.TypeOf(router))
-
 }
 
-func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Client) http.Handler { // Change the receiver to (*Config)
+func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Client, redis_client *redis.Client) http.Handler { // Change the receiver to (*Config)
 	mux := chi.NewRouter()
 
 	mux.Use(cors.Handler(cors.Options{
@@ -111,8 +110,41 @@ func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Clie
 	}
 
 	//Pass the mux to routes to use.
-	routes.RouteDigest(mux,firebase, stripeclient, checkout_config)
+	routes.RouteDigest(mux,firebase, stripeclient, checkout_config, redis_client)
 	return mux
+}
+
+func ConnectToRedis() (*redis.Client, error) {
+	redis_port := os.Getenv("REDIS_PORT")
+	if redis_port == "" {
+		redis_port = "6379"
+	}
+	redis_host := os.Getenv("REDIS_HOST")
+	if redis_host == "" || redis_host == "user" {
+		redis_host = "redis"
+	}
+	redis_password := os.Getenv("REDIS_PASSWORD")
+	redis_username := os.Getenv("REDIS_USERNAME")
+	if redis_username == "" || redis_username == "user" {
+		redis_username = ""
+	}
+
+	fmt.Println("Connecting to Redis at ", redis_host, ":", redis_port)
+	rdb := redis.NewClient(&redis.Options{
+		Username: redis_username,
+		Addr:     fmt.Sprintf("%s:%s", redis_host, redis_port),
+		Password: redis_password,
+		DB:       0, // use default DB
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if _, err := rdb.Ping(ctx).Result(); err != nil {
+		return nil, fmt.Errorf("could not connect to Redis: %w", err)
+	}
+
+	return rdb, nil
 }
 
 func NewStripeClient() *stripe.Client {
