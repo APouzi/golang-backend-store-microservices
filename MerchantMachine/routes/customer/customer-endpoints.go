@@ -235,3 +235,98 @@ func (cr *CustomerRoutes) GetCustomerProfile(w http.ResponseWriter, r *http.Requ
 	w.Write(respBody)
 }
 
+func (cr *CustomerRoutes) UpdateCustomerProfile(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Update has been started")
+	var payload struct {
+		Email            string  `json:"email"`
+		FirstName        string  `json:"first_name"`
+		LastName         string  `json:"last_name"`
+		PhoneNumberCell  *string `json:"phone_number_cell,omitempty"`
+		PhoneNumberHome  *string `json:"phone_number_home,omitempty"`
+	}
+
+	if err := helpers.ReadJSON(w, r, &payload); err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("invalid request payload: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	email := r.URL.Query().Get("email")
+	if email == "" {
+		email = payload.Email
+	}
+	if email == "" {
+		helpers.ErrorJSON(w, fmt.Errorf("email is required"), http.StatusBadRequest)
+		return
+	}
+
+	dbURL := os.Getenv("DBLAYER_URL")
+	if dbURL == "" {
+		dbURL = "http://dblayer:8080"
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to marshal patch payload"), http.StatusInternalServerError)
+		return
+	}
+
+	urlWithQuery := dbURL + "/users/profile?email=" + url.QueryEscape(email)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodPatch, urlWithQuery, bytes.NewBuffer(body))
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to build request"), http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to reach dblayer: %v", err), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to read dblayer response"), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(resp.StatusCode)
+	w.Write(respBody)
+}
+
+func (cr *CustomerRoutes) GetCustomerWishList(w http.ResponseWriter, r *http.Request) {
+	userProfileID := chi.URLParam(r, "userProfileID")
+	if userProfileID == "" {
+		helpers.ErrorJSON(w, fmt.Errorf("userProfileID is required"), http.StatusBadRequest)
+		return
+	}
+
+	dbURL := os.Getenv("DBLAYER_URL")
+	if dbURL == "" {
+		dbURL = "http://dblayer:8080"
+	}
+
+	targetURL := fmt.Sprintf("%s/users/%s/wishlists", dbURL, userProfileID)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, targetURL, nil)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to build request"), http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to reach dblayer: %v", err), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to read dblayer response"), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(resp.StatusCode)
+	w.Write(body)
+}

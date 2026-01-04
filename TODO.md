@@ -1,7 +1,7 @@
 # MVP Ecommerce Site to Launch
 
 ## TODO Backend
-*It's important to realize that we are phase 1 and MVP so we are not focusing on features such as membership loyalty, email campaigns, etc.*. We are launching an MVP that will allow us to sell products online, email users of orders, etc.
+*It's important to remember that we are phase 1 and MVP so we are not focusing on features such as membership loyalty, email campaigns, etc.*. We are launching an MVP that will allow us to sell products online, email users of orders, etc.
 
 - [*] Finish all gets for Products, Product variation and Inventory check for the checkout process.
 - [*] Implement Stripe Confirmation for payment processing.
