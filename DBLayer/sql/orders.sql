@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE TABLE IF NOT EXISTS order_items (
   order_item_id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   order_id              BIGINT UNSIGNED NOT NULL,
-  product_id            BIGINT,
+  product_id            INT,
   sku                   VARCHAR(128),
   title                 VARCHAR(255) NOT NULL,
   variation             JSON,

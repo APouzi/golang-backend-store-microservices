@@ -1,41 +1,68 @@
 CREATE TABLE IF NOT EXISTS tblUser (
-  UserID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  UserID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   FirstName VARCHAR(55),
   LastName VARCHAR(55),
   Email VARCHAR(55) UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS tblUserProfile (
-  UserProfileID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  UserID INT NOT NULL UNIQUE,
-  PhoneNumberCell VARCHAR(16),
-  PhoneNumberHome VARCHAR(16),
+CREATE TABLE IF NOT EXISTS tblUserAddresses (
+  AddressID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  UserID BIGINT UNSIGNED NOT NULL,
+  RecipientName VARCHAR(255),
+  Company VARCHAR(255),
+  AddressLine1 VARCHAR(128) NOT NULL,
+  AddressLine2 VARCHAR(128),
+  AddressLine3 VARCHAR(128),
+  Locality VARCHAR(128),
+  DependentLocality VARCHAR(128),
+  AdministrativeArea VARCHAR(128),
+  AdministrativeAreaCode VARCHAR(32),
+  PostalCode VARCHAR(32),
+  SortingCode VARCHAR(32),
+  CountryCode CHAR(2) NOT NULL,
+  PhoneE164 VARCHAR(32),
+  Metadata JSON,
+  CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  KEY idx_user_addresses_user (UserID),
+  KEY idx_user_addresses_country_postal (CountryCode, PostalCode),
   FOREIGN KEY (UserID) REFERENCES tblUser (UserID) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS tblUserAddresses (
-  AddressID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  Street VARCHAR(150),
-  City VARCHAR(50),
-  USState VARCHAR(2),
-  ZipCode INT
+CREATE TABLE IF NOT EXISTS tblUserProfile (
+  UserID BIGINT UNSIGNED NOT NULL,
+  PhoneNumberMobileE164 VARCHAR(20),
+  PhoneNumberHomeE164   VARCHAR(20),
+  PrimaryShippingAddressID INT NULL,
+  PrimaryBillingAddressID  INT NULL,
+  PreferredLocale   VARCHAR(16) NULL,   -- e.g. en-US, fr-FR
+  PreferredTimeZone VARCHAR(64) NULL,   -- e.g. America/Los_Angeles
+  CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UpdatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (UserID),
+  CONSTRAINT fk_user_profile_user FOREIGN KEY (UserID) REFERENCES tblUser (UserID) ON DELETE CASCADE,
+  CONSTRAINT fk_user_profile_primary_ship FOREIGN KEY (PrimaryShippingAddressID) REFERENCES tblUserAddresses (AddressID) ON DELETE SET NULL,
+  CONSTRAINT fk_user_profile_primary_bill FOREIGN KEY (PrimaryBillingAddressID) REFERENCES tblUserAddresses (AddressID) ON DELETE SET NULL,
+  CONSTRAINT chk_mobile_e164 CHECK (PhoneNumberMobileE164 IS NULL OR PhoneNumberMobileE164 REGEXP '^\\+[1-9][0-9]{1,14}$'),
+  CONSTRAINT chk_home_e164 CHECK (PhoneNumberHomeE164 IS NULL OR PhoneNumberHomeE164 REGEXP '^\\+[1-9][0-9]{1,14}$')
 );
 
 CREATE TABLE IF NOT EXISTS tblUserAddressesProfile (
-  UserProfileID INT,
+  UserID BIGINT UNSIGNED,
   AddressID INT,
   FOREIGN KEY (AddressID) REFERENCES tblUserAddresses (AddressID) ON DELETE CASCADE,
-  FOREIGN KEY (UserProfileID) REFERENCES tblUserProfile (UserProfileID) ON DELETE CASCADE
+  FOREIGN KEY (UserID) REFERENCES tblUserProfile (UserID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tblUserWishList(
   WishlistID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  UserProfileID INT,
+  UserID BIGINT UNSIGNED,
   WishlistName VARCHAR(100),
   CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   IsDefault BOOLEAN DEFAULT FALSE,
-  FOREIGN KEY (UserProfileID) REFERENCES tblUserProfile (UserProfileID) ON DELETE CASCADE
+  FOREIGN KEY (UserID) REFERENCES tblUserProfile (UserID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tblWishlistProduct(
