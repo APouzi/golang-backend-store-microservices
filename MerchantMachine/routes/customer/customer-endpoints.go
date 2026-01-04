@@ -183,3 +183,55 @@ func (cr *CustomerRoutes) RegisterCustomer(w http.ResponseWriter, r *http.Reques
 
 	helpers.WriteJSON(w, http.StatusOK, customer)
 }
+
+func (cr *CustomerRoutes) GetCustomerProfile(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("GetCustomerProfile started")
+	email := r.URL.Query().Get("email")
+	if email == "" {
+		var req struct {
+			Email string `json:"email"`
+		}
+		if err := helpers.ReadJSON(w, r, &req); err == nil {
+			email = req.Email
+		}
+	}
+	if email == "" {
+		helpers.ErrorJSON(w, fmt.Errorf("email is required"), http.StatusBadRequest)
+		return
+	}
+
+	// Forward request to DBLayer to fetch customer profile by email
+	dbURL := os.Getenv("DBLAYER_URL")
+	if dbURL == "" {
+		dbURL = "http://dblayer:8080"
+	}
+
+	targetURL := dbURL + "/users/profile?email=" + url.QueryEscape(email)
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, targetURL, nil)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to build request"), http.StatusInternalServerError)
+		return
+	}
+
+	proxyResp, err := http.DefaultClient.Do(proxyReq)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to reach dblayer: %v", err), http.StatusBadGateway)
+		return
+	}
+	defer proxyResp.Body.Close()
+
+	respBody, err := io.ReadAll(proxyResp.Body)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to read dblayer response"), http.StatusInternalServerError)
+		return
+	}
+
+	for key, vals := range proxyResp.Header {
+		for _, v := range vals {
+			w.Header().Add(key, v)
+		}
+	}
+	w.WriteHeader(proxyResp.StatusCode)
+	w.Write(respBody)
+}
+

@@ -93,10 +93,16 @@ func main() {
 func (app *Config) StartRouter(firebase *firebase.App, stripeclient *stripe.Client, redis_client *redis.Client) http.Handler { // Change the receiver to (*Config)
 	mux := chi.NewRouter()
 
+	allowedOrigins := app.GetAllowedOrigins()
+	if len(allowedOrigins) == 0 {
+		allowedOrigins = []string{"http://localhost:4200", "http://127.0.0.1:4200", "http://localhost"}
+	}
+
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   app.GetAllowedOrigins(),
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Link","Content-Type","Accept","Accept", "Authorization", "X-CSRF-Token"},
+		AllowedOrigins:   allowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           301,
 	}))
