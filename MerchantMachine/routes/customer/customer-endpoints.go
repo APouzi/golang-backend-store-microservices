@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
 	"github.com/APouzi/MerchantMachinee/routes/helpers"
+	"github.com/go-chi/chi/v5"
 )
 
 type CustomerRoutes struct {

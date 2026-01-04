@@ -158,6 +158,8 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	// =====================
 	
 	digest.Post("/users/profile",rUser.CreateUserWithProfileEndpoint)
+	digest.Get("/users/profile",rUser.GetUserProfileEndpoint)
+	digest.Patch("/users/profile",rUser.UpdateUserProfileEndpoint)
 	return digest
 
 

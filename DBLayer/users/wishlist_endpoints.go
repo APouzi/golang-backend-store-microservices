@@ -28,7 +28,7 @@ func (routes *WishlistRoutesTray) GetAllWishListsEndPoint(w http.ResponseWriter,
 		return
 	}
 
-	rows, err := routes.dbInstance.Query("SELECT WishlistID, UserProfileID FROM tblUserWishList WHERE UserProfileID = ?", id)
+	rows, err := routes.dbInstance.Query("SELECT WishlistID, WishlistName FROM tblUserWishList WHERE UserProfileID = ?", id)
 	if err != nil {
 		http.Error(w, "Database query error", http.StatusInternalServerError)
 		return

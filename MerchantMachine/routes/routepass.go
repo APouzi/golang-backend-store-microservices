@@ -100,6 +100,9 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// Admin need to lockdown based on jwt payload and scope
 	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
 	digest.Post("/register-login-oauth",rCustomer.RegisterCustomer)
+	digest.Get("/customer/profile",rCustomer.GetCustomerProfile)
+	digest.Patch("/customer/profile",rCustomer.UpdateCustomerProfile)
+	digest.Get("/users/{userProfileID:[0-9]+}/wishlists", rCustomer.GetCustomerWishList)
 	// digest.Post("/products/", rAdmin.CreateProduct)
 	// digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
 	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
