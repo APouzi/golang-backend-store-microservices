@@ -33,16 +33,7 @@ func InstanceCustomerRoutes(app *firebase.App) *CustomerRoutes {
 	}
 }
 
-type CustomerRegistration struct {
-	Email       string `json:"email"`
-	DisplayName string `json:"display_name"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	PhoneNumber string `json:"phone_number"`
-	PhotoURL    string `json:"photo_url"`
-	ProviderID  string `json:"provider_id"`
-	UID         string `json:"uid"`
-}
+
 
 func (cr *CustomerRoutes) RegisterCustomer(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("started here")
@@ -141,12 +132,11 @@ func (cr *CustomerRoutes) RegisterCustomer(w http.ResponseWriter, r *http.Reques
 		dbURL = "http://dblayer:8080"
 	}
 
-	profilePayload := map[string]string{
-		"email":             customer.Email,
-		"first_name":        customer.FirstName,
-		"last_name":         customer.LastName,
-		"phone_number_cell": customer.PhoneNumber,
-		"phone_number_home": "",
+	profilePayload := DBUserProfileRequest{
+		Email:                 customer.Email,
+		FirstName:             customer.FirstName,
+		LastName:              customer.LastName,
+		PhoneNumberMobileE164: customer.PhoneNumber,
 	}
 
 	body, err := json.Marshal(profilePayload)
@@ -243,13 +233,7 @@ func (cr *CustomerRoutes) GetCustomerProfile(w http.ResponseWriter, r *http.Requ
 
 func (cr *CustomerRoutes) UpdateCustomerProfile(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Update has been started")
-	var payload struct {
-		Email            string  `json:"email"`
-		FirstName        string  `json:"first_name"`
-		LastName         string  `json:"last_name"`
-		PhoneNumberCell  *string `json:"phone_number_cell,omitempty"`
-		PhoneNumberHome  *string `json:"phone_number_home,omitempty"`
-	}
+	var payload DBUserProfileRequest
 
 	if err := helpers.ReadJSON(w, r, &payload); err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("invalid request payload: %v", err), http.StatusBadRequest)
