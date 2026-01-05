@@ -19,11 +19,11 @@ func PopulateProductTables(db *sql.DB) {
 	// Execute SQL files in the correct order to handle dependencies
 	// Order: Core tables first, then junction tables, then views
 	sqlFiles := []string{
-		"./sql/admin.sql",       // No dependencies
 		"./sql/inventory.sql",   // Contains tblLocation (needed by products)
 		"./sql/products.sql",    // References tblLocation 
 		"./sql/categories.sql",  // References tblProducts
 		"./sql/user.sql",        // References tblProducts  
+		"./sql/admin.sql",       // References tblUser
 		"./sql/orders.sql",      // References multiple tables
 		"./sql/views.sql",       // References all above tables
 	}
