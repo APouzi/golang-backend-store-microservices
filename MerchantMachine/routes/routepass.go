@@ -26,12 +26,13 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 
 	rCheckout := checkout.InstanceCheckoutRoutes(stripeClient, config)
 	rCustomer := customer.InstanceCustomerRoutes(firebaseAuth)
+	
 	// rUser := userendpoints.InstanceUserRoutes(db)
-
-	// rAdmin := adminendpoints.InstanceAdminRoutes()
+	
 	
 	AuthMiddleWare := authorization.InjectSystemRefrences(firebaseAuth, redisClient)
 	
+	// digest.Use(AuthMiddleWare.CheckUserRegistration)
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
 
 	// c := cors.New(cors.Options{
@@ -75,16 +76,16 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// digest.Post("/products/test-categories", rTestRoutes.CreateTestCategory)
 
 
-	digest.Group(func(digest chi.Router){
-		// digest.Use(AuthMiddleWare.ValidateToken)
-		// digest.Get("/users/profile",rUser.UserProfile)
-	})
+	// digest.Group(func(digest chi.Router){
+	// 	// digest.Use(AuthMiddleWare.ValidateToken)
+		
+	// 	// digest.Get("/users/profile",rUser.UserProfile)
+	// })
 	// digest.Post("/users/",rUser.Register)
 	// digest.Post("/users/login",rUser.Login)
 
 	
 	// digest.Post("/superusercreation",rUser.AdminSuperUserCreation)
-	
 	digest.Get("/products/{ProductID}",rProduct.GetOneProductsEndPoint)
 	digest.Get("/products",rProduct.GetAllProductsAndVariationsEndPoint)
 	digest.Get("/products/variations/pagination/", rProduct.GetProductAndVariationsPaginated)
@@ -99,8 +100,12 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// digest.Post("/products/test-categories/InsertTest", rAdmin.InsertIntoFinalProd)
 
 	// Admin need to lockdown based on jwt payload and scope
+	
+	// digest.Get("/users/{userProfileID:[0-9]+}/wishlists/{wishlistID:[0-9]+}", rWishlist.GetWishListByIDEndpoint)
 	digest.Group(func(digest chi.Router){
 	digest.Use(AuthMiddleWare.CheckUserRegistration)
+	// 	// digest.Use(AuthMiddleWare.HasAdminScope)
+	// 	// digest.Post("/products/", rAdmin.CreateProduct)
 	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
 	digest.Post("/register-login-oauth",rCustomer.RegisterCustomer)
 	digest.Get("/customer/profile",rCustomer.GetCustomerProfile)
