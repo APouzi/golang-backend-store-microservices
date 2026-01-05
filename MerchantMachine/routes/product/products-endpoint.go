@@ -23,8 +23,6 @@ func InstanceProductsRoutes(dbBaseURL string) *ProductRoutes {
 	return r
 }
 
-//Delete THIS AFTER FIX!!!!
-
 
 func (route *ProductRoutes) GetAllProductsAndVariationsEndPoint(w http.ResponseWriter, r *http.Request) {
 	var ProdJSON *[]ProductRetrieve = &[]ProductRetrieve{}

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	firebase "firebase.google.com/go"
+	"github.com/APouzi/MerchantMachinee/authorization"
 	"github.com/APouzi/MerchantMachinee/routes/checkout"
 	"github.com/APouzi/MerchantMachinee/routes/customer"
 	productendpoints "github.com/APouzi/MerchantMachinee/routes/product"
@@ -28,9 +29,9 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// rUser := userendpoints.InstanceUserRoutes(db)
 
 	// rAdmin := adminendpoints.InstanceAdminRoutes()
-
-	// AuthMiddleWare := authorization.InjectSystemRefrences()
-
+	
+	AuthMiddleWare := authorization.InjectSystemRefrences(firebaseAuth, redisClient)
+	
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
 
 	// c := cors.New(cors.Options{
@@ -98,11 +99,15 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// digest.Post("/products/test-categories/InsertTest", rAdmin.InsertIntoFinalProd)
 
 	// Admin need to lockdown based on jwt payload and scope
+	digest.Group(func(digest chi.Router){
+	digest.Use(AuthMiddleWare.CheckUserRegistration)
 	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
 	digest.Post("/register-login-oauth",rCustomer.RegisterCustomer)
 	digest.Get("/customer/profile",rCustomer.GetCustomerProfile)
 	digest.Patch("/customer/profile",rCustomer.UpdateCustomerProfile)
+	digest.Delete("/customer/profile",rCustomer.DeleteCustomerProfile)
 	digest.Get("/users/{userProfileID:[0-9]+}/wishlists", rCustomer.GetCustomerWishList)
+	})
 	// digest.Post("/products/", rAdmin.CreateProduct)
 	// digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
 	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
