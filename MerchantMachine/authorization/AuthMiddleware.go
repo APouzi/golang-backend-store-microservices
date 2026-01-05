@@ -70,6 +70,10 @@ func(db *AuthMiddleWareStruct) ValidateToken(next http.Handler) http.Handler{
 type ctxKey string
 
 const ctxUserEmail ctxKey = "userEmail"
+func GetEmailFromContext(ctx context.Context) (string, bool) {
+	email, ok := ctx.Value(ctxUserEmail).(string)
+	return email, ok
+}
 
 // CheckUserRegistration is an HTTP middleware that validates a Firebase OAuth (ID) token and injects the
 // authenticated user's email into the request context.
@@ -163,8 +167,43 @@ func(midwareinstance *AuthMiddleWareStruct) CheckUserRegistration(next http.Hand
 				dbURL = "http://dblayer:8080"
 			}
 			
-			// Safe JSON creation
-			payload := map[string]string{"email": email}
+			// Prepare payload
+			payload := CreateUserWithProfileRequest{
+				Email: email,
+			}
+
+			// 1. Try to fill from Token Claims
+			if name, ok := token.Claims["name"].(string); ok {
+				parts := strings.Fields(name)
+				if len(parts) > 0 {
+					payload.FirstName = parts[0]
+				}
+				if len(parts) > 1 {
+					payload.LastName = strings.Join(parts[1:], " ")
+				}
+			}
+			if phone, ok := token.Claims["phone_number"].(string); ok {
+				payload.PhoneNumberMobileE164 = phone
+			}
+
+			// 2. Try to fill from Request Body (if it's a registration request)
+			bodyBytes, err := io.ReadAll(r.Body)
+			if err == nil {
+				r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes)) // Restore immediately
+				
+				var bodyRequest CreateUserWithProfileRequest
+				if json.Unmarshal(bodyBytes, &bodyRequest) == nil {
+					// Overwrite/Merge fields if present in body
+					if bodyRequest.FirstName != "" { payload.FirstName = bodyRequest.FirstName }
+					if bodyRequest.LastName != "" { payload.LastName = bodyRequest.LastName }
+					if bodyRequest.PhoneNumberMobileE164 != "" { payload.PhoneNumberMobileE164 = bodyRequest.PhoneNumberMobileE164 }
+					if bodyRequest.PhoneNumberHomeE164 != "" { payload.PhoneNumberHomeE164 = bodyRequest.PhoneNumberHomeE164 }
+					if bodyRequest.PrimaryShippingAddressID != nil { payload.PrimaryShippingAddressID = bodyRequest.PrimaryShippingAddressID }
+					if bodyRequest.PrimaryBillingAddressID != nil { payload.PrimaryBillingAddressID = bodyRequest.PrimaryBillingAddressID }
+					if bodyRequest.PreferredLocale != nil { payload.PreferredLocale = bodyRequest.PreferredLocale }
+					if bodyRequest.PreferredTimeZone != nil { payload.PreferredTimeZone = bodyRequest.PreferredTimeZone }
+				}
+			}
 			jsonData, _ := json.Marshal(payload)
 
 			// Create request with context to propagate timeouts/cancellations
@@ -180,6 +219,12 @@ func(midwareinstance *AuthMiddleWareStruct) CheckUserRegistration(next http.Hand
 				if err != nil {
 					fmt.Printf("Error syncing user profile: %v\n", err)
 				} else {
+					if resp.StatusCode >= 400 {
+						bodyBytes, _ := io.ReadAll(resp.Body)
+						fmt.Printf("Error syncing user profile. Status: %d, Body: %s\n", resp.StatusCode, string(bodyBytes))
+					} else {
+						fmt.Println("User profile synced successfully")
+					}
 					// Important: Close the body to prevent resource leaks
 					resp.Body.Close()
 				}
