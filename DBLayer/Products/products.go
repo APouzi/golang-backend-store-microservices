@@ -58,7 +58,7 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 		log.Fatal(err)
 	}
 	
-	GetOneVariationStmt, err := dbInst.Prepare("SELECT Variation_ID, Product_ID, Variation_Name, Variation_Description, Variation_Price, PRIMARY_IMAGE FROM tblProductVariation WHERE Variation_ID = ?")
+	GetOneVariationStmt, err := dbInst.Prepare("SELECT Variation_ID, Product_ID, Variation_Name, Variation_Description, PRIMARY_IMAGE FROM tblProductVariation WHERE Variation_ID = ?")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,8 +119,6 @@ var allowed = map[string]string{
 	"variation_id":"Variation_ID",
     "product_id": "Product_ID",
     "variation_name": "Variation_Name",
-    "sku": "SKU",
-    "upc": "UPC",
 }
 
 func (prdRoutes *ProductRoutesTray) GetOneProductVariationByParamEndPoint(w http.ResponseWriter, r *http.Request){
@@ -139,7 +137,7 @@ func (prdRoutes *ProductRoutesTray) GetOneProductVariationByParamEndPoint(w http
 		filters = append(filters, fmt.Sprintf("%s = %s", allowed[key], values[0]))
 	}
 
-	query := "SELECT Variation_ID, Product_ID, Variation_Name, Variation_Description, Variation_Price, SKU, UPC FROM tblProductVariation"
+	query := "SELECT Variation_ID, Product_ID, Variation_Name, Variation_Description FROM tblProductVariation"
 	query += " WHERE "
 
 	if len(filters) > 0 {
@@ -158,9 +156,6 @@ func (prdRoutes *ProductRoutesTray) GetOneProductVariationByParamEndPoint(w http
 			&prodJSON.ProductID,
 			&prodJSON.VariationName,
 			&prodJSON.VariationDescription,
-			&prodJSON.VariationPrice,
-			&prodJSON.SKU,
-			&prodJSON.UPC,
 		)
 
 		if err != nil{
@@ -239,7 +234,6 @@ type VariationRetrieve struct{
 	ProductID int64 `json:"Product_ID"`
 	Name string `json:"Variation_Name"`
 	Description string `json:"Variation_Description"`
-	Price float32 `json:"Variation_Price"`
 	PrimaryImage sql.NullString `json:"PRIMARY_IMAGE,omitempty"`
 
 }
@@ -264,7 +258,6 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 		&variationJSON.ProductID, 
 		&variationJSON.Name, 
 		&variationJSON.Description,  
-		&variationJSON.Price,
 		&variationJSON.PrimaryImage,
 	)
 	if err == sql.ErrNoRows{
@@ -411,7 +404,7 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.Re
 	fmt.Println("query from product end point", productID)
 	sqlQuery := `
 		SELECT p.Product_ID, p.Product_Name, p.Product_Description,
-			   pv.Variation_ID, pv.Variation_Name, pv.Variation_Description, pv.Variation_Price,
+			   pv.Variation_ID, pv.Variation_Name, pv.Variation_Description,
 			   ps.Size_ID, ps.Size_Name, ps.Size_Description, ps.Variation_Price as Size_Variation_Price, ps.SKU, ps.UPC, ps.PRIMARY_IMAGE,
 			   pil.Inv_ID, pil.Quantity, pil.Location_At
 		FROM tblProducts p
@@ -441,7 +434,7 @@ func (prdRoutes *ProductRoutesTray) GetProductAndVariationsByProductID(w http.Re
 
 		err := rows.Scan(
 			&r.ProductID, &r.ProductName, &r.ProductDescription,
-			&r.VariationID, &r.VariationName, &r.VariationDesc, &r.VariationPrice,
+			&r.VariationID, &r.VariationName, &r.VariationDesc,
 			&r.SizeID, &r.SizeName, &r.SizeDesc, &r.SizeVariationPrice, &r.SKU, &r.UPC, &r.PrimaryImage,
 			&inventory.Inv_ID, &inventory.Quantity, &inventory.LocationAt,
 		)

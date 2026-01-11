@@ -31,9 +31,6 @@ type ProductVariation struct {
 	ProductID            int        `db:"Product_ID" json:"product_id"`
 	VariationName        string     `db:"Variation_Name" json:"variation_name"`
 	VariationDescription string     `db:"Variation_Description,omitempty" json:"variation_description,omitempty"`
-	VariationPrice       float64    `db:"Variation_Price" json:"variation_price"`
-	SKU                  *string    `db:"SKU,omitempty" json:"sku,omitempty"`
-	UPC                  *string    `db:"UPC,omitempty" json:"upc,omitempty"`
 	PrimaryImage         *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
 	DateCreated          time.Time  `db:"Date_Created" json:"date_created"`
 	ModifiedDate         *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
@@ -53,7 +50,6 @@ type rowData struct {
     VariationID        *int64
     VariationName      *string
     VariationDesc      *string
-    VariationPrice     *float64
     InvID              *int64
     Quantity           *int64
     LocationAt         *string

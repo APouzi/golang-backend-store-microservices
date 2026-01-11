@@ -61,11 +61,13 @@ type User struct {
 }
 
 type Products struct {
-	ProductID   string   `json:"product_Id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Price       *float64 `json:"price,omitempty"`
-	Image       string   `json:"image"`
+	ProductID     string   `json:"product_Id"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description"`
+	VariationName string   `json:"variation_name"`
+	Price         *float64 `json:"price,omitempty"`
+	Size          string   `json:"size"`
+	Image         string   `json:"image"`
 }
 
 

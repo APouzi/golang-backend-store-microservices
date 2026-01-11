@@ -53,7 +53,7 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.Respons
 	}
 	var ProdVarID int64
 	for _, variation := range productRetrieve.Variations{
-		tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", prodID, variation.Name, variation.Description, variation.Price)
+		tRes, err = transaction.Exec("INSERT INTO tblProductVariation(Product_ID,Variation_Name, Variation_Description) VALUES(?,?,?)", prodID, variation.Name, variation.Description)
 		if err != nil {
 			fmt.Println("transaction at tblProductVariation has failed")
 			fmt.Println(err)
@@ -64,6 +64,15 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.Respons
 		ProdVarID, err = tRes.LastInsertId()
 		if err != nil {
 			fmt.Println("retrieval of LastInsertID of tblProductVariation has failed")
+			fmt.Println(err)
+			transaction.Rollback()
+			return
+		}
+
+		// Insert default size with price
+		_, err = transaction.Exec("INSERT INTO tblProductSize(Size_Name, Variation_ID, Variation_Price, Price) VALUES(?, ?, ?, ?)", "Standard", ProdVarID, variation.Price, variation.Price)
+		if err != nil {
+			fmt.Println("transaction at tblProductSize has failed")
 			fmt.Println(err)
 			transaction.Rollback()
 			return
@@ -117,7 +126,7 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 	varitCrt := variCrtd{}
 	if variation.PrimaryImage != "" {
 		
-		varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", ProductID,variation.Name, variation.Description, variation.Price)
+		varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description) VALUES(?,?,?)", ProductID,variation.Name, variation.Description)
 		if err != nil{
 			log.Println("insert into tblProductVariation failed")
 			log.Println(err)
@@ -130,17 +139,29 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 			helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
 			return
 		}
+
+		_, err = adminProdRoutes.DB.Exec("INSERT INTO tblProductSize(Size_Name, Variation_ID, Variation_Price, Price) VALUES(?, ?, ?, ?)", "Standard", varitCrt.VariationID, variation.Price, variation.Price)
+		if err != nil {
+			log.Println("insert into tblProductSize failed", err)
+		}
+
 		helpers.WriteJSON(w, http.StatusCreated,varitCrt)
 	}
 	prodid, err := strconv.Atoi(ProductID)
-	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description, Variation_Price) VALUES(?,?,?,?)", prodid,variation.Name, variation.Description, variation.Price)
+	varit, err := adminProdRoutes.DB.Exec("INSERT INTO tblProductVariation(Product_ID, Variation_Name, Variation_Description) VALUES(?,?,?)", prodid,variation.Name, variation.Description)
 	if err != nil{
 		fmt.Println("insert into tblProductVariation failed")
 		fmt.Println(err)
 		helpers.ErrorJSON(w, errors.New("insert into tblProductVariation failed, could not retrieve varitation id"),400)
+		return
 	}
 	varitCrt.VariationID, err = varit.LastInsertId()
 	
+	_, err = adminProdRoutes.DB.Exec("INSERT INTO tblProductSize(Size_Name, Variation_ID, Variation_Price, Price) VALUES(?, ?, ?, ?)", "Standard", varitCrt.VariationID, variation.Price, variation.Price)
+	if err != nil {
+		fmt.Println("insert into tblProductSize failed", err)
+	}
+
 	helpers.WriteJSON(w, http.StatusCreated,varitCrt)
 }
 
@@ -241,56 +262,38 @@ func (route *ProductRoutesTray) EditVariation(w http.ResponseWriter, r *http.Req
 	buf.WriteString("UPDATE tblProductVariation SET")
 	var count int = 0
 	if VaritEdit.VariationName != "" {
-		if count == 0{
-			buf.WriteString(" Variation_Name = ?")
-			Varib = append(Varib, VaritEdit.VariationName)
-			count++
+		if count > 0{
+			buf.WriteString(", ")
 		}
-		buf.WriteString(", Variation_Name = ?")
+		buf.WriteString("Variation_Name = ?")
 		Varib = append(Varib, VaritEdit.VariationName)
+		count++
 	}
 	if VaritEdit.VariationDescription != ""{
-		if count == 0{
-			buf.WriteString(" Variation_Description = ?")
-			Varib = append(Varib, VaritEdit.VariationDescription)
-			count++
+		if count > 0{
+			buf.WriteString(", ")
 		}
-		buf.WriteString(", Variation_Description = ?")
+		buf.WriteString("Variation_Description = ?")
 		Varib = append(Varib, VaritEdit.VariationDescription)
+		count++
 	}
-	if VaritEdit.SKU != ""{
-		if count == 0 {
-			buf.WriteString(" SKU = ?")
-			Varib = append(Varib, VaritEdit.SKU)
-			count++
+	
+	if count > 0 {
+		buf.WriteString(" WHERE Variation_ID = ?")
+		Varib = append(Varib, VarID)
+		_,err := route.DB.Exec(buf.String(),Varib...)
+		if err != nil{
+			fmt.Println(err)
 		}
-		buf.WriteString(", SKU = ?")
-		Varib = append(Varib, VaritEdit.SKU)
 	}
-	if VaritEdit.UPC != ""{
-		if count == 0{
-			buf.WriteString(" UPC = ?")
-			Varib = append(Varib, VaritEdit.UPC)
-			count++
-		}
-		buf.WriteString(", UPC = ?")
-		Varib = append(Varib, VaritEdit.UPC)
-	}
+
 	if VaritEdit.VariationPrice != 0 {
-		if count == 0{
-			buf.WriteString(" Variation_Price = ?")
-			Varib = append(Varib, VaritEdit.VariationPrice)
-			count++
+		_, err := route.DB.Exec("UPDATE tblProductSize SET Variation_Price = ?, Price = ? WHERE Variation_ID = ?", VaritEdit.VariationPrice, VaritEdit.VariationPrice, VarID)
+		if err != nil {
+			fmt.Println("Error updating price in tblProductSize:", err)
 		}
-		buf.WriteString(", Variation_Price = ?")
-		Varib = append(Varib, VaritEdit.VariationPrice)
 	}
-	buf.WriteString(" WHERE Variation_ID = ?")
-	Varib = append(Varib, VarID)
-	_,err := route.DB.Exec(buf.String(),Varib...)
-	if err != nil{
-		fmt.Println(err)
-	}
+
 	helpers.WriteJSON(w, http.StatusAccepted, VaritEdit)
 }
 
