@@ -109,6 +109,16 @@ func (routes *UserRoutesTray) CreateUserWithProfileEndpoint(w http.ResponseWrite
 	}
 	fmt.Println("User profile upserted into tblUserProfile")
 
+	// Create default wishlist for the user (only if it doesn't exist)
+	wishlistStmt := `INSERT IGNORE INTO tblUserWishList (UserID, WishlistName, isDefault) VALUES (?, ?, ?)`
+	_, err = tx.Exec(wishlistStmt, userID, "My Wishlist", true)
+	if err != nil {
+		status, msg := mapMySQLError(err, "failed to create default wishlist")
+		helpers.ErrorJSON(w, errors.New(msg), status)
+		return
+	}
+	fmt.Println("Default wishlist created for user")
+
 	if err := tx.Commit(); err != nil {
 		fmt.Printf("Failed to commit transaction: %v\n", err)
 		helpers.ErrorJSON(w, fmt.Errorf("failed to commit transaction"), http.StatusInternalServerError)

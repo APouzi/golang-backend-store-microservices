@@ -5,7 +5,6 @@ import (
 	"os"
 
 	firebase "firebase.google.com/go"
-	"github.com/APouzi/MerchantMachinee/authorization"
 	"github.com/APouzi/MerchantMachinee/routes/checkout"
 	"github.com/APouzi/MerchantMachinee/routes/customer"
 	productendpoints "github.com/APouzi/MerchantMachinee/routes/product"
@@ -111,8 +110,11 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	digest.Get("/customer/profile",rCustomer.GetCustomerProfile)
 	digest.Patch("/customer/profile",rCustomer.UpdateCustomerProfile)
 	digest.Delete("/customer/profile",rCustomer.DeleteCustomerProfile)
-	digest.Get("/users/{userProfileID:[0-9]+}/wishlists", rCustomer.GetCustomerWishList)
-	})
+	digest.Get("/users/{userProfileID:[0-9]+}/wishlists/{wishlistID:[0-9]+}", rCustomer.GetCustomerWishList)
+	digest.Get("/users/{userProfileID:[0-9]+}/wishlists/all", rCustomer.GetAllCustomerWishLists)
+	digest.Post("/wishlists/{wishlistID:[0-9]+}/products", rCustomer.AddProductToWishListEndpoint)
+	digest.Post("/users/{userProfileID:[0-9]+}/wishlists/default/products", rCustomer.AddProductToDefaultWishListEndpoint)
+	digest.Delete("/wishlists/{wishlistID:[0-9]+}/products", rCustomer.RemoveProductFromWishListEndpoint)
 	// digest.Post("/products/", rAdmin.CreateProduct)
 	// digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
 	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)
