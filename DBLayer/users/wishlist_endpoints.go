@@ -229,8 +229,62 @@ func (routes *WishlistRoutesTray) CreateWishlistEndpoint(w http.ResponseWriter, 
 	helpers.WriteJSON(w, http.StatusCreated, map[string]interface{}{"created": true, "wishlist_id": wishlistId, "wishlist_name": wishlistName})
 }
 
-func (routes *WishlistRoutesTray) DeleteWishlistEndpoint (w http.ResponseWriter, r *http.Request) {
-//Make sure to not delete default wishlist and make sure that its not allowed on frontend.
+func (routes *WishlistRoutesTray) DeleteWishlistEndpoint(w http.ResponseWriter, r *http.Request) {
+	wishListID := chi.URLParam(r, "wishlistID")
+	
+	// Convert wishListID to integer
+	wishlistIDInt, err := strconv.Atoi(wishListID)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("invalid wishlist ID format"), http.StatusBadRequest)
+		return
+	}
+
+
+
+	// Check if wishlist exists and belongs to the user, and get isDefault status
+	var isDefault bool
+	err = routes.dbInstance.QueryRow("SELECT isDefault FROM tblUserWishList WHERE WishlistID = ?", wishlistIDInt).Scan(&isDefault)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			helpers.ErrorJSON(w, fmt.Errorf("wishlist not found"), http.StatusNotFound)
+			return
+		}
+		helpers.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	// Prevent deletion of default wishlist
+	if isDefault {
+		helpers.ErrorJSON(w, fmt.Errorf("cannot delete default wishlist"), http.StatusBadRequest)
+		return
+	}
+
+	// Delete all products from the wishlist first
+	_, err = routes.dbInstance.Exec("DELETE FROM tblWishlistProduct WHERE WishlistID = ?", wishlistIDInt)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to remove products from wishlist"), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete the wishlist
+	result, err := routes.dbInstance.Exec("DELETE FROM tblUserWishList WHERE WishlistID = ?", wishlistIDInt)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to delete wishlist"), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to verify deletion"), http.StatusInternalServerError)
+		return
+	}
+
+	if rowsAffected == 0 {
+		helpers.ErrorJSON(w, fmt.Errorf("wishlist not found"), http.StatusNotFound)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, map[string]any{"deleted": true})
 }
 
 func (routes *WishlistRoutesTray) AddProductToWishListEndpoint(w http.ResponseWriter, r *http.Request) {

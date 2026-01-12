@@ -111,6 +111,8 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	digest.Patch("/customer/profile",rCustomer.UpdateCustomerProfile)
 	digest.Delete("/customer/profile",rCustomer.DeleteCustomerProfile)
 	digest.Get("/users/{userProfileID:[0-9]+}/wishlists/{wishlistID:[0-9]+}", rCustomer.GetCustomerWishList)
+	digest.Post("/users/{userProfileID:[0-9]+}/wishlists", rCustomer.CreateCustomerWishList)
+	digest.Delete("/wishlists/{wishlistID:[0-9]+}", rCustomer.DeleteCustomerWishList)
 	digest.Get("/users/{userProfileID:[0-9]+}/wishlists/all", rCustomer.GetAllCustomerWishLists)
 	digest.Post("/wishlists/{wishlistID:[0-9]+}/products", rCustomer.AddProductToWishListEndpoint)
 	digest.Post("/users/{userProfileID:[0-9]+}/wishlists/default/products", rCustomer.AddProductToDefaultWishListEndpoint)

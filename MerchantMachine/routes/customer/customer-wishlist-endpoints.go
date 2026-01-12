@@ -141,6 +141,32 @@ func (cr *CustomerRoutes) CreateCustomerWishList(w http.ResponseWriter, r *http.
 	helpers.WriteJSON(w, resp.StatusCode, decoded)
 }
 
+func (cr *CustomerRoutes) DeleteCustomerWishList(w http.ResponseWriter, r *http.Request) {
+	wishlistID := chi.URLParam(r, "wishlistID")
+	if wishlistID == "" {
+		helpers.ErrorJSON(w, fmt.Errorf("wishlistID is required"), http.StatusBadRequest)
+		return
+	}
+	dbURL := os.Getenv("DBLAYER_URL")
+	if dbURL == "" {
+		dbURL = "http://dblayer:8080"
+	}
+	targetURL := fmt.Sprintf("%s/wishlists/%s", dbURL, wishlistID)
+
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodDelete, targetURL, nil)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to build request"), http.StatusInternalServerError)
+		return
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to reach dblayer: %v", err), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	
+}
+
 func (cr *CustomerRoutes) GetAllCustomerWishLists(w http.ResponseWriter, r *http.Request) {
 	userProfileID := chi.URLParam(r, "userProfileID")
 	if userProfileID == "" {

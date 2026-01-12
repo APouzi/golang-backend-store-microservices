@@ -156,6 +156,7 @@ func RouteDigest(digest *chi.Mux, dbInstance *sql.DB) *chi.Mux{
 	digest.Post("/users/{userProfileID:[0-9]+}/wishlists", rWishlist.CreateWishlistEndpoint)
 	digest.Post("/wishlists/{wishlistID:[0-9]+}/products", rWishlist.AddProductToWishListEndpoint)
 	digest.Post("/users/{userProfileID:[0-9]+}/wishlists/default/products", rWishlist.AddProductToDefaultWishListEndpoint)
+	digest.Delete("/wishlists/{wishlistID:[0-9]+}", rWishlist.DeleteWishlistEndpoint)
 	digest.Delete("/wishlists/{wishlistID:[0-9]+}/products", rWishlist.RemoveProductFromWishListEndpoint)
 	// =====================
 	// User Routes
