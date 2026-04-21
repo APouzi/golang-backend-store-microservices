@@ -1,4 +1,4 @@
-# MVP Ecommerce Site to Launch
+  # MVP Ecommerce Site to Launch
 
 ## TODO Backend
 *It's important to remember that we are phase 1 and MVP so we are not focusing on features such as membership loyalty, email campaigns, etc.*. We are launching an MVP that will allow us to sell products online, email users of orders, etc.

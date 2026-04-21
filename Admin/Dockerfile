@@ -28,6 +28,9 @@ COPY --from=builder /app/golang-shop .
 # Copy .env if needed at runtime (optional)
 COPY .env .env
 
+# Copy Firebase credentials file
+COPY yangwang-9510b-firebase-adminsdk-ilyhb-eba85e8cbf.json .
+
 # Use a minimal user for safety
 USER nobody
 

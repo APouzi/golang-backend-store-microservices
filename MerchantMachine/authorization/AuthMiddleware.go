@@ -70,6 +70,8 @@ func(db *AuthMiddleWareStruct) ValidateToken(next http.Handler) http.Handler{
 type ctxKey string
 
 const ctxUserEmail ctxKey = "userEmail"
+
+// GetEmailFromContext retrieves the user email from the context.
 func GetEmailFromContext(ctx context.Context) (string, bool) {
 	email, ok := ctx.Value(ctxUserEmail).(string)
 	return email, ok
@@ -204,6 +206,7 @@ func(midwareinstance *AuthMiddleWareStruct) CheckUserRegistration(next http.Hand
 					if bodyRequest.PreferredTimeZone != nil { payload.PreferredTimeZone = bodyRequest.PreferredTimeZone }
 				}
 			}
+
 			jsonData, _ := json.Marshal(payload)
 
 			// Create request with context to propagate timeouts/cancellations
@@ -219,6 +222,7 @@ func(midwareinstance *AuthMiddleWareStruct) CheckUserRegistration(next http.Hand
 				if err != nil {
 					fmt.Printf("Error syncing user profile: %v\n", err)
 				} else {
+					// Check response status code
 					if resp.StatusCode >= 400 {
 						bodyBytes, _ := io.ReadAll(resp.Body)
 						fmt.Printf("Error syncing user profile. Status: %d, Body: %s\n", resp.StatusCode, string(bodyBytes))

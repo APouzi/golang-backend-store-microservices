@@ -8,12 +8,23 @@ import (
 
 const maxBodyBytes = 1 << 20 
 
+//  This constant is set using a bitwise left shift operation: 1 << 20. In binary terms, shifting the number 1 left by 20 places results in the value 1,048,576. This is equivalent to 2 raised to the 20th power.In practical terms, maxBodyBytes is often used to specify a size limit for data, such as the maximum number of bytes allowed in an HTTP request body. Setting this limit helps prevent excessive memory usage or potential denial-of-service attacks caused by very large payloads. In this case, the value represents 1 megabyte (MB), which is a common default for request size limits in web applications.
+
+// Using a bitwise shift for powers of two is a concise and efficient way to express such values in code, and it makes the intent clear to developers familiar with binary operations.
+
+// Strict semantic options for v2's Unmarshal.
 var unmarshalOpts = json.JoinOptions(
 	json.RejectUnknownMembers(true),       // fail on unknown fields
 	json.MatchCaseInsensitiveNames(false), // keep strict, case-sensitive names
 )
+
+// ReadJSON reads exactly one JSON value into data with a hard body limit.
+// Uses v2's streaming decoder variant; no []byte staging.
 func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+
+	// v2 defaults already reject duplicate names & invalid UTF-8;
+	// we pass them explicitly for clarity (safe defaults).
 	if err := json.UnmarshalRead(
 		r.Body,
 		data,
@@ -26,6 +37,8 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	return nil
 }
 
+// WriteJSON streams JSON directly to the ResponseWriter.
+// This avoids an intermediate []byte and is the fastest path.
 func WriteJSON(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	for _, h := range headers {
 		for k, v := range h {
@@ -35,8 +48,8 @@ func WriteJSON(w http.ResponseWriter, status int, data any, headers ...http.Head
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
-	_, err = w.Write(out)
-	if err != nil{
+
+	// Stream out; choose options as needed.
 	return json.MarshalWrite(
 		w,
 		data,
@@ -45,7 +58,7 @@ func WriteJSON(w http.ResponseWriter, status int, data any, headers ...http.Head
 	)
 }
 
-func ErrorJSON(w http.ResponseWriter, err error, status ...int) error{
+// ErrorJSON writes a standard error envelope.
 func ErrorJSON(w http.ResponseWriter, err error, status ...int) error {
 	code := http.StatusBadRequest
 	if len(status) > 0 {

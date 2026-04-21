@@ -32,7 +32,6 @@ services:
       REDIS_DB: 0
       REDIS_USERNAME: "user"
 
-
   merchantmachine:
     build: MerchantMachine/
     ports:

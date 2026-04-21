@@ -24,6 +24,9 @@ COPY --from=builder /app/golang-shop .
 # Copy your .env file (optional, if we rely on it in production)
 COPY .env .
 
+# Copy Firebase credentials
+COPY yangwang-9510b-firebase-adminsdk-ilyhb-eba85e8cbf.json .
+
 
 RUN adduser -D -u 10001 appuser
 USER appuser

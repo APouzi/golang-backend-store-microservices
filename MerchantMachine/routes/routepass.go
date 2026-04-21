@@ -29,7 +29,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// rUser := userendpoints.InstanceUserRoutes(db)
 	
 	
-	AuthMiddleWare := authorization.InjectSystemRefrences(firebaseAuth, redisClient)
+	// AuthMiddleWare := authorization.InjectSystemRefrences(firebaseAuth, redisClient)
 	
 	// digest.Use(AuthMiddleWare.CheckUserRegistration)
 	// rTestRoutes := testroutes.InjectDBRef(db, redis)
@@ -101,8 +101,8 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	// Admin need to lockdown based on jwt payload and scope
 	
 	// digest.Get("/users/{userProfileID:[0-9]+}/wishlists/{wishlistID:[0-9]+}", rWishlist.GetWishListByIDEndpoint)
-	digest.Group(func(digest chi.Router){
-	digest.Use(AuthMiddleWare.CheckUserRegistration)
+	// digest.Group(func(digest chi.Router){
+	// digest.Use(AuthMiddleWare.CheckUserRegistration)
 	// 	// digest.Use(AuthMiddleWare.HasAdminScope)
 	// 	// digest.Post("/products/", rAdmin.CreateProduct)
 	digest.Post("/checkout",rCheckout.CreateCheckoutSession)
@@ -117,6 +117,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App, stripeClient *stri
 	digest.Post("/wishlists/{wishlistID:[0-9]+}/products", rCustomer.AddProductToWishListEndpoint)
 	digest.Post("/users/{userProfileID:[0-9]+}/wishlists/default/products", rCustomer.AddProductToDefaultWishListEndpoint)
 	digest.Delete("/wishlists/{wishlistID:[0-9]+}/products", rCustomer.RemoveProductFromWishListEndpoint)
+	// })
 	// digest.Post("/products/", rAdmin.CreateProduct)
 	// digest.Post("/products/{ProductID}/variation", rAdmin.CreateVariation)
 	// digest.Post("/products/inventory", rAdmin.CreateInventoryLocation)

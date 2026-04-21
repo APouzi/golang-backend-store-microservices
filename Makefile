@@ -1,4 +1,4 @@
-up:
+ up:
 	docker compose build; docker compose up
 
 down:
@@ -16,14 +16,8 @@ trigger-start:
 
 
 
-trigger-meta:
-	stripe trigger checkout.session.completed \
-		--add checkout_session:metadata.itemsizeqty_1=2 \
-		--add checkout_session:metadata.itemsizeqty_2=1 \
-
-
-trigger-meta-2:
-	stripe trigger checkout.session.completed \
+trigger-meta: 
+	stripe trigger checkout.session.completed \  v       
 		--remove checkout_session:payment_intent_data.shipping \
 		--add checkout_session:automatic_tax.enabled=true \
 		--add checkout_session:customer_update[shipping]=auto \

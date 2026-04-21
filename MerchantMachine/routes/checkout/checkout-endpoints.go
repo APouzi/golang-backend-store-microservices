@@ -123,6 +123,7 @@ func (route *CheckoutRoutes) CreateCheckoutSession(w http.ResponseWriter, r *htt
 				taxCode = v.Provider
 			}
 		}
+		fmt.Println("taxCode:", taxCode)
 
 		params.LineItems = append(params.LineItems, &stripe.CheckoutSessionLineItemParams{
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -179,6 +180,9 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 
 		OrderLineItems, listOfProductDetails := ProcessInventoryAndOrderItems( inventoryMap, w, GetProductInventoryDetailByID, GetProductSizeByID, UpdateInventoryShelfDetailQuantity )
 
+		fmt.Println("Order Line Items:", OrderLineItems)
+		fmt.Println("List of Product Details:", listOfProductDetails)
+
 		
 
 		cust := ExtractCustomerInfoFromSession(&session)
@@ -195,11 +199,33 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 			fmt.Printf("Stripe Payment Intent ID: %s\n", paymentIntent.ID)
 			// You can now use paymentIntent.ID for further processing, e.g., storing in your DB
 		}
+// Payment Intent ID (pi_…)
+// This is a payment record, not an order .
+// → create a row in payments with provider='stripe', provider_payment_id = '<pi_...>'
 		var paymentMethodBrand, paymentMethodID, paymentMethodLast4, customerID, chargeID string 
 
+//In Stripe, paymentMethodID refers to the unique identifier for a Payment Method object. A Payment Method in Stripe represents a way a customer pays, such as a credit card, bank account, or other supported payment types.
+
+// paymentMethodID: This is a string like pm_1Hxxxxxxx, which uniquely identifies the payment method used for a transaction.
+// It allows you to reference, reuse, or update the payment method for future payments or subscriptions.
+// It is different from a source or token (older Stripe APIs); Payment Methods are the recommended approach for newer integrations.
+// Why collect it?
+
+// It helps you track which card or payment instrument was used.
+// You can use it for refunds, recurring payments, or customer support.
+
+// Charge ID (ch_…) (created after confirmation/capture)
+// Useful for refunds/reconciliation.
+// → either store in payments (new column provider_charge_id) or in a payment_charges child table
 		if session.Customer != nil {
 			customerID = session.Customer.ID
 		}
+// You can now use customerID for storing in your orders table or further processing
+// → store in orders.provider_customer_id = '<cus_...>'
+// Customer ID (cus_…)
+// Useful to re-use payment methods and for support.
+// → optional column orders.provider_customer_id (or normalize into a payment_accounts table keyed by your customer)
+
 		pi, err := route.fetchPaymentIntentBits(paymentIntentID)
 		if err != nil {
 			log.Printf("Error fetching PaymentIntent details: %v", err)
@@ -218,7 +244,7 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 			}
 		}
 
-		// (Alternative) read last4/brand from the Charge’s payment_method_details:
+		// (Alternative) read last4/brand from the Charges payment_method_details:
 		if paymentMethodLast4 == "" && pi.LatestCharge != nil && pi.LatestCharge.PaymentMethodDetails != nil && pi.LatestCharge.PaymentMethodDetails.Card != nil {
 			paymentMethodLast4 = pi.LatestCharge.PaymentMethodDetails.Card.Last4
 			paymentMethodBrand = string(pi.LatestCharge.PaymentMethodDetails.Card.Brand)
@@ -303,6 +329,13 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 			Payment    PaymentCreation     `json:"payment"`
 		}
 
+		// payload := OrderPayload{
+		// 	Order:     orderSendOff,
+		// 	LineItems: OrderLineItems,
+		// 	Payment:   payment_payload,
+		// }
+
+		// Marshal the payload using jsonv2 (Go 1.25+)
 		var buf bytes.Buffer
 		enc := json.NewEncoder(&buf)
 		enc.SetEscapeHTML(false)
@@ -319,6 +352,9 @@ func(route *CheckoutRoutes) PaymentConfirmation(w http.ResponseWriter, r *http.R
 			return
 		}
 		defer resp.Body.Close()
+		// Optionally, handle response from order service here// send to order service
+
+		// helpers.WriteJSON(w, http.StatusOK, payload)
 		fmt.Println("customer id is:", customerID, "shipping address:", shippingAddress, "billing address:", billingAddress)
 		fmt.Printf("Stripe Charge ID: %s\n", chargeID)
 		fmt.Println("order send off:", orderSendOff, listOfProductDetails, payment_payload)
@@ -336,7 +372,7 @@ func(route *CheckoutRoutes) fetchPaymentIntentBits(piID string) (*stripe.Payment
         Expand: []*string{
             stripe.String("payment_method"),              // pm_..., includes card.brand/last4
             stripe.String("latest_charge"),               // ch_...
-            // Optionally dig into charge’s PM details instead:
+            // Optionally dig into charges PM details instead:
             stripe.String("latest_charge.payment_method_details"),
         },
     }
