@@ -80,6 +80,7 @@ func RouteDigest(digest *chi.Mux, firebaseAuth *firebase.App) *chi.Mux{
 		digest.Delete("/variation/{VariationID}/attribute/{AttributeName}",rAdmin.DeleteAttribute)
 		digest.Post("/admin/{UserID}", rAdmin.UserToAdmin)
 		digest.Get("/tables",rAdmin.GetAllTables)
+		digest.Delete("/product-size/{ProductSizeID}",rAdmin.DeleteProductSize)
 		// digest.Get("/users/profile",rUser.UserProfile)
 	})
 	// digest.Post("/users/",rUser.Register)

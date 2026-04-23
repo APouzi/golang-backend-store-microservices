@@ -502,4 +502,81 @@ func(route *AdminRoutes) CreateProductSize(w http.ResponseWriter, r *http.Reques
 	}
 
 	helpers.WriteJSON(w, http.StatusCreated, sizeID)
+}  
+
+func (route *AdminRoutes) DeleteProductSize(w http.ResponseWriter, r *http.Request){
+	sizeID := chi.URLParam(r, "ProductSizeID")
+	prdCheck := ProductSize{}
+
+
+	response, err := http.Get("http://dblayer:8080/product-size/"+sizeID)
+	if err != nil {
+		fmt.Println("There was an error retrieving product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error retrieving product size"), 500)
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		fmt.Println("Failed to retrieve product size, status code:", response.StatusCode)
+		helpers.ErrorJSON(w, errors.New("failed to retrieve product size"), response.StatusCode)
+		return
+	}
+	decoder := json.NewDecoder(response.Body)
+	if err := decoder.Decode(&prdCheck); err != nil {
+		fmt.Println("Error decoding response from DBLayer:", err)
+		helpers.ErrorJSON(w, errors.New("failed to parse database response"), 500)
+		return
+	}
+
+	if prdCheck.SizeID == nil {
+		fmt.Println("Product size not found for deletion")
+		helpers.ErrorJSON(w, errors.New("product size not found for deletion"), 404)
+		return
+	}
+
+	req, err := http.NewRequest("DELETE", "http://dblayer:8080/product-size/"+sizeID, nil)
+	if err != nil {
+		fmt.Println("There was an error creating delete request for product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error creating delete request for product size"), 500)
+		return
+	}
+
+	client := &http.Client{}
+	deleteResp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("There was an error sending delete request for product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error deleting product size"), 500)
+		return
+	}
+	defer deleteResp.Body.Close()
+
+	if deleteResp.StatusCode != http.StatusOK {
+		fmt.Println("Delete product size failed, status code:", deleteResp.StatusCode)
+		helpers.ErrorJSON(w, errors.New("failed to delete product size"), deleteResp.StatusCode)
+		return
+	}
+
+	verifyResp, err := http.Get("http://dblayer:8080/productsize/" + sizeID)
+	if err != nil {
+		fmt.Println("There was an error verifying product size deletion:", err)
+		helpers.ErrorJSON(w, errors.New("could not verify product size deletion"), 500)
+		return
+	}
+	defer verifyResp.Body.Close()
+
+	if verifyResp.StatusCode == http.StatusOK {
+		verifyCheck := ProductSize{}
+		verifyDecoder := json.NewDecoder(verifyResp.Body)
+		if err := verifyDecoder.Decode(&verifyCheck); err == nil && verifyCheck.SizeID != nil {
+			helpers.ErrorJSON(w, errors.New("product size was not deleted"), 500)
+			return
+		}
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, "Product size deleted successfully")
+}
+func (route *AdminRoutes) DeleteProductVariation(w http.ResponseWriter, r *http.Request){
+}
+func (route *AdminRoutes) DeleteProduct(w http.ResponseWriter, r *http.Request){
 }

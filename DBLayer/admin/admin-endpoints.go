@@ -350,6 +350,31 @@ func (route *ProductRoutesTray) DeleteAttribute(w http.ResponseWriter, r *http.R
 	helpers.WriteJSON(w, 200, "Deleted")
 }
 
+func (route *ProductRoutesTray) DeleteProductSize(w http.ResponseWriter, r *http.Request){
+	VarID := chi.URLParam(r,"ProductSizeID")
+
+	if VarID == ""{
+		helpers.ErrorJSON(w, errors.New("please input ProductSizeID"),400)
+		return
+	}
+
+	sql, err := route.DB.Exec("DELETE FROM tblProductSize WHERE Size_ID = ?", VarID)
+	if err != nil{
+		helpers.ErrorJSON(w,err, 400)
+		return
+	}
+
+	nRows, _ := sql.RowsAffected()
+	if nRows < 1{
+		helpers.WriteJSON(w, 200, "Not Deleted")
+		return
+	}
+	
+	helpers.WriteJSON(w, 200, "Deleted")
+}
+
+
+
 
 func (route *ProductRoutesTray) UpdateAttribute(w http.ResponseWriter, r *http.Request){
 	VarID := chi.URLParam(r,"VariationID")
