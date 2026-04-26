@@ -349,7 +349,7 @@ func (route *ProductRoutesTray) DeleteAttribute(w http.ResponseWriter, r *http.R
 	
 	helpers.WriteJSON(w, 200, "Deleted")
 }
-
+ 
 func (route *ProductRoutesTray) DeleteProductSize(w http.ResponseWriter, r *http.Request){
 	VarID := chi.URLParam(r,"ProductSizeID")
 
@@ -464,8 +464,8 @@ func(route *ProductRoutesTray) CreateProductSize(w http.ResponseWriter, r *http.
 	prdSize.ModifiedDate = &now
 
 	// Use SQL column names consistent with DB schema - singular table name and Date_Created/Modified_Date
-	sql, err := route.DB.Exec("INSERT INTO tblProductSize (Size_Name, Size_Description, Variation_ID, Variation_Price, SKU, UPC, PRIMARY_IMAGE, Date_Created, Modified_Date) VALUES(?,?,?,?,?,?,?,?,?)",
-		prdSize.SizeName, prdSize.SizeDescription, prdSize.VariationID, prdSize.VariationPrice, prdSize.SKU, prdSize.UPC, prdSize.PrimaryImage, prdSize.DateCreated, prdSize.ModifiedDate)
+	sql, err := route.DB.Exec("INSERT INTO tblProductSize (Size_Name, Size_Description, Variation_ID, Variation_Price, SKU, UPC,Price, PRIMARY_IMAGE, Date_Created, Modified_Date) VALUES(?,?,?,?,?,?,?,?,?,?)",
+		prdSize.SizeName, prdSize.SizeDescription, prdSize.VariationID, prdSize.VariationPrice, prdSize.SKU, prdSize.UPC, prdSize.Price, prdSize.PrimaryImage, prdSize.DateCreated, prdSize.ModifiedDate)
 	if err != nil{
 		fmt.Println("There was an error inserting product size:", err)
 		helpers.ErrorJSON(w, errors.New("there was an error inserting product size"), 500)

@@ -146,6 +146,7 @@ type ProductSize struct {
     VariationID    *int64        `db:"Variation_ID" json:"variation_id"`
     VariationPrice *float64    `db:"Variation_Price" json:"variation_price"`
     SKU            *string    `db:"SKU,omitempty" json:"sku,omitempty"`
+	Price		  *float64    `db:"Price,omitempty" json:"price,omitempty"`
     UPC            *string    `db:"UPC,omitempty" json:"upc,omitempty"`
     PrimaryImage   *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
     DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
