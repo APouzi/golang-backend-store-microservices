@@ -374,6 +374,35 @@ func (route *AdminRoutes) DeleteProductSize(w http.ResponseWriter, r *http.Reque
 
 	helpers.WriteJSON(w, http.StatusOK, "Product size deleted successfully")
 }
+
+func EditProductSize(w http.ResponseWriter, r *http.Request){
+	response, err := http.Get("http://dblayer:8080/product-size/"+chi.URLParam(r, "ProductSizeID"))
+	if err != nil {
+		fmt.Println("There was an error retrieving product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error retrieving product size"), 500)
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		fmt.Println("Failed to retrieve product size, status code:", response.StatusCode)
+		helpers.ErrorJSON(w, errors.New("failed to retrieve product size"), response.StatusCode)
+		return
+	}
+	prdEdit := ProductSize{}
+	decoder := json.NewDecoder(response.Body)
+	if err := decoder.Decode(&prdEdit); err != nil {
+		fmt.Println("Error decoding response from DBLayer:", err)
+		helpers.ErrorJSON(w, errors.New("failed to parse database response"), 500)
+		return
+	}
+
+	http.NewRequest("POST", "http://dblayer:8080/product-size/"+chi.URLParam(r, "ProductSizeID"), bytes.NewReader([]byte{}))
+
+
+}
+
+
 func (route *AdminRoutes) DeleteProductVariation(w http.ResponseWriter, r *http.Request){
 }
 func (route *AdminRoutes) DeleteProduct(w http.ResponseWriter, r *http.Request){
