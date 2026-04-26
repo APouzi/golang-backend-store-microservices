@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/Apouzi/Golang-Admin-Service/helpers"
+	"github.com/go-chi/chi/v5"
 )
 
 type AdminCategoriesRoutes struct{
@@ -19,6 +20,67 @@ func InstanceAdminCategoriesRoutes(  ) *AdminCategoriesRoutes {
 	r := &AdminCategoriesRoutes{
 	}
 	return r
+}
+
+
+
+
+
+
+
+func (route *AdminRoutes) DeletePrimeCategory(w http.ResponseWriter, r *http.Request){
+	CatName := chi.URLParam(r,"CatPrimeName")
+	if CatName == ""{
+		fmt.Println("No CatPrimeName wasn't pulled")
+		return
+	}
+	_, err := route.DB.Exec("DELETE FROM tblCategoriesPrime WHERE CategoryName = ?", CatName)
+	if err != nil{
+		fmt.Println("Failed deletion in CatPrimeName")
+		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
+		return
+	}
+
+	sendBack := DeletedSendBack{SendBack:false}
+	helpers.WriteJSON(w,200,sendBack)
+}
+
+
+func (route *AdminRoutes) DeleteSubCategory(w http.ResponseWriter, r *http.Request){
+	CatName := chi.URLParam(r,"CatSubName")
+	if CatName == ""{
+		fmt.Println("No CatSubName wasn't pulled")
+		return
+	}
+	
+	_, err := route.DB.Exec("DELETE FROM tblCategoriesSub WHERE CategoryName = ?", CatName)
+	if err != nil{
+		fmt.Println("Failed deletion in CatSubName")
+		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
+		return
+	}
+	
+	sendBack := DeletedSendBack{SendBack:false}
+	helpers.WriteJSON(w,200,sendBack)
+}
+
+
+func (route *AdminRoutes) DeleteFinalCategory(w http.ResponseWriter, r *http.Request){
+	CatName := chi.URLParam(r,"CatFinalName")
+	if CatName == ""{
+		fmt.Println("No CatPrimeName wasn't pulled")
+		return
+	}
+	
+	_, err := route.DB.Exec("DELETE FROM tblCategoriesFinal WHERE CategoryName = ?", CatName)
+	if err != nil{
+		fmt.Println("Failed deletion in CatPrimeName")
+		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
+		return
+	}
+
+	sendBack := DeletedSendBack{SendBack:false}
+	helpers.WriteJSON(w,200,sendBack)
 }
 
 
