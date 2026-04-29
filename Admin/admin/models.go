@@ -93,16 +93,16 @@ type ProductEdit struct {
 }
 
 type VariationEdit struct {
-	VariationID          int64   `json:"Variation_ID"`
-	VariationProductID   int64   `json:"Product_ID"`
-	VariationName        string  `json:"Variation_Name"`
-	VariationDescription string  `json:"Variation_Description"`
-	VariationPrice       float32 `json:"Variation_Price"`
-	SKU                  string  `json:"SKU"`
-	UPC                  string  `json:"UPC"`
-	PrimaryImage         string  `json:"Primary_Image,omitempty"`
-	VariationQuantity    int     `json:"Variation_Quantity"`
-	LocationAt           string  `json:"Location_At"`
+	VariationID          int64   `db:"Variation_ID" json:"variation_id"`
+	VariationProductID   int64   `db:"Product_ID" json:"product_id"`
+	VariationName        string  `db:"Variation_Name" json:"variation_name"`
+	VariationDescription string  `db:"Variation_Description" json:"variation_description"`
+	VariationPrice       float32 `db:"Variation_Price" json:"variation_price"`
+	SKU                  string  `db:"SKU" json:"sku"`
+	UPC                  string  `db:"UPC" json:"upc"`
+	PrimaryImage         string  `db:"Primary_Image,omitempty" json:"primary_image,omitempty"`
+	VariationQuantity    int     `db:"Variation_Quantity" json:"variation_quantity"`
+	LocationAt           string  `db:"Location_At" json:"location_at"`
 }
 
 type DeletedSendBack struct {
@@ -138,6 +138,7 @@ type ProductSize struct {
     VariationPrice *float64    `db:"Variation_Price" json:"variation_price"`
     SKU            *string    `db:"SKU,omitempty" json:"sku,omitempty"`
     UPC            *string    `db:"UPC,omitempty" json:"upc,omitempty"`
+	Price 		*float64    `db:"Price,omitempty" json:"price,omitempty"`
     PrimaryImage   *string    `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
     DateCreated    *time.Time  `db:"Date_Created" json:"date_created"`
     ModifiedDate   *time.Time `db:"Modified_Date,omitempty" json:"modified_date,omitempty"`
