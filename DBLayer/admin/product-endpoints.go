@@ -13,8 +13,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-
-
 func (adminProdRoutes *ProductRoutesTray) CreateProductMultiChain(w http.ResponseWriter, r *http.Request) {
 	transaction, err := adminProdRoutes.DB.Begin()
 	if err != nil {
@@ -147,20 +145,17 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 	helpers.WriteJSON(w, http.StatusCreated, varitCrt)
 }
 
-
-
-
-func (route *ProductRoutesTray) EditProduct(w http.ResponseWriter, r *http.Request){
+func (route *ProductRoutesTray) EditProduct(w http.ResponseWriter, r *http.Request) {
 	ProdID := chi.URLParam(r, "ProductID")
 	prodEdit := ProductEdit{}
-	helpers.ReadJSON(w,r, &prodEdit)
+	helpers.ReadJSON(w, r, &prodEdit)
 	fmt.Println("edit product:", prodEdit)
 	var buf strings.Builder
-	buf.WriteString("UPDATE tblProducts SET")
+	buf.WriteString("UPDATE tblProducts SET ")
 	var count int = 0
 	Varib := []any{}
 	if prodEdit.Name != "" {
-		if count == 0{
+		if count == 0 {
 			buf.WriteString(" Product_Name = ?")
 			Varib = append(Varib, prodEdit.Name)
 			count++
@@ -169,7 +164,7 @@ func (route *ProductRoutesTray) EditProduct(w http.ResponseWriter, r *http.Reque
 		Varib = append(Varib, prodEdit.Name)
 	}
 	if prodEdit.Description != "" {
-		if count == 0{
+		if count == 0 {
 			buf.WriteString(" Product_Description = ?")
 			Varib = append(Varib, prodEdit.Description)
 			count++
@@ -177,56 +172,55 @@ func (route *ProductRoutesTray) EditProduct(w http.ResponseWriter, r *http.Reque
 		buf.WriteString(", Product_Description = ?")
 		Varib = append(Varib, prodEdit.Description)
 	}
-	if count  == 0 {
-		helpers.WriteJSON(w,http.StatusAccepted,"failed")
+	if count == 0 {
+		helpers.WriteJSON(w, http.StatusAccepted, "failed")
 		return
 	}
 
 	buf.WriteString(", Modified_Date = ? WHERE Product_ID = ?")
-	Varib = append(Varib, time.Now(),ProdID)
+	Varib = append(Varib, time.Now(), ProdID)
 	_, err := route.DB.Exec(buf.String(), Varib...)
-	if err != nil{
+	if err != nil {
 		fmt.Println("err with exec Edit Product Update")
 		fmt.Println(err)
 	}
 
-	helpers.WriteJSON(w,http.StatusAccepted,&prodEdit)
-	
+	helpers.WriteJSON(w, http.StatusAccepted, &prodEdit)
+
 }
 
-
-
-func (route *ProductRoutesTray) EditVariation(w http.ResponseWriter, r *http.Request){
+func (route *ProductRoutesTray) EditVariation(w http.ResponseWriter, r *http.Request) {
 	r.Header.Get("Authorization")
 	VarID := chi.URLParam(r, "VariationID")
 	VaritEdit := VariationEdit{}
-	helpers.ReadJSON(w,r, &VaritEdit)
+	helpers.ReadJSON(w, r, &VaritEdit)
+	fmt.Println("the recieved payload:",VaritEdit)
 	var buf strings.Builder
 	Varib := []any{}
-	buf.WriteString("UPDATE tblProductVariation SET")
+	buf.WriteString("UPDATE tblProductVariation SET ")
 	var count int = 0
 	if VaritEdit.VariationName != "" {
-		if count > 0{
+		if count > 0 {
 			buf.WriteString(", ")
 		}
 		buf.WriteString("Variation_Name = ?")
 		Varib = append(Varib, VaritEdit.VariationName)
 		count++
 	}
-	if VaritEdit.VariationDescription != ""{
-		if count > 0{
+	if VaritEdit.VariationDescription != "" {
+		if count > 0 {
 			buf.WriteString(", ")
 		}
 		buf.WriteString("Variation_Description = ?")
 		Varib = append(Varib, VaritEdit.VariationDescription)
 		count++
 	}
-	
+
 	if count > 0 {
 		buf.WriteString(" WHERE Variation_ID = ?")
 		Varib = append(Varib, VarID)
-		_,err := route.DB.Exec(buf.String(),Varib...)
-		if err != nil{
+		_, err := route.DB.Exec(buf.String(), Varib...)
+		if err != nil {
 			fmt.Println(err)
 		}
 	}
@@ -241,116 +235,28 @@ func (route *ProductRoutesTray) EditVariation(w http.ResponseWriter, r *http.Req
 	helpers.WriteJSON(w, http.StatusAccepted, VaritEdit)
 }
 
+func (route *ProductRoutesTray) DeleteVariation(w http.ResponseWriter, r *http.Request) {
+	r.Header.Get("Authorization")
+	VarID := chi.URLParam(r, "VariationID")
+	fmt.Println("variation id to delete:", VarID)
+	VaritDelete := VariationEdit{}
+	helpers.ReadJSON(w, r, &VaritDelete)
 
+	_, err := route.DB.Exec("DELETE FROM tblProductVariation WHERE Variation_ID = ?", VarID)
+	if err != nil {
+		fmt.Println("Error deleting variation:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error deleting the variation"), 500)
+		return
+	}
 
-func (route *ProductRoutesTray) AddAttribute(w http.ResponseWriter, r *http.Request){
-	VarID := chi.URLParam(r,"VariationID")
-	if VarID == ""{
-		helpers.ErrorJSON(w, errors.New("please input VariationID"),400)
-		return
-	}
-	att := Attribute{}
-	
-	err := helpers.ReadJSON(w,r,&att)
-	if err != nil{
-		helpers.ErrorJSON(w, err, 500)
-		return
-	}
-	sql, err := route.DB.Exec("INSERT INTO tblProductAttribute (Variation_ID, AttributeName) VALUES(?,?)",VarID,att.Attribute)
-	if err != nil{
-		helpers.ErrorJSON(w,err, 400)
-		return
-	}
-	var id int64
-	id, err = sql.LastInsertId()
-	if err != nil{
-		helpers.ErrorJSON(w,errors.New("failed attribute LastInsertID"))
-		return
-	}
-	sendBack := AddedSendBack{IDSendBack: id}
-	helpers.WriteJSON(w, 200, sendBack)
+	helpers.WriteJSON(w, http.StatusAccepted, VaritDelete)
 }
 
-func (route *ProductRoutesTray) DeleteAttribute(w http.ResponseWriter, r *http.Request){
-	VarID := chi.URLParam(r,"VariationID")
-	AttName := chi.URLParam(r, "AttributeName")
-	if VarID == ""{
-		helpers.ErrorJSON(w, errors.New("please input VariationID"),400)
-		return
-	}
-
-	sql, err := route.DB.Exec("DELETE FROM tblProductAttribute WHERE Variation_ID = ? AND AttributeName = ?", VarID, AttName)
-	if err != nil{
-		helpers.ErrorJSON(w,err, 400)
-		return
-	}
-
-	nRows, _ := sql.RowsAffected()
-	if nRows < 1{
-		helpers.WriteJSON(w, 200, "Not Deleted")
-		return
-	}
-	
-	helpers.WriteJSON(w, 200, "Deleted")
-}
- 
-func (route *ProductRoutesTray) DeleteProductSize(w http.ResponseWriter, r *http.Request){
-	VarID := chi.URLParam(r,"ProductSizeID")
-
-	if VarID == ""{
-		helpers.ErrorJSON(w, errors.New("please input ProductSizeID"),400)
-		return
-	}
-
-	sql, err := route.DB.Exec("DELETE FROM tblProductSize WHERE Size_ID = ?", VarID)
-	if err != nil{
-		helpers.ErrorJSON(w,err, 400)
-		return
-	}
-
-	nRows, _ := sql.RowsAffected()
-	if nRows < 1{
-		helpers.WriteJSON(w, 200, "Not Deleted")
-		return
-	}
-	
-	helpers.WriteJSON(w, 200, "Deleted")
-}
-
-
-
-
-func (route *ProductRoutesTray) UpdateAttribute(w http.ResponseWriter, r *http.Request){
-	VarID := chi.URLParam(r,"VariationID")
-	AttName := chi.URLParam(r, "AttributeName")
-	if VarID == ""{
-		helpers.ErrorJSON(w, errors.New("please input VariationID"),400)
-		return
-	}
-	AttRead := Attribute{}
-	helpers.ReadJSON(w,r,&AttRead)
-	fmt.Println(AttRead.Attribute,"variatio id and atttribute name", VarID,AttName)
-	sql, err := route.DB.Exec("UPDATE tblProductAttribute SET AttributeName = ? WHERE Variation_ID = ? AND AttributeName = ?",AttRead.Attribute ,VarID, AttName)
-	if err != nil{
-		helpers.ErrorJSON(w,err, 400)
-		return
-	}
-
-	nRows, _ := sql.RowsAffected()
-	if nRows < 1{
-		helpers.WriteJSON(w, 200, "No Updated Happened")
-		return
-	}
-	
-	helpers.WriteJSON(w, 200, "Attribute Updated")
-}
-
-
-func(route *ProductRoutesTray) CreateProductSize(w http.ResponseWriter, r *http.Request){
+func (route *ProductRoutesTray) CreateProductSize(w http.ResponseWriter, r *http.Request) {
 	var prdSize ProductSize
 
-	helpers.ReadJSON(w,r,&prdSize)
-	fmt.Println("product size payload:",prdSize)
+	helpers.ReadJSON(w, r, &prdSize)
+	fmt.Println("product size payload:", prdSize)
 	// Ensure DateCreated and ModifiedDate are initialized to now
 	now := time.Now().UTC()
 	prdSize.DateCreated = &now
@@ -359,14 +265,14 @@ func(route *ProductRoutesTray) CreateProductSize(w http.ResponseWriter, r *http.
 	// Use SQL column names consistent with DB schema - singular table name and Date_Created/Modified_Date
 	sql, err := route.DB.Exec("INSERT INTO tblProductSize (Size_Name, Size_Description, Variation_ID, Variation_Price, SKU, UPC,Price, PRIMARY_IMAGE, Date_Created, Modified_Date) VALUES(?,?,?,?,?,?,?,?,?,?)",
 		prdSize.SizeName, prdSize.SizeDescription, prdSize.VariationID, prdSize.VariationPrice, prdSize.SKU, prdSize.UPC, prdSize.Price, prdSize.PrimaryImage, prdSize.DateCreated, prdSize.ModifiedDate)
-	if err != nil{
+	if err != nil {
 		fmt.Println("There was an error inserting product size:", err)
 		helpers.ErrorJSON(w, errors.New("there was an error inserting product size"), 500)
 		return
 	}
 
 	sizeID, err := sql.LastInsertId()
-	if err != nil{
+	if err != nil {
 		fmt.Println("There was an error getting last insert id for product size:", err)
 		helpers.ErrorJSON(w, errors.New("there was an error getting last insert id for product size"), 500)
 		return
@@ -375,4 +281,183 @@ func(route *ProductRoutesTray) CreateProductSize(w http.ResponseWriter, r *http.
 	prdSize.SizeID = &sizeID
 
 	helpers.WriteJSON(w, http.StatusCreated, prdSize)
+}
+
+func (route *ProductRoutesTray) EditProductSize(w http.ResponseWriter, r *http.Request) {
+	prodsizeID := chi.URLParam(r, "ProductSizeID")
+	if prodsizeID == "" {
+		helpers.ErrorJSON(w, errors.New("please input ProductSizeID"), http.StatusBadRequest)
+		return
+	}
+
+	sizeID, err := strconv.ParseInt(prodsizeID, 10, 64)
+	if err != nil {
+		helpers.ErrorJSON(w, errors.New("invalid ProductSizeID"), http.StatusBadRequest)
+		return
+	}
+
+	var prdSize ProductSize
+	if err := helpers.ReadJSON(w, r, &prdSize); err != nil {
+		helpers.ErrorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+	fmt.Println("edit product size payload:", prdSize)
+
+	setClauses := []string{}
+	args := []any{}
+
+	if prdSize.SizeName != nil {
+		setClauses = append(setClauses, "Size_Name = ?")
+		args = append(args, *prdSize.SizeName)
+	}
+	if prdSize.SizeDescription != nil {
+		setClauses = append(setClauses, "Size_Description = ?")
+		args = append(args, *prdSize.SizeDescription)
+	}
+	if prdSize.VariationPrice != nil {
+		setClauses = append(setClauses, "Variation_Price = ?")
+		args = append(args, *prdSize.VariationPrice)
+	}
+	if prdSize.SKU != nil {
+		setClauses = append(setClauses, "SKU = ?")
+		args = append(args, *prdSize.SKU)
+	}
+	if prdSize.UPC != nil {
+		setClauses = append(setClauses, "UPC = ?")
+		args = append(args, *prdSize.UPC)
+	}
+	if prdSize.Price != nil {
+		setClauses = append(setClauses, "Price = ?")
+		args = append(args, *prdSize.Price)
+	}
+	if prdSize.PrimaryImage != nil {
+		setClauses = append(setClauses, "PRIMARY_IMAGE = ?")
+		args = append(args, *prdSize.PrimaryImage)
+	}
+
+	if len(setClauses) == 0 {
+		helpers.ErrorJSON(w, errors.New("no fields provided for update"), http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now().UTC()
+	setClauses = append(setClauses, "Modified_Date = ?")
+	args = append(args, now, sizeID)
+
+	query := "UPDATE tblProductSize SET " + strings.Join(setClauses, ", ") + " WHERE Size_ID = ?"
+	result, err := route.DB.Exec(query, args...)
+	if err != nil {
+		fmt.Println("There was an error updating product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error updating product size"), 500)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err == nil && rowsAffected == 0 {
+		helpers.ErrorJSON(w, errors.New("product size not found"), http.StatusNotFound)
+		return
+	}
+
+	prdSize.SizeID = &sizeID
+	prdSize.ModifiedDate = &now
+	helpers.WriteJSON(w, http.StatusOK, prdSize)
+}
+
+func (route *ProductRoutesTray) AddAttribute(w http.ResponseWriter, r *http.Request) {
+	VarID := chi.URLParam(r, "VariationID")
+	if VarID == "" {
+		helpers.ErrorJSON(w, errors.New("please input VariationID"), 400)
+		return
+	}
+	att := Attribute{}
+
+	err := helpers.ReadJSON(w, r, &att)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 500)
+		return
+	}
+	sql, err := route.DB.Exec("INSERT INTO tblProductAttribute (Variation_ID, AttributeName) VALUES(?,?)", VarID, att.Attribute)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		return
+	}
+	var id int64
+	id, err = sql.LastInsertId()
+	if err != nil {
+		helpers.ErrorJSON(w, errors.New("failed attribute LastInsertID"))
+		return
+	}
+	sendBack := AddedSendBack{IDSendBack: id}
+	helpers.WriteJSON(w, 200, sendBack)
+}
+
+func (route *ProductRoutesTray) DeleteAttribute(w http.ResponseWriter, r *http.Request) {
+	VarID := chi.URLParam(r, "VariationID")
+	AttName := chi.URLParam(r, "AttributeName")
+	if VarID == "" {
+		helpers.ErrorJSON(w, errors.New("please input VariationID"), 400)
+		return
+	}
+
+	sql, err := route.DB.Exec("DELETE FROM tblProductAttribute WHERE Variation_ID = ? AND AttributeName = ?", VarID, AttName)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		return
+	}
+
+	nRows, _ := sql.RowsAffected()
+	if nRows < 1 {
+		helpers.WriteJSON(w, 200, "Not Deleted")
+		return
+	}
+
+	helpers.WriteJSON(w, 200, "Deleted")
+}
+
+func (route *ProductRoutesTray) DeleteProductSize(w http.ResponseWriter, r *http.Request) {
+	VarID := chi.URLParam(r, "ProductSizeID")
+
+	if VarID == "" {
+		helpers.ErrorJSON(w, errors.New("please input ProductSizeID"), 400)
+		return
+	}
+
+	sql, err := route.DB.Exec("DELETE FROM tblProductSize WHERE Size_ID = ?", VarID)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		return
+	}
+
+	nRows, _ := sql.RowsAffected()
+	if nRows < 1 {
+		helpers.WriteJSON(w, 200, "Not Deleted")
+		return
+	}
+
+	helpers.WriteJSON(w, 200, "Deleted")
+}
+
+func (route *ProductRoutesTray) UpdateAttribute(w http.ResponseWriter, r *http.Request) {
+	VarID := chi.URLParam(r, "VariationID")
+	AttName := chi.URLParam(r, "AttributeName")
+	if VarID == "" {
+		helpers.ErrorJSON(w, errors.New("please input VariationID"), 400)
+		return
+	}
+	AttRead := Attribute{}
+	helpers.ReadJSON(w, r, &AttRead)
+	fmt.Println(AttRead.Attribute, "variatio id and atttribute name", VarID, AttName)
+	sql, err := route.DB.Exec("UPDATE tblProductAttribute SET AttributeName = ? WHERE Variation_ID = ? AND AttributeName = ?", AttRead.Attribute, VarID, AttName)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
+		return
+	}
+
+	nRows, _ := sql.RowsAffected()
+	if nRows < 1 {
+		helpers.WriteJSON(w, 200, "No Updated Happened")
+		return
+	}
+
+	helpers.WriteJSON(w, 200, "Attribute Updated")
 }

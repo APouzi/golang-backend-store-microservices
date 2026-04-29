@@ -2,6 +2,7 @@ package adminendpoints
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,7 +12,16 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request) {
+type AdminProductRoutes struct {
+	DB *sql.DB
+}
+
+func InstanceAdminProductRoutes() *AdminProductRoutes {
+	r := &AdminProductRoutes{}
+	return r
+}
+
+func (route *AdminProductRoutes) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("hit!")
 
@@ -61,7 +71,7 @@ func (route *AdminRoutes) CreateProduct(w http.ResponseWriter, r *http.Request) 
 
 }
 
-func (route *AdminRoutes) CreateVariation(w http.ResponseWriter, r *http.Request) {
+func (route *AdminProductRoutes) CreateVariation(w http.ResponseWriter, r *http.Request) {
 	ProductID := chi.URLParam(r, "ProductID")
 	variation := VariationCreate{}
 	helpers.ReadJSON(w, r, &variation)
@@ -107,23 +117,22 @@ func (route *AdminRoutes) CreateVariation(w http.ResponseWriter, r *http.Request
 
 }
 
-
-func (route *AdminRoutes) EditProduct(w http.ResponseWriter, r *http.Request){
+func (route *AdminProductRoutes) EditProduct(w http.ResponseWriter, r *http.Request) {
 	ProdID := chi.URLParam(r, "ProductID")
 	prodEdit := &ProductEdit{}
-	helpers.ReadJSON(w,r, prodEdit)
-	
+	helpers.ReadJSON(w, r, prodEdit)
+
 	fmt.Println(prodEdit)
-	url := "http://dblayer:8080/products/"+ProdID
+	url := "http://dblayer:8080/products/" + ProdID
 	fmt.Println("url:", url)
 	prodBytes, err := json.Marshal(prodEdit)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 	// prodDecode:= bytes.NewReader(prodBytes)
-	req, err := http.NewRequest("PATCH",url,bytes.NewReader(prodBytes))
-	if err != nil{
-		fmt.Println("error trying to post to create prime category",err)
+	req, err := http.NewRequest("PATCH", url, bytes.NewReader(prodBytes))
+	if err != nil {
+		fmt.Println("error trying to post to create prime category", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -133,32 +142,29 @@ func (route *AdminRoutes) EditProduct(w http.ResponseWriter, r *http.Request){
 	resp, err := client.Do(req)
 	responseDecode := json.NewDecoder(resp.Body)
 	err = responseDecode.Decode(prodEdit)
-	if err != nil{
-		fmt.Println("error trying to decode",err)
+	if err != nil {
+		fmt.Println("error trying to decode", err)
 	}
 
+	helpers.WriteJSON(w, http.StatusAccepted, &prodEdit)
 
-	helpers.WriteJSON(w,http.StatusAccepted,&prodEdit)
-	
 }
 
-
-
-func (route *AdminRoutes) EditVariation(w http.ResponseWriter, r *http.Request){
+func (route *AdminProductRoutes) EditVariation(w http.ResponseWriter, r *http.Request) {
 	r.Header.Get("Authorization")
 	VarID := chi.URLParam(r, "VariationID")
 	VaritEdit := &VariationEdit{}
-	helpers.ReadJSON(w,r, VaritEdit)
+	helpers.ReadJSON(w, r, VaritEdit)
 	url := "http://dblayer:8080/variation/" + VarID
 
 	varitBytes, err := json.Marshal(VaritEdit)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 	// prodDecode:= bytes.NewReader(prodBytes)
-	req, err := http.NewRequest("PATCH",url,bytes.NewReader(varitBytes))
-	if err != nil{
-		fmt.Println("error trying to post to create prime category",err)
+	req, err := http.NewRequest("PATCH", url, bytes.NewReader(varitBytes))
+	if err != nil {
+		fmt.Println("error trying to post to create prime category", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -169,26 +175,23 @@ func (route *AdminRoutes) EditVariation(w http.ResponseWriter, r *http.Request){
 	responseDecode := json.NewDecoder(resp.Body)
 	varitReturn := &VariationEdit{}
 	err = responseDecode.Decode(varitReturn)
-	if err != nil{
-		fmt.Println("error trying to decode",err)
+	if err != nil {
+		fmt.Println("error trying to decode", err)
 	}
-
 
 	helpers.WriteJSON(w, http.StatusAccepted, VaritEdit)
 }
 
-
-
-func (route *AdminRoutes) AddAttribute(w http.ResponseWriter, r *http.Request){
-	VarID := chi.URLParam(r,"VariationID")
-	if VarID == ""{
-		helpers.ErrorJSON(w, errors.New("please input VariationID"),400)
+func (route *AdminProductRoutes) AddAttribute(w http.ResponseWriter, r *http.Request) {
+	VarID := chi.URLParam(r, "VariationID")
+	if VarID == "" {
+		helpers.ErrorJSON(w, errors.New("please input VariationID"), 400)
 		return
 	}
 	att := Attribute{}
-	
-	err := helpers.ReadJSON(w,r,&att)
-	if err != nil{
+
+	err := helpers.ReadJSON(w, r, &att)
+	if err != nil {
 		helpers.ErrorJSON(w, err, 500)
 		return
 	}
@@ -196,13 +199,13 @@ func (route *AdminRoutes) AddAttribute(w http.ResponseWriter, r *http.Request){
 	url := "http://dblayer:8080/variation/" + VarID + "/attribute"
 
 	attributeBytes, err := json.Marshal(att)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 	// prodDecode:= bytes.NewReader(prodBytes)
-	req, err := http.NewRequest("POST",url,bytes.NewReader(attributeBytes))
-	if err != nil{
-		fmt.Println("error trying to post to create prime category",err)
+	req, err := http.NewRequest("POST", url, bytes.NewReader(attributeBytes))
+	if err != nil {
+		fmt.Println("error trying to post to create prime category", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -213,69 +216,67 @@ func (route *AdminRoutes) AddAttribute(w http.ResponseWriter, r *http.Request){
 	responseDecode := json.NewDecoder(resp.Body)
 	attRet := &AddedSendBack{}
 	err = responseDecode.Decode(attRet)
-	if err != nil{
-		fmt.Println("error trying to decode",err)
+	if err != nil {
+		fmt.Println("error trying to decode", err)
 	}
-	
+
 	helpers.WriteJSON(w, 200, attRet)
 }
 
-func (route *AdminRoutes) DeleteAttribute(w http.ResponseWriter, r *http.Request){
-	VarID := chi.URLParam(r,"VariationID")
+func (route *AdminProductRoutes) DeleteAttribute(w http.ResponseWriter, r *http.Request) {
+	VarID := chi.URLParam(r, "VariationID")
 	AttName := chi.URLParam(r, "AttributeName")
-	if VarID == ""{
-		helpers.ErrorJSON(w, errors.New("please input VariationID"),400)
+	if VarID == "" {
+		helpers.ErrorJSON(w, errors.New("please input VariationID"), 400)
 		return
 	}
 
 	sql, err := route.DB.Exec("DELETE FROM tblProductAttribute WHERE Variation_ID = ? AND AttributeName = ?", VarID, AttName)
-	if err != nil{
-		helpers.ErrorJSON(w,err, 400)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
 		return
 	}
 
 	nRows, _ := sql.RowsAffected()
-	if nRows < 1{
+	if nRows < 1 {
 		helpers.WriteJSON(w, 200, "Not Deleted")
 		return
 	}
-	
+
 	helpers.WriteJSON(w, 200, "Deleted")
 }
 
-
-func (route *AdminRoutes) UpdateAttribute(w http.ResponseWriter, r *http.Request){
-	VarID := chi.URLParam(r,"VariationID")
+func (route *AdminProductRoutes) UpdateAttribute(w http.ResponseWriter, r *http.Request) {
+	VarID := chi.URLParam(r, "VariationID")
 	AttName := chi.URLParam(r, "AttributeName")
-	if VarID == ""{
-		helpers.ErrorJSON(w, errors.New("please input VariationID"),400)
+	if VarID == "" {
+		helpers.ErrorJSON(w, errors.New("please input VariationID"), 400)
 		return
 	}
-	AttRead := Attribute{} 
-	helpers.ReadJSON(w,r,&AttRead)
-	fmt.Println(AttRead.Attribute,"variatio id and atttribute name", VarID,AttName)
-	sql, err := route.DB.Exec("UPDATE tblProductAttribute SET AttributeName = ? WHERE Variation_ID = ? AND AttributeName = ?",AttRead.Attribute ,VarID, AttName)
-	if err != nil{
-		helpers.ErrorJSON(w,err, 400)
+	AttRead := Attribute{}
+	helpers.ReadJSON(w, r, &AttRead)
+	fmt.Println(AttRead.Attribute, "variatio id and atttribute name", VarID, AttName)
+	sql, err := route.DB.Exec("UPDATE tblProductAttribute SET AttributeName = ? WHERE Variation_ID = ? AND AttributeName = ?", AttRead.Attribute, VarID, AttName)
+	if err != nil {
+		helpers.ErrorJSON(w, err, 400)
 		return
 	}
 
 	nRows, _ := sql.RowsAffected()
-	if nRows < 1{
+	if nRows < 1 {
 		helpers.WriteJSON(w, 200, "No Updated Happened")
 		return
 	}
-	
+
 	helpers.WriteJSON(w, 200, "Attribute Updated")
 }
 
-
-func(route *AdminRoutes) CreateProductSize(w http.ResponseWriter, r *http.Request){
+func (route *AdminProductRoutes) CreateProductSize(w http.ResponseWriter, r *http.Request) {
 	variationID := chi.URLParam(r, "VariationID")
 	productID := chi.URLParam(r, "ProductID")
 
 	// Ensure DateCreated and ModifiedDate are initialized to now
-	resp, err := http.Post("http://dblayer:8080/products/"+productID+"/variation/"+variationID+"/size","application/json", r.Body)
+	resp, err := http.Post("http://dblayer:8080/products/"+productID+"/variation/"+variationID+"/size", "application/json", r.Body)
 	if err != nil {
 		fmt.Println("There was an error posting product size:", err)
 		helpers.ErrorJSON(w, errors.New("there was an error posting product size"), 500)
@@ -300,14 +301,13 @@ func(route *AdminRoutes) CreateProductSize(w http.ResponseWriter, r *http.Reques
 	}
 
 	helpers.WriteJSON(w, http.StatusCreated, sizeID)
-}  
+}
 
-func (route *AdminRoutes) DeleteProductSize(w http.ResponseWriter, r *http.Request){
+func (route *AdminProductRoutes) DeleteProductSize(w http.ResponseWriter, r *http.Request) {
 	sizeID := chi.URLParam(r, "ProductSizeID")
 	prdCheck := ProductSize{}
 
-
-	response, err := http.Get("http://dblayer:8080/product-size/"+sizeID)
+	response, err := http.Get("http://dblayer:8080/product-size/" + sizeID)
 	if err != nil {
 		fmt.Println("There was an error retrieving product size:", err)
 		helpers.ErrorJSON(w, errors.New("there was an error retrieving product size"), 500)
@@ -375,24 +375,85 @@ func (route *AdminRoutes) DeleteProductSize(w http.ResponseWriter, r *http.Reque
 	helpers.WriteJSON(w, http.StatusOK, "Product size deleted successfully")
 }
 
-func EditProductSize(w http.ResponseWriter, r *http.Request){
-	response, err := http.Get("http://dblayer:8080/product-size/"+chi.URLParam(r, "ProductSizeID"))
-	if err != nil {
-		fmt.Println("There was an error retrieving product size:", err)
-		helpers.ErrorJSON(w, errors.New("there was an error retrieving product size"), 500)
-		return
-	}
-	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		fmt.Println("Failed to retrieve product size, status code:", response.StatusCode)
-		helpers.ErrorJSON(w, errors.New("failed to retrieve product size"), response.StatusCode)
+func (route *AdminProductRoutes) DeleteVariation(w http.ResponseWriter, r *http.Request) {
+	varID := chi.URLParam(r, "VariationID")
+	if varID == "" {
+		helpers.ErrorJSON(w, errors.New("please input VariationID"), http.StatusBadRequest)
 		return
 	}
+
+	req, err := http.NewRequest("DELETE", "http://dblayer:8080/variation/"+varID, nil)
+	if err != nil {
+		fmt.Println("There was an error creating delete request for variation:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error creating delete request for variation"), 500)
+		return
+	}
+
+	client := &http.Client{}
+	deleteResp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("There was an error sending delete request for variation:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error deleting variation"), 500)
+		return
+	}
+	defer deleteResp.Body.Close()
+
+	if deleteResp.StatusCode != http.StatusOK {
+		fmt.Println("Delete variation failed, status code:", deleteResp.StatusCode)
+		helpers.ErrorJSON(w, errors.New("failed to delete variation"), deleteResp.StatusCode)
+		return
+	}
+
+	helpers.WriteJSON(w, http.StatusOK, "Variation deleted successfully")
+}
+
+func (route *AdminProductRoutes) EditProductSize(w http.ResponseWriter, r *http.Request) {
+	sizeID := chi.URLParam(r, "ProductSizeID")
+	if sizeID == "" {
+		helpers.ErrorJSON(w, errors.New("please input ProductSizeID"), http.StatusBadRequest)
+		return
+	}
+
 	prdEdit := ProductSize{}
-	decoder := json.NewDecoder(response.Body)
-	if err := decoder.Decode(&prdEdit); err != nil {
-		fmt.Println("Error decoding response from DBLayer:", err)
+	if err := helpers.ReadJSON(w, r, &prdEdit); err != nil {
+		helpers.ErrorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+
+	reqBody, err := json.Marshal(prdEdit)
+	if err != nil {
+		fmt.Println("Error encoding product size for update:", err)
+		helpers.ErrorJSON(w, errors.New("failed to encode product size for update"), 500)
+		return
+	}
+
+	req, err := http.NewRequest("PUT", "http://dblayer:8080/product-size/"+sizeID, bytes.NewReader(reqBody))
+	if err != nil {
+		fmt.Println("There was an error creating update request for product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error creating update request for product size"), 500)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	updateResp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("There was an error sending update request for product size:", err)
+		helpers.ErrorJSON(w, errors.New("there was an error updating product size"), 500)
+		return
+	}
+	defer updateResp.Body.Close()
+
+	if updateResp.StatusCode != http.StatusOK {
+		fmt.Println("Update product size failed, status code:", updateResp.StatusCode)
+		helpers.ErrorJSON(w, errors.New("failed to update product size"), updateResp.StatusCode)
+		return
+	}
+
+	updated := ProductSize{}
+	if err := json.NewDecoder(updateResp.Body).Decode(&updated); err != nil {
+		fmt.Println("Error decoding update response from DBLayer:", err)
 		helpers.ErrorJSON(w, errors.New("failed to parse database response"), 500)
 		return
 	}
@@ -403,7 +464,7 @@ func EditProductSize(w http.ResponseWriter, r *http.Request){
 }
 
 
-func (route *AdminRoutes) DeleteProductVariation(w http.ResponseWriter, r *http.Request){
+func (route *AdminProductRoutes) DeleteProductVariation(w http.ResponseWriter, r *http.Request){
 }
-func (route *AdminRoutes) DeleteProduct(w http.ResponseWriter, r *http.Request){
+func (route *AdminProductRoutes) DeleteProduct(w http.ResponseWriter, r *http.Request){
 }

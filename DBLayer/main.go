@@ -37,6 +37,7 @@ func initDB() (*sql.DB,*database.Models){
 		Addr:                 "mysql:3306",
 		DBName:               "database",
 		MultiStatements:      true,
+		ParseTime:            true,
 	}
 	var db *sql.DB
 	var err error
