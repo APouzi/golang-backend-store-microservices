@@ -88,8 +88,9 @@ type ReadCat struct {
 }
 
 type ProductEdit struct {
-	Name        string `json:"Product_Name"`
-	Description string `json:"Product_Description"`
+	Name         *string `db:"Product_Name" json:"product_name,omitempty"`
+	Description  *string `db:"Product_Description" json:"product_description,omitempty"`
+	PrimaryImage *string `db:"PRIMARY_IMAGE" json:"primary_image,omitempty"`
 }
 
 type VariationEdit struct {

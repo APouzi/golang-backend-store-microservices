@@ -121,7 +121,7 @@ func (app *Config) StartRouter() http.Handler { // Change the receiver to (*Conf
 
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   app.GetAllowedOrigins(),
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           301,

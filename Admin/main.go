@@ -95,7 +95,7 @@ func (app *Config) StartRouter(firebase *firebase.App) http.Handler { // Change 
 	mux := chi.NewRouter()
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   app.GetAllowedOrigins(),
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT","PATCH","DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"}, // this is what the browser can *read* from the response
 		AllowCredentials: true,

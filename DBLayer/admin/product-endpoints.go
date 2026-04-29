@@ -148,45 +148,53 @@ func (adminProdRoutes *ProductRoutesTray) CreateProductVariation(w http.Response
 func (route *ProductRoutesTray) EditProduct(w http.ResponseWriter, r *http.Request) {
 	ProdID := chi.URLParam(r, "ProductID")
 	prodEdit := ProductEdit{}
-	helpers.ReadJSON(w, r, &prodEdit)
-	fmt.Println("edit product:", prodEdit)
+	if err := helpers.ReadJSON(w, r, &prodEdit); err != nil {
+		helpers.ErrorJSON(w, err, http.StatusBadRequest)
+		return
+	}
 	var buf strings.Builder
-	buf.WriteString("UPDATE tblProducts SET ")
+	buf.WriteString("UPDATE tblProducts SET")
 	var count int = 0
 	Varib := []any{}
-	if prodEdit.Name != "" {
-		if count == 0 {
-			buf.WriteString(" Product_Name = ?")
-			Varib = append(Varib, prodEdit.Name)
-			count++
+	if prodEdit.Name != nil {
+		if count > 0 {
+			buf.WriteString(",")
 		}
-		buf.WriteString(", Product_Name = ?")
-		Varib = append(Varib, prodEdit.Name)
+		buf.WriteString(" Product_Name = ?")
+		Varib = append(Varib, *prodEdit.Name)
+		count++
 	}
-	if prodEdit.Description != "" {
-		if count == 0 {
-			buf.WriteString(" Product_Description = ?")
-			Varib = append(Varib, prodEdit.Description)
-			count++
+	if prodEdit.Description != nil {
+		if count > 0 {
+			buf.WriteString(",")
 		}
-		buf.WriteString(", Product_Description = ?")
-		Varib = append(Varib, prodEdit.Description)
+		buf.WriteString(" Product_Description = ?")
+		Varib = append(Varib, *prodEdit.Description)
+		count++
+	}
+	if prodEdit.PrimaryImage != nil {
+		if count > 0 {
+			buf.WriteString(",")
+		}
+		buf.WriteString(" PRIMARY_IMAGE = ?")
+		Varib = append(Varib, *prodEdit.PrimaryImage)
+		count++
 	}
 	if count == 0 {
-		helpers.WriteJSON(w, http.StatusAccepted, "failed")
+		helpers.ErrorJSON(w, errors.New("no fields provided for update: expected at least one of product_name, product_description, primary_image"), http.StatusBadRequest)
 		return
 	}
 
 	buf.WriteString(", Modified_Date = ? WHERE Product_ID = ?")
-	Varib = append(Varib, time.Now(), ProdID)
+	Varib = append(Varib, time.Now().UTC(), ProdID)
 	_, err := route.DB.Exec(buf.String(), Varib...)
 	if err != nil {
-		fmt.Println("err with exec Edit Product Update")
-		fmt.Println(err)
+		log.Println("err with exec Edit Product Update:", err)
+		helpers.ErrorJSON(w, errors.New("failed to update product"), http.StatusInternalServerError)
+		return
 	}
 
-	helpers.WriteJSON(w, http.StatusAccepted, &prodEdit)
-
+	helpers.WriteJSON(w, http.StatusOK, &prodEdit)
 }
 
 func (route *ProductRoutesTray) EditVariation(w http.ResponseWriter, r *http.Request) {

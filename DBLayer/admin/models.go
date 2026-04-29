@@ -108,8 +108,9 @@ type ReadCat struct {
 }
 
 type ProductEdit struct {
-	Name        string `json:"Product_Name"`
-	Description string `json:"Product_Description"`
+	Name         *string `db:"Product_Name" json:"product_name,omitempty"`
+	Description  *string `db:"Product_Description" json:"product_description,omitempty"`
+	PrimaryImage *string `db:"PRIMARY_IMAGE" json:"primary_image,omitempty"`
 }
 
 type VariationEdit struct {
@@ -120,8 +121,8 @@ type VariationEdit struct {
 	VariationPrice       float32 `db:"Variation_Price" json:"variation_price"`
 	SKU                  string  `db:"SKU" json:"sku"`
 	UPC                  string  `db:"UPC" json:"upc"`
-	PrimaryImage         string  `db:"Primary_Image,omitempty" json:"primary_image,omitempty"`
-	VariationQuantity    int     `db:"Variation_Quantity" json:"variation_quantity"`
+	PrimaryImage         string  `db:"PRIMARY_IMAGE,omitempty" json:"primary_image,omitempty"`
+	VariationQuantity    int     `db:"Quantity" json:"variation_quantity"`
 	LocationAt           string  `db:"Location_At" json:"location_at"`
 }
 
