@@ -77,34 +77,34 @@ type PILCreated struct{
 }
 
 type CategoryInsert struct{
-	CategoryName string `json:"CategoryName"`
-	CategoryDescription string `json:"CategoryDescription"`
+	CategoryName *string `db:"CategoryName" json:"category_name"`
+	CategoryDescription *string `db:"CategoryDescription" json:"category_description"`
 }
 
 type CategoryReturn struct{
-	CategoryId int64 `json:"Category_ID"`
-	CategoryName string `json:"CategoryName"`
-	CategoryDescription string `json:"CategoryDescription"`
+	CategoryId int64 ` json:"category_id"`
+	CategoryName *string ` json:"category_name"`
+	CategoryDescription *string ` json:"category_description"`
 }
 
 type CategoryEdit struct{
-	CategoryId int64 `json:"category_id"`
-	CategoryName *string `json:"category_name"`
-	CategoryDescription *string `json:"category_description"`
+	CategoryId int64 `db:"Category_ID" json:"category_id"`
+	CategoryName *string `db:"CategoryName" json:"category_name"`
+	CategoryDescription *string `db:"CategoryDescription" json:"category_description"`
 }
 
 type CatToCat struct {
-	CatStart int `json:"CategoryStart"`
-	CatEnd   int `json:"CategoryEnd"`
+	CatStart int `json:"CategoryStart" db:"category_start"`
+	CatEnd   int `json:"CategoryEnd" db:"category_end"`
 }
 
 type CatToProd struct {
-	Cat  int `json:"Category"`
-	Prod int `json:"Product"`
+	Cat  int `json:"Category" db:"category"`
+	Prod int `json:"Product" db:"product"`
 }
 
 type ReadCat struct {
-	Category int `json:"category"`
+	Category int `json:"category" db:"category"`
 }
 
 type ProductEdit struct {
