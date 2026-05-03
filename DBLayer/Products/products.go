@@ -267,6 +267,8 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 	}
 	if err != nil{
 		fmt.Println("scanning error:",err)
+		helpers.ErrorJSON(w, fmt.Errorf("scanning error getting variation: %w", err), http.StatusInternalServerError)
+		return
 	}
 	
 	helpers.WriteJSON(w,200,&variationJSON)
@@ -820,6 +822,8 @@ func (prdRoutes *ProductRoutesTray) GetOneProductSizeEndPoint(w http.ResponseWri
 	}
 	if err != nil{
 		fmt.Println("scanning error:",err)
+		helpers.ErrorJSON(w, fmt.Errorf("scanning error getting product size: %w", err), http.StatusInternalServerError)
+		return
 	}
 	
 	helpers.WriteJSON(w,200,&variationJSON)

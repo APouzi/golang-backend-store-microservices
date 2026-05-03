@@ -117,19 +117,37 @@ type Attribute struct {
 }
 
 type CategoryInsert struct{
-	CategoryName string `json:"CategoryName"`
-	CategoryDescription string `json:"CategoryDescription"`
+	CategoryName string `json:"category_name"`
+	CategoryDescription string `json:"category_description"`
 }
 
 type CategoryReturn struct{
-	CategoryId int64 `json:"Category_ID"`
-	CategoryName string `json:"CategoryName"`
-	CategoryDescription string `json:"CategoryDescription"`
+	CategoryId int64 `json:"category_id"`
+	CategoryName *string `json:"category_name"`
+	CategoryDescription *string `json:"category_description"`
 }
 
-type CategoriesList struct{
-	collection []CategoryReturn
+type CategoryTree struct{
+  	Categories map[string]PrimeCategoryTree `json:"categories"`
 }
+
+type PrimeCategoryTree struct{
+    PrimeCategoryID int `json:"prime_category_id"`
+    PrimeCategoryName string `json:"prime_category_name"` 
+    Categories map[string]SubCategoryTree `json:"categories"`
+}
+
+type SubCategoryTree struct{
+    SubCategoryID int `json:"sub_category_id"`
+    SubCategoryName string `json:"sub_category_name"`
+    Categories map[string]FinalCategoryTree `json:"categories"`
+}
+
+type FinalCategoryTree struct{
+    FinalCategoryID int `json:"final_category_id"`
+    FinalCategoryName string `json:"final_name"`
+}
+
 
 type ProductSize struct {
     SizeID         *int64       `db:"Size_ID" json:"size_id"`
