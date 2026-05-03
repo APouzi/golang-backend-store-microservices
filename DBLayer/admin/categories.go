@@ -176,14 +176,14 @@ func (route *CategoriesRoutesTray) InsertIntoFinalProd(w http.ResponseWriter, r 
 }
 
 func (route *CategoriesRoutesTray) DeletePrimeCategory(w http.ResponseWriter, r *http.Request){
-	CatName := chi.URLParam(r,"CatPrimeName")
+	CatName := chi.URLParam(r,"CatPrimeID")
 	if CatName == ""{
-		fmt.Println("No CatPrimeName wasn't pulled")
+		fmt.Println("No CatPrimeID wasn't pulled")
 		return
 	}
-	_, err := route.DB.Exec("DELETE FROM tblCategoriesPrime WHERE CategoryName = ?", CatName)
+	_, err := route.DB.Exec("DELETE FROM tblCategoriesPrime WHERE Category_ID = ?", CatName)
 	if err != nil{
-		fmt.Println("Failed deletion in CatPrimeName")
+		fmt.Println("Failed deletion in CatPrimeID")
 		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
 		return
 	}
@@ -194,15 +194,15 @@ func (route *CategoriesRoutesTray) DeletePrimeCategory(w http.ResponseWriter, r 
 
 
 func (route *CategoriesRoutesTray) DeleteSubCategory(w http.ResponseWriter, r *http.Request){
-	CatName := chi.URLParam(r,"CatSubName")
+	CatName := chi.URLParam(r,"CatSubID")
 	if CatName == ""{
-		fmt.Println("No CatSubName wasn't pulled")
+		fmt.Println("No CatSubID wasn't pulled")
 		return
 	}
 	
-	_, err := route.DB.Exec("DELETE FROM tblCategoriesSub WHERE CategoryName = ?", CatName)
+	_, err := route.DB.Exec("DELETE FROM tblCategoriesSub WHERE Category_ID = ?", CatName)
 	if err != nil{
-		fmt.Println("Failed deletion in CatSubName")
+		fmt.Println("Failed deletion in CatSubID")
 		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
 		return
 	}
@@ -213,15 +213,15 @@ func (route *CategoriesRoutesTray) DeleteSubCategory(w http.ResponseWriter, r *h
 
 
 func (route *CategoriesRoutesTray) DeleteFinalCategory(w http.ResponseWriter, r *http.Request){
-	CatName := chi.URLParam(r,"CatFinalName")
+	CatName := chi.URLParam(r,"CatFinalID")
 	if CatName == ""{
-		fmt.Println("No CatPrimeName wasn't pulled")
+		fmt.Println("No CatFinalID wasn't pulled")
 		return
 	}
 	
-	_, err := route.DB.Exec("DELETE FROM tblCategoriesFinal WHERE CategoryName = ?", CatName)
+	_, err := route.DB.Exec("DELETE FROM tblCategoriesFinal WHERE Category_ID = ?", CatName)
 	if err != nil{
-		fmt.Println("Failed deletion in CatPrimeName")
+		fmt.Println("Failed deletion in CatFinalID")
 		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
 		return
 	}

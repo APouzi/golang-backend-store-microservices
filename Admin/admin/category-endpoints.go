@@ -28,58 +28,124 @@ func InstanceAdminCategoriesRoutes(  ) *AdminCategoriesRoutes {
 
 
 
-func (route *AdminRoutes) DeletePrimeCategory(w http.ResponseWriter, r *http.Request){
-	CatName := chi.URLParam(r,"CatPrimeName")
-	if CatName == ""{
-		fmt.Println("No CatPrimeName wasn't pulled")
-		return
-	}
-	_, err := route.DB.Exec("DELETE FROM tblCategoriesPrime WHERE CategoryName = ?", CatName)
-	if err != nil{
-		fmt.Println("Failed deletion in CatPrimeName")
-		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
-		return
-	}
 
-	sendBack := DeletedSendBack{SendBack:false}
-	helpers.WriteJSON(w,200,sendBack)
+
+func (route *AdminCategoriesRoutes) ReturnCategoryTree(w http.ResponseWriter, r *http.Request){
+	 catTree := CategoryTree{}
+	 url := "http://dblayer:8080/category/tree"
+	 resp, err := http.Get(url)
+	 if err != nil {
+		 fmt.Println("Error fetching category tree:", err)
+		 helpers.ErrorJSON(w, errors.New("failed to fetch category tree"), 500)
+		 return
+	 }
+	 defer resp.Body.Close()
+
+	 err = json.NewDecoder(resp.Body).Decode(&catTree)
+	 if err != nil {
+		 fmt.Println("Error decoding category tree:", err)
+		 helpers.ErrorJSON(w, errors.New("failed to decode category tree"), 500)
+		 return
+	 }
+
+	 helpers.WriteJSON(w, 200, catTree)
 }
 
+func (route *AdminRoutes) DeletePrimeCategory(w http.ResponseWriter, r *http.Request){
+	CatID := chi.URLParam(r,"CatPrimeID")
+	if CatID == ""{
+		fmt.Println("No CatPrimeID wasn't pulled")
+		return
+	}
+	url := "http://dblayer:8080/category/prime/" + CatID
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		fmt.Println("Failed to create delete request for CatPrimeID")
+		helpers.ErrorJSON(w, errors.New("failed to create delete request"), 500)
+		return
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil{
+		fmt.Println("Failed deletion in CatPrimeID")
+		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
+		return
+	}
+	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Failed deletion in CatPrimeID, status code:", resp.StatusCode)
+		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
+		return
+	}
+
+	sendBack := DeletedSendBack{SendBack:true}
+	helpers.WriteJSON(w,200,sendBack)
+}
 func (route *AdminRoutes) DeleteSubCategory(w http.ResponseWriter, r *http.Request){
-	CatName := chi.URLParam(r,"CatSubName")
-	if CatName == ""{
-		fmt.Println("No CatSubName wasn't pulled")
+	CatID := chi.URLParam(r,"CatSubID")
+	if CatID == ""{
+		fmt.Println("No CatSubID wasn't pulled")
 		return
 	}
 	
-	_, err := route.DB.Exec("DELETE FROM tblCategoriesSub WHERE CategoryName = ?", CatName)
+	url := "http://dblayer:8080/category/sub/" + CatID
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		fmt.Println("Failed to create delete request for CatSubID")
+		helpers.ErrorJSON(w, errors.New("failed to create delete request"), 500)
+		return
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil{
-		fmt.Println("Failed deletion in CatSubName")
+		fmt.Println("Failed deletion in CatSubID")
+		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Failed deletion in CatSubID, status code:", resp.StatusCode)
 		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
 		return
 	}
 	
-	sendBack := DeletedSendBack{SendBack:false}
+	sendBack := DeletedSendBack{SendBack:true}
 	helpers.WriteJSON(w,200,sendBack)
 }
 
 
 func (route *AdminRoutes) DeleteFinalCategory(w http.ResponseWriter, r *http.Request){
-	CatName := chi.URLParam(r,"CatFinalName")
-	if CatName == ""{
-		fmt.Println("No CatPrimeName wasn't pulled")
+	CatID := chi.URLParam(r,"CatFinalID")
+	if CatID == ""{
+		fmt.Println("No CatFinalID wasn't pulled")
 		return
 	}
 	
-	_, err := route.DB.Exec("DELETE FROM tblCategoriesFinal WHERE CategoryName = ?", CatName)
+	url := "http://dblayer:8080/category/final/" + CatID
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		fmt.Println("Failed to create delete request for CatFinalID")
+		helpers.ErrorJSON(w, errors.New("failed to create delete request"), 500)
+		return
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil{
-		fmt.Println("Failed deletion in CatPrimeName")
+		fmt.Println("Failed deletion in CatFinalID")
+		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Failed deletion in CatFinalID, status code:", resp.StatusCode)
 		helpers.ErrorJSON(w, errors.New("failed deletion in table"), 500)
 		return
 	}
 
-	sendBack := DeletedSendBack{SendBack:false}
+	sendBack := DeletedSendBack{SendBack:true}
 	helpers.WriteJSON(w,200,sendBack)
 }
 
@@ -118,14 +184,16 @@ func (route *AdminCategoriesRoutes) CreateSubCategory(w http.ResponseWriter, r *
 	category_read := CategoryInsert{}
 	err := helpers.ReadJSON(w, r, &category_read)
 	if err != nil{
-		fmt.Println(err)
+		fmt.Println("error reading json",err)
 	}
+
+	fmt.Println("category payload:", category_read.CategoryName, category_read.CategoryDescription)
 
 
 	url := "http://dblayer:8080/category/sub"
 	catBytes, err := json.Marshal(category_read)
 	if err != nil{
-		fmt.Println(err)
+		fmt.Println("error marshalling json",err)
 	}
 	catDecode:= bytes.NewReader(catBytes)
 	resp, err := http.Post(url,"application/json",catDecode)
@@ -282,50 +350,46 @@ func (route *AdminCategoriesRoutes) InsertIntoFinalProd(w http.ResponseWriter, r
 
 
 func (route *AdminCategoriesRoutes) ReturnAllPrimeCategories(w http.ResponseWriter, r *http.Request){
-	query := "SELECT CategoryName, CategoryDescription FROM tblCategoriesPrime"
-	rows,err := route.DB.Query(query)
+	url := "http://dblayer:8080/category/prime"
+	resp, err := http.Get(url)
 	if err != nil{
 		fmt.Println(err)
 	}
-	category := CategoryReturn{}
-	categoryList := CategoriesList{}
-	categoryList.collection = []CategoryReturn{}
-	for rows.Next(){
-		rows.Scan(&category.CategoryName, &category.CategoryDescription)
-		categoryList.collection = append(categoryList.collection, category)
+	defer resp.Body.Close()
+	categoryList := []CategoryReturn{}
+	err = json.NewDecoder(resp.Body).Decode(&categoryList)
+	if err != nil {
+		fmt.Println("Error decoding prime categories:", err)
 	}
-	helpers.WriteJSON(w,http.StatusAccepted, categoryList.collection)
+	helpers.WriteJSON(w,http.StatusAccepted, categoryList)
 
 }
 
 func (route *AdminCategoriesRoutes) ReturnAllSubCategories(w http.ResponseWriter, r *http.Request){
-	query := "SELECT CategoryName, CategoryDescription FROM tblCategoriesSub"
-	rows,err := route.DB.Query(query)
+	url := "http://dblayer:8080/category/sub"
+	resp, err := http.Get(url)
 	if err != nil{
 		fmt.Println(err)
 	}
-	category := CategoryReturn{}
-	categoryList := CategoriesList{}
-	categoryList.collection = []CategoryReturn{}
-	for rows.Next(){
-		rows.Scan(&category.CategoryName, &category.CategoryDescription)
-		categoryList.collection = append(categoryList.collection, category)
+	defer resp.Body.Close()
+	categoryList := []CategoryReturn{}
+	err = json.NewDecoder(resp.Body).Decode(&categoryList)
+	if err != nil {
+		fmt.Println("Error decoding prime categories:", err)
 	}
-	helpers.WriteJSON(w,http.StatusAccepted, categoryList.collection)
+	helpers.WriteJSON(w,http.StatusAccepted, categoryList)
 }
 
 func (route *AdminCategoriesRoutes) ReturnAllFinalCategories(w http.ResponseWriter, r *http.Request){
-	query := "SELECT CategoryName, CategoryDescription FROM tblCategoriesFinal"
-	rows,err := route.DB.Query(query)
+	url := "http://dblayer:8080/category/final"
+	resp, err := http.Get(url)
 	if err != nil{
 		fmt.Println(err)
 	}
-	category := CategoryReturn{}
-	categoryList := CategoriesList{}
-	categoryList.collection = []CategoryReturn{}
-	for rows.Next(){
-		rows.Scan(&category.CategoryName, &category.CategoryDescription)
-		categoryList.collection = append(categoryList.collection, category)
+	categoryList := []CategoryReturn{}
+	err = json.NewDecoder(resp.Body).Decode(&categoryList)
+	if err != nil {
+		fmt.Println("Error decoding prime categories:", err)
 	}
-	helpers.WriteJSON(w,http.StatusAccepted, categoryList.collection)
+	helpers.WriteJSON(w,http.StatusAccepted, categoryList)
 }

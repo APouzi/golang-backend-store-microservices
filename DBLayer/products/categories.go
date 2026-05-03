@@ -29,13 +29,12 @@ func (route *ProductRoutesTray) ReturnAllPrimeCategories(w http.ResponseWriter, 
 		fmt.Println(err)
 	}
 	category := CategorySingleReturn{}
-	categoryList := CategoriesList{}
-	categoryList.collection = []CategorySingleReturn{}
+	categoryList := []CategorySingleReturn{}
 	for rows.Next(){
 		rows.Scan(&category.CategoryId, &category.CategoryName, &category.CategoryDescription)
-		categoryList.collection = append(categoryList.collection, category)
+		categoryList = append(categoryList, category)
 	}
-	helpers.WriteJSON(w,http.StatusAccepted, categoryList.collection)
+	helpers.WriteJSON(w,http.StatusAccepted, categoryList)
 
 }
 
@@ -46,13 +45,12 @@ func (route *ProductRoutesTray) ReturnAllSubCategories(w http.ResponseWriter, r 
 		fmt.Println(err)
 	}
 	category := CategorySingleReturn{}
-	categoryList := CategoriesList{}
-	categoryList.collection = []CategorySingleReturn{}
+	categoryList := []CategorySingleReturn{}
 	for rows.Next(){
 		rows.Scan(&category.CategoryId, &category.CategoryName, &category.CategoryDescription)
-		categoryList.collection = append(categoryList.collection, category)
+		categoryList = append(categoryList, category)
 	}
-	helpers.WriteJSON(w,http.StatusAccepted, categoryList.collection)
+	helpers.WriteJSON(w,http.StatusAccepted, categoryList)
 }
 
 func (route *ProductRoutesTray) ReturnAllFinalCategories(w http.ResponseWriter, r *http.Request){
@@ -62,13 +60,12 @@ func (route *ProductRoutesTray) ReturnAllFinalCategories(w http.ResponseWriter, 
 		fmt.Println(err)
 	}
 	category := CategorySingleReturn{}
-	categoryList := CategoriesList{}
-	categoryList.collection = []CategorySingleReturn{}
+	categoryList := []CategorySingleReturn{}
 	for rows.Next(){
 		rows.Scan(&category.CategoryId, &category.CategoryName, &category.CategoryDescription)
-		categoryList.collection = append(categoryList.collection, category)
+		categoryList = append(categoryList, category)
 	}
-	helpers.WriteJSON(w,http.StatusAccepted, categoryList.collection)
+	helpers.WriteJSON(w,http.StatusAccepted, categoryList)
 }
 
 
