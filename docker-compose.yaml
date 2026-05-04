@@ -40,7 +40,7 @@ services:
       - dblayer
     networks:
       - pouzikov
-    env_file:
+    env_file: 
     - ./MerchantMachine/.env
 
   adminmerchant:

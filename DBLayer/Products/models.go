@@ -155,12 +155,12 @@ type FinalCategoryTree struct{
 //========================
 
 type CategorySingleReturn struct{
-    CategoryId int64 `json:"Category_ID"`
-    CategoryName string `json:"CategoryName"`
-    CategoryDescription string `json:"CategoryDescription"`
+    CategoryId int64 `json:"category_id" db:"Category_ID"`
+    CategoryName string `json:"category_name" db:"CategoryName"`
+    CategoryDescription string `json:"category_description" db:"CategoryDescription"`
 }
 
 type CategoryInsert struct{
-	CategoryName string `json:"CategoryName"`
-	CategoryDescription string `json:"CategoryDescription"`
+	CategoryName string `json:"category_name" db:"CategoryName"`
+	CategoryDescription string `json:"category_description" db:"CategoryDescription"`
 }

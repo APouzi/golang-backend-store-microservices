@@ -63,19 +63,19 @@ func prepareProductRoutes(dbInst *sql.DB) map[string]*sql.Stmt{
 		log.Fatal(err)
 	}
 
-	getAllFinalStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInFinalView LIMIT 10 OFFSET ?")
+	getAllFinalStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInFinalView WHERE CategoryName = ? LIMIT 10 OFFSET ?")
 	if err != nil {
 		log.Printf("Warning: Could not prepare AllProductsInFinalView statement: %v", err)
 		getAllFinalStment = nil // Set to nil so we can check later
 	}
 
-	getAllSubStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInSubView LIMIT 10 OFFSET ?")
+	getAllSubStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInSubView WHERE CategoryName = ? LIMIT 10 OFFSET ?")
 	if err != nil {
 		log.Printf("Warning: Could not prepare AllProductsInSubView statement: %v", err)
 		getAllSubStment = nil
 	}
 
-	getAllPrimeStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInPrimeView LIMIT 10 OFFSET ?")
+	getAllPrimeStment, err := dbInst.Prepare("SELECT Product_ID, Product_Name, CategoryName FROM AllProductsInPrimeView WHERE CategoryName = ? LIMIT 10 OFFSET ?")
 	if err != nil {
 		log.Printf("Warning: Could not prepare AllProductsInPrimeView statement: %v", err)
 		getAllPrimeStment = nil
@@ -267,7 +267,7 @@ func (prdRoutes *ProductRoutesTray) GetOneVariationEndPoint(w http.ResponseWrite
 	}
 	if err != nil{
 		fmt.Println("scanning error:",err)
-		helpers.ErrorJSON(w, fmt.Errorf("scanning error getting variation: %w", err), http.StatusInternalServerError)
+ 		helpers.ErrorJSON(w, fmt.Errorf("scanning error getting variation: %w", err), http.StatusInternalServerError)
 		return
 	}
 	
@@ -647,6 +647,10 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInFinalCategoryViewEndPoint(w 
 	CatDBRet := &CategoryRetrieval{}
 	
 	category_name := r.URL.Query().Get("final_category_name")
+	if strings.TrimSpace(category_name) == "" {
+		helpers.ErrorJSON(w, errors.New("final_category_name is required"), http.StatusBadRequest)
+		return
+	}
 	page, err :=  strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("getting page failed: %v", err), http.StatusInternalServerError)
@@ -660,7 +664,7 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInFinalCategoryViewEndPoint(w 
 		return
 	}
 
-	res, err := prdRoutes.getAllProductByCategoryFinalStmt.Query(page)
+	res, err := prdRoutes.getAllProductByCategoryFinalStmt.Query(category_name, page)
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
 		return
@@ -696,6 +700,10 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInSubCategoryViewEndPoint(w ht
 	CatDBRet := &CategoryRetrieval{}
 	
 	category_name := r.URL.Query().Get("sub_category_name")
+	if strings.TrimSpace(category_name) == "" {
+		helpers.ErrorJSON(w, errors.New("sub_category_name is required"), http.StatusBadRequest)
+		return
+	}
 	page, err :=  strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("getting page failed: %v", err), http.StatusInternalServerError)
@@ -709,7 +717,7 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInSubCategoryViewEndPoint(w ht
 		return
 	}
 
-	res, err := prdRoutes.getAllProductByCategorySubStmt.Query(page)
+	res, err := prdRoutes.getAllProductByCategorySubStmt.Query(category_name, page)
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
 		return
@@ -745,6 +753,10 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInPrimeCategoryViewEndPoint(w 
 	CatDBRet := &CategoryRetrieval{}
 	
 	category_name := r.URL.Query().Get("prime_category_name")
+	if strings.TrimSpace(category_name) == "" {
+		helpers.ErrorJSON(w, errors.New("prime_category_name is required"), http.StatusBadRequest)
+		return
+	}
 	page, err :=  strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("getting page failed: %v", err), http.StatusInternalServerError)
@@ -758,7 +770,7 @@ func (prdRoutes *ProductRoutesTray) GetAllProductsInPrimeCategoryViewEndPoint(w 
 		return
 	}
 
-	res, err := prdRoutes.getAllProductByCategoryPrimeStmt.Query(page)
+	res, err := prdRoutes.getAllProductByCategoryPrimeStmt.Query(category_name, page)
 	if err != nil {
 		helpers.ErrorJSON(w, fmt.Errorf("database query failed: %v", err), http.StatusInternalServerError)
 		return

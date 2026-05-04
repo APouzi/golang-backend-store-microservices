@@ -146,6 +146,33 @@ func (route *ProductRoutes) SearchProductsEndPoint(w http.ResponseWriter, r *htt
 	}
 }
 
+func (route *ProductRoutes) GetAllProductsByChosenCategory(w http.ResponseWriter, r *http.Request){
+	categoryID := chi.URLParam(r, "CategoryID")
+	if categoryID == "" {
+		helpers.ErrorJSON(w, errors.New("categoryID path param required"), http.StatusBadRequest)
+		return
+	}
+	reqURL := fmt.Sprintf("%s/products/category/%s", route.DBBaseURL, categoryID)
+	resp, err := http.Get(reqURL)
+	if err != nil{
+		helpers.ErrorJSON(w, fmt.Errorf("failed db pull: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	var products []ProductRetrieve
+	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
+		helpers.ErrorJSON(w, fmt.Errorf("failed to decode response: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if len(products) == 0 {
+		helpers.ErrorJSON(w, errors.New("no products found for this category"), http.StatusNotFound)
+		return
+	}
+	if err := helpers.WriteJSON(w, http.StatusOK, products); err != nil {
+		fmt.Println("WriteJSON error:", err)
+	}
+}
+
 // GetProductAndVariationsPaginated proxies a pagination request to the DBLayer
 func (route *ProductRoutes) GetProductAndVariationsPaginated(w http.ResponseWriter, r *http.Request) {
 	page := r.URL.Query().Get("page")
